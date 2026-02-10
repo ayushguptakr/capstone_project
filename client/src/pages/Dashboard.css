@@ -1,0 +1,79 @@
+.dash-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(#e8ffce, #fffbd1);
+  padding: 20px;
+}
+
+.dash-box {
+  background: #ffffffd9;
+  padding: 35px;
+  width: 380px;
+  border-radius: 25px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.6s ease;
+}
+
+.dash-title {
+  font-size: 28px;
+  color: #2e7d32;
+  margin-bottom: 10px;
+  font-family: "Comic Sans MS", cursive;
+}
+
+.dash-role {
+  font-size: 18px;
+  color: #f39c12;
+  margin-bottom: 25px;
+  font-weight: bold;
+}
+
+.dash-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.dash-btn {
+  padding: 12px;
+  background: #2ecc71;
+  border: none;
+  border-radius: 15px;
+  font-size: 18px;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+  font-family: "Comic Sans MS", cursive;
+}
+
+.dash-btn:hover {
+  transform: scale(1.05);
+  background: #27ae60;
+}
+
+.logout-btn {
+  margin-top: 25px;
+  padding: 12px;
+  background: #ff5252;
+  border: none;
+  width: 100%;
+  font-size: 18px;
+  border-radius: 15px;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+  font-family: "Comic Sans MS", cursive;
+}
+
+.logout-btn:hover {
+  transform: scale(1.05);
+  background: #e84141;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(25px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,114 @@
+/* Ensure inputs & button calculate width correctly */
+input, button {
+  box-sizing: border-box !important;
+}
+
+/* Fullscreen background */
+.login-container {
+  height: 100vh;
+  width: 100vw;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(2px);
+}
+
+/* Card box */
+.login-box {
+  background: rgba(255, 255, 255, 0.85);
+  padding: 40px 35px;
+  width: 360px;
+  border-radius: 28px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  animation: pop 0.5s ease;
+}
+
+/* Mascot Image */
+.mascot {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid #f7e000;
+  margin-bottom: 15px;
+}
+
+/* Title */
+.title {
+  font-size: 30px;
+  font-family: "Comic Sans MS", cursive;
+  color: #2b7a0b;
+  margin-bottom: 25px;
+}
+
+/* Input fields */
+.input-field {
+  width: 100%;
+  padding: 14px;
+  margin: 12px 0;
+  border-radius: 15px;
+  border: 2px solid #f4c542;
+  outline: none;
+  font-size: 17px;
+  font-family: "Comic Sans MS", cursive;
+  transition: 0.3s;
+}
+
+.input-field:focus {
+  border-color: #2ecc71;
+  background: #fff5c3;
+}
+
+/* FIXED Login Button */
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background: #2ecc71;
+  border: 2px solid #2ecc71;   /* Added border to match input */
+  border-radius: 15px;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: transform 0.2s, background 0.3s;
+  font-family: "Comic Sans MS", cursive;
+  box-sizing: border-box !important;  /* IMPORTANT FIX */
+}
+
+.login-btn:hover {
+  transform: scale(1.08);
+  background: #27ae60;
+}
+
+/* Signup text */
+.signup-text {
+  margin-top: 20px;
+  font-size: 17px;
+  font-family: "Comic Sans MS", cursive;
+  color: #444;
+}
+
+.signup-text a {
+  color: #f39c12;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.signup-text a:hover {
+  color: #d35400;
+}
+
+/* Pop animation */
+@keyframes pop {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,88 @@
+.submissions-container {
+  width: 100vw;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.submissions-box {
+  width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 25px;
+  border-radius: 25px;
+  text-align: center;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+.title {
+  font-family: "Comic Sans MS", cursive;
+  color: #2b7a0b;
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+/* No submission text */
+.empty-text {
+  font-size: 18px;
+  color: #444;
+  font-family: "Comic Sans MS", cursive;
+}
+
+/* Submission Card */
+.submission-card {
+  background: #e8ffe8;
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 15px;
+  text-align: left;
+  border-left: 6px solid #2ecc71;
+  animation: pop 0.4s ease;
+}
+
+.submission-card h3 {
+  margin: 0;
+  font-family: "Comic Sans MS";
+}
+
+.submission-card p {
+  font-size: 14px;
+  margin: 6px 0;
+}
+
+.file-link {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #f4c542;
+  color: black;
+  text-decoration: none;
+  border-radius: 10px;
+  font-family: "Comic Sans MS";
+  transition: 0.3s;
+}
+
+.file-link:hover {
+  background: #f1b20a;
+  transform: scale(1.05);
+}
+
+.date {
+  font-size: 12px;
+  color: #777;
+}
+
+/* Pop animation */
+@keyframes pop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

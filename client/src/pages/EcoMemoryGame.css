@@ -1,0 +1,265 @@
+.memory-game-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.game-header h1 {
+  color: #2e7d32;
+  margin: 0;
+  font-size: 2rem;
+}
+
+.game-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.memory-card {
+  aspect-ratio: 1;
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.memory-card:hover {
+  transform: scale(1.05);
+  border-color: #4CAF50;
+}
+
+.memory-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.memory-card.matched {
+  border-color: #4CAF50;
+  background: #e8f5e8;
+}
+
+.card-front, .card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.card-front {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.card-back {
+  background: white;
+  transform: rotateY(180deg);
+  flex-direction: column;
+  text-align: center;
+}
+
+.card-emoji {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.card-fact {
+  font-size: 0.7rem;
+  color: #666;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.quit-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quit-btn:hover {
+  background: #d32f2f;
+  transform: translateY(-2px);
+}
+
+/* Game Over Styles */
+.game-over-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: 20px;
+}
+
+.game-over-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  max-width: 400px;
+  width: 100%;
+}
+
+.game-over-card h1 {
+  color: #2e7d32;
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+}
+
+.final-score {
+  margin-bottom: 20px;
+}
+
+.score-value {
+  display: block;
+  font-size: 3rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.score-label {
+  color: #666;
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.game-over-card p {
+  color: #666;
+  margin: 10px 0;
+  font-size: 1.1rem;
+}
+
+.game-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.play-again-btn, .back-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.play-again-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.play-again-btn:hover {
+  background: #45a049;
+}
+
+.back-btn {
+  background: #f5f5f5;
+  color: #333;
+  border: 2px solid #ddd;
+}
+
+.back-btn:hover {
+  background: #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .game-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .game-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .game-stats {
+    gap: 15px;
+  }
+  
+  .cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  
+  .card-emoji {
+    font-size: 2rem;
+  }
+  
+  .card-fact {
+    font-size: 0.6rem;
+  }
+  
+  .game-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .card-emoji {
+    font-size: 1.5rem;
+  }
+  
+  .card-fact {
+    font-size: 0.55rem;
+  }
+}

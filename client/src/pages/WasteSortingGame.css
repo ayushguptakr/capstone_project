@@ -1,0 +1,306 @@
+.waste-sorting-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.game-header h1 {
+  color: #2e7d32;
+  margin: 0;
+  font-size: 2rem;
+}
+
+.game-stats {
+  display: flex;
+  gap: 30px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.feedback {
+  text-align: center;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.feedback.correct {
+  background: #e8f5e8;
+  color: #2e7d32;
+  border: 2px solid #4CAF50;
+}
+
+.feedback.wrong {
+  background: #ffebee;
+  color: #d32f2f;
+  border: 2px solid #f44336;
+}
+
+.game-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.waste-items {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.waste-items h3 {
+  color: #2e7d32;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.waste-item {
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  cursor: grab;
+  transition: all 0.3s ease;
+}
+
+.waste-item:hover {
+  border-color: #4CAF50;
+  transform: scale(1.05);
+}
+
+.waste-item:active {
+  cursor: grabbing;
+}
+
+.item-emoji {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.item-name {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: bold;
+}
+
+.bins-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bin {
+  background: white;
+  border: 3px dashed #ddd;
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.bin:hover {
+  border-color: #4CAF50;
+  background: #f8f9fa;
+}
+
+.bin.recyclable {
+  border-color: #2196F3;
+}
+
+.bin.organic {
+  border-color: #4CAF50;
+}
+
+.bin.hazardous {
+  border-color: #f44336;
+}
+
+.bin-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.bin-label {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.bin-examples {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.quit-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quit-btn:hover {
+  background: #d32f2f;
+  transform: translateY(-2px);
+}
+
+/* Game Over Styles */
+.game-over-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: 20px;
+}
+
+.game-over-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  max-width: 400px;
+  width: 100%;
+}
+
+.game-over-card h1 {
+  color: #2e7d32;
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+}
+
+.final-score {
+  margin-bottom: 20px;
+}
+
+.score-value {
+  display: block;
+  font-size: 3rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.score-label {
+  color: #666;
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.game-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.play-again-btn, .back-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.play-again-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.play-again-btn:hover {
+  background: #45a049;
+}
+
+.back-btn {
+  background: #f5f5f5;
+  color: #333;
+  border: 2px solid #ddd;
+}
+
+.back-btn:hover {
+  background: #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .game-area {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .game-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .game-stats {
+    gap: 20px;
+  }
+  
+  .items-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .bins-container {
+    gap: 15px;
+  }
+  
+  .bin {
+    min-height: 100px;
+    padding: 15px;
+  }
+  
+  .game-actions {
+    flex-direction: column;
+  }
+}

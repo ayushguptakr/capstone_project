@@ -1,0 +1,186 @@
+.climate-hero-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.game-header {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.game-header h1 {
+  color: #2e7d32;
+  margin: 0 0 15px 0;
+  text-align: center;
+}
+
+.game-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat span:first-child {
+  display: block;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.stat span:last-child {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.game-instructions {
+  background: #e3f2fd;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 20px;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.game-area {
+  position: relative;
+  height: 400px;
+  background: linear-gradient(to bottom, #87CEEB 0%, #98D8C8 100%);
+  border-radius: 15px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.falling-item {
+  position: absolute;
+  font-size: 2rem;
+  transition: top 0.05s linear;
+}
+
+.falling-item.good {
+  filter: drop-shadow(0 0 5px #4CAF50);
+}
+
+.falling-item.bad {
+  filter: drop-shadow(0 0 5px #f44336);
+}
+
+.hero {
+  position: absolute;
+  bottom: 10px;
+  font-size: 3rem;
+  transition: left 0.1s ease;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.controls {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.controls button {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.controls button:hover {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.game-over-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+}
+
+.game-over-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  max-width: 400px;
+}
+
+.game-over-card h1 {
+  color: #2e7d32;
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+}
+
+.final-score {
+  margin-bottom: 20px;
+}
+
+.score-value {
+  display: block;
+  font-size: 3rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.score-label {
+  color: #666;
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.game-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.play-again-btn, .back-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.play-again-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.back-btn {
+  background: #f5f5f5;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .game-area {
+    height: 300px;
+  }
+  .hero {
+    font-size: 2rem;
+  }
+  .falling-item {
+    font-size: 1.5rem;
+  }
+}
