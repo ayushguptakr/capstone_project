@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./WasteSortingGame.css";
+import useFeedback from "../hooks/useFeedback";
+import useSound from "../hooks/useSound";
+import { apiRequest } from "../api/httpClient";
 
 const wasteItems = [
   { id: 1, name: "Plastic Bottle", type: "recyclable", emoji: "🍼" },
@@ -20,6 +23,8 @@ function WasteSortingGame() {
   const [feedback, setFeedback] = useState("");
   const [timeLeft, setTimeLeft] = useState(60);
   const navigate = useNavigate();
+  const { triggerXP, triggerSuccess } = useFeedback();
+  const { playClick } = useSound();
 
   useEffect(() => {
     shuffleItems();
@@ -41,10 +46,11 @@ function WasteSortingGame() {
     setCurrentItems(shuffled.slice(0, 6));
   };
 
-  const handleDrop = (itemId, binType) => {
+  const handleDrop = (itemId, binType, position) => {
     const item = currentItems.find(i => i.id === itemId);
     if (item.type === binType) {
       setScore(prev => prev + 10);
+      triggerXP(10, position);
       setFeedback("✅ Correct! Well done!");
       setCurrentItems(prev => prev.filter(i => i.id !== itemId));
       
@@ -61,19 +67,16 @@ function WasteSortingGame() {
 
   const endGame = async () => {
     setGameOver(true);
+    triggerSuccess();
     try {
-      const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/mini-games/submit-score", {
+      await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+        body: {
           gameId: "waste-sorting",
           score,
           timeSpent: 60 - timeLeft
-        }),
+        },
+        retries: 0,
       });
     } catch (error) {
       console.error("Error submitting score:", error);
@@ -85,7 +88,7 @@ function WasteSortingGame() {
   const drop = (e, binType) => {
     e.preventDefault();
     const itemId = parseInt(e.dataTransfer.getData("text"));
-    handleDrop(itemId, binType);
+    handleDrop(itemId, binType, { x: e.clientX, y: e.clientY });
   };
 
   if (gameOver) {
@@ -99,10 +102,10 @@ function WasteSortingGame() {
           </div>
           <p>Great job learning about waste sorting!</p>
           <div className="game-actions">
-            <button onClick={() => window.location.reload()} className="play-again-btn">
+            <button onClick={() => { playClick(); window.location.reload(); }} className="play-again-btn">
               🔄 Play Again
             </button>
-            <button onClick={() => navigate("/mini-games")} className="back-btn">
+            <button onClick={() => { playClick(); navigate("/mini-games"); }} className="back-btn">
               ← Back to Games
             </button>
           </div>
@@ -187,7 +190,7 @@ function WasteSortingGame() {
 
       <button 
         className="quit-btn"
-        onClick={() => navigate("/mini-games")}
+        onClick={() => { playClick(); navigate("/mini-games"); }}
       >
         ← Quit Game
       </button>

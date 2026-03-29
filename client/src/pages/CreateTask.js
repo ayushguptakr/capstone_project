@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CreateTask.css";
+import { apiRequest } from "../api/httpClient";
 
 function CreateTask() {
   const [title, setTitle] = useState("");
@@ -18,23 +19,12 @@ function CreateTask() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token"); // must be teacher token
-      const res = await fetch("http://localhost:5000/api/tasks/create", {
+      await apiRequest("/api/tasks/create", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({ title, description, points, deadline }),
+        body: { title, description, points, deadline },
+        retries: 0,
       });
-
-      const data = await res.json();
       setLoading(false);
-
-      if (!res.ok) {
-        setError(data.message || data.error || "Failed to create task");
-        return;
-      }
 
       // success -> go to tasks list
       navigate("/tasks");

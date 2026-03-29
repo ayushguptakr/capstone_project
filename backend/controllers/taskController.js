@@ -1,16 +1,28 @@
 const Task = require("../models/Task");
 
-// Create task (teacher/admin)
+// Create task (teacher/admin); optional impact_model, category, difficulty
 exports.createTask = async (req, res) => {
   try {
-    const { title, description, points, deadline } = req.body;
+    const { title, description, points, deadline, impact_model, category, difficulty } = req.body;
 
     const task = await Task.create({
       title,
       description,
       points,
       deadline,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      ...(impact_model && {
+        impact_model: {
+          co2_per_unit: impact_model.co2_per_unit,
+          water_per_unit: impact_model.water_per_unit,
+          waste_per_unit: impact_model.waste_per_unit,
+          energy_per_unit: impact_model.energy_per_unit,
+          impact_weight: impact_model.impact_weight,
+          unit_label: impact_model.unit_label,
+        },
+      }),
+      ...(category != null && { category }),
+      ...(difficulty != null && { difficulty }),
     });
 
     res.json({ message: "Task created", task });

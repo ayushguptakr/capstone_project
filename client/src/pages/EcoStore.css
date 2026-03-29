@@ -1,0 +1,890 @@
+/* ═══════════════════════════════════════════════════════════
+   ECO STORE — Premium Refined Styles v2
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Loading state ──────────────────────────────────────── */
+.eco-store-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%);
+}
+.eco-store-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #4CAF50;
+  border-radius: 50%;
+}
+
+/* ── Main layout ────────────────────────────────────────── */
+.eco-store-main {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #f0fdf4 0%, #f8fafc 40%, #f0fdfa 100%);
+  padding-bottom: 5rem;
+}
+.eco-store-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+@media (min-width: 640px) {
+  .eco-store-container {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* ── Section Titles ─────────────────────────────────────── */
+.eco-store-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+.eco-store-section-title.grid-title {
+  margin-top: 0.25rem;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HERO HEADER
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-hero {
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  margin-bottom: 1.75rem;
+}
+.eco-store-hero-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #166534 0%, #15803d 40%, #22c55e 100%);
+  z-index: 0;
+}
+.eco-store-hero-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255,213,79,0.12) 0%, transparent 50%);
+}
+
+/* Sparkle particles */
+.eco-store-hero-sparkles {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.eco-store-sparkle {
+  position: absolute;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.eco-store-hero-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2rem;
+}
+@media (min-width: 640px) {
+  .eco-store-hero-content {
+    padding: 2.5rem;
+  }
+}
+.eco-store-hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+.eco-store-hero-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+.eco-store-hero-title {
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: 2rem;
+  color: white;
+  letter-spacing: -0.5px;
+}
+.eco-store-hero-sub {
+  color: rgba(255,255,255,0.85);
+  font-size: 1rem;
+  font-weight: 500;
+  margin-top: 0.35rem;
+}
+/* Motivational message */
+.eco-store-hero-motivate {
+  margin-top: 0.65rem;
+  padding: 0.5rem 1rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fef3c7;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+.eco-store-hero-motivate strong {
+  color: #fde68a;
+  margin: 0 0.25rem;
+}
+.eco-store-hero-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* XP Badge in header — pulsing glow */
+.eco-store-xp-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fffbeb;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.eco-store-xp-value {
+  font-size: 1.4rem;
+  font-family: "Fredoka", "Nunito", sans-serif;
+  line-height: 1;
+}
+.eco-store-xp-label {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* History button */
+.eco-store-history-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.eco-store-history-btn:hover {
+  background: rgba(255,255,255,0.28);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FEATURED REWARD SECTION
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-featured-section {
+  margin-bottom: 2rem;
+}
+.eco-store-featured-grid {
+  max-width: 420px;
+}
+.eco-store-featured-grid .eco-store-card.featured {
+  border-width: 2px;
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(251, 191, 36, 0.15),
+    0 12px 48px rgba(251, 191, 36, 0.18);
+}
+.eco-store-featured-grid .eco-store-card.featured:hover {
+  border-color: rgba(251, 191, 36, 0.7);
+  box-shadow:
+    0 0 0 2px rgba(251, 191, 36, 0.2),
+    0 20px 60px rgba(251, 191, 36, 0.28);
+}
+/* Featured tag */
+.eco-store-featured-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   READY TO UNLOCK SECTION
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-ready-section {
+  margin-bottom: 2rem;
+}
+.eco-store-ready-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.eco-store-ready-scroll::-webkit-scrollbar { display: none; }
+.eco-store-ready-scroll > .eco-store-card {
+  min-width: 270px;
+  max-width: 300px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MYSTERY BOX SECTION
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-mystery-section {
+  margin-bottom: 2rem;
+}
+.eco-store-mystery-grid {
+  max-width: 340px;
+}
+.eco-store-mystery-grid .eco-store-card.mystery {
+  border-color: rgba(167, 139, 250, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(167, 139, 250, 0.12),
+    0 12px 40px rgba(167, 139, 250, 0.18);
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+}
+.eco-store-mystery-grid .eco-store-card.mystery:hover {
+  border-color: rgba(167, 139, 250, 0.65);
+  box-shadow:
+    0 0 0 2px rgba(167, 139, 250, 0.18),
+    0 20px 56px rgba(167, 139, 250, 0.28);
+}
+/* Mystery tag */
+.eco-store-mystery-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CATEGORY TABS
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-categories {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.eco-store-categories::-webkit-scrollbar { display: none; }
+
+.eco-store-cat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 2px solid transparent;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.2s;
+}
+.eco-store-cat-btn:hover {
+  border-color: #bbf7d0;
+  color: #166534;
+  box-shadow: 0 4px 16px rgba(76,175,80,0.1);
+}
+.eco-store-cat-btn.active {
+  background: linear-gradient(135deg, #166534, #22c55e);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 20px rgba(76,175,80,0.3);
+}
+.eco-store-cat-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+.eco-store-cat-count.active {
+  background: rgba(255,255,255,0.25);
+  color: white;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ITEM GRID
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 1.25rem;
+}
+@media (max-width: 639px) {
+  .eco-store-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INDIVIDUAL CARD — Enhanced
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-card {
+  position: relative;
+  background: white;
+  border-radius: 32px;
+  overflow: hidden;
+  border: 4px solid #f1f5f9;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s;
+  box-shadow: 0 8px 0 #f1f5f9;
+  will-change: transform;
+  margin-bottom: 8px; /* account for shadow */
+}
+.eco-store-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--glow-solid, #bbf7d0); /* override by style logic later if possible, else solid green */
+  box-shadow: 0 16px 0 var(--glow-solid, #bbf7d0), 0 24px 64px var(--glow, rgba(76,175,80,0.25));
+}
+.eco-store-card.locked .eco-store-card-stripe,
+.eco-store-card.locked .eco-store-card-body {
+  filter: blur(4px) grayscale(40%);
+  pointer-events: none;
+}
+.eco-store-card.locked:hover {
+  transform: translateY(0);
+  border-color: #e2e8f0;
+  box-shadow: 0 8px 0 #e2e8f0;
+}
+
+/* ─── Locked Overlay ────────────────────────────────────── */
+.eco-store-locked-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.4); /* Dark translucent */
+  border-radius: 22px;
+}
+.eco-store-locked-overlay .locked-text {
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* Rarity stripe at top */
+.eco-store-card-stripe {
+  height: 5px;
+  width: 100%;
+}
+
+/* Card body */
+.eco-store-card-body {
+  padding: 1.5rem 1.4rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Icon circle */
+.eco-store-card-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.85rem;
+  cursor: default;
+}
+
+/* Rarity badge */
+.eco-store-rarity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.6rem;
+}
+
+/* Title */
+.eco-store-card-title {
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin-bottom: 0.35rem;
+  line-height: 1.3;
+}
+
+/* Description */
+.eco-store-card-desc {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Stock */
+.eco-store-card-stock {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fb923c;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   XP PROGRESS BAR (replaces "You need X more XP")
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-progress-wrap {
+  width: 100%;
+  margin: 0.4rem 0 0.25rem;
+}
+.eco-store-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 0.35rem;
+}
+.eco-store-progress-labels span:first-child {
+  color: #166534;
+}
+.eco-store-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  overflow: hidden;
+  position: relative;
+}
+.eco-store-progress-bar {
+  height: 100%;
+  border-radius: 8px;
+  position: relative;
+}
+/* Animated shine on progress bar */
+.eco-store-progress-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.35) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: progressShine 2.5s ease-in-out infinite;
+}
+@keyframes progressShine {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARD FOOTER — Price + Button
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+.eco-store-card-price {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  font-family: "Fredoka", "Nunito", sans-serif;
+}
+.eco-store-card-price-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Redeem button */
+.eco-store-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+}
+.eco-store-card-btn.can-redeem {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: white;
+  border-color: #16a34a;
+  box-shadow: 0 6px 0 #16a34a;
+  position: relative;
+  overflow: hidden;
+}
+.eco-store-card-btn.can-redeem:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #16a34a;
+}
+.eco-store-card-btn.can-redeem:active {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 #16a34a;
+}
+.eco-store-card-btn.cannot-redeem {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 0 #cbd5e1;
+  color: #64748b;
+  cursor: default;
+  font-size: 0.8rem;
+}
+.eco-store-btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+}
+
+/* Shimmer on redeemable buttons */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.eco-store-card-btn.can-redeem::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EMPTY / BACK / OVERLAYS
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-empty {
+  text-align: center;
+  padding: 4rem 1rem;
+  background: white;
+  border-radius: 24px;
+  border: 2px dashed #e2e8f0;
+}
+
+.eco-store-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 18px;
+  border: 2px solid #bbf7d0;
+  background: white;
+  color: #166534;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.eco-store-back-btn:hover {
+  background: #f0fdf4;
+  border-color: #4ade80;
+  box-shadow: 0 4px 16px rgba(76,175,80,0.12);
+}
+
+/* ── XP Deduction Float ─────────────────────────────────── */
+.eco-store-xp-deduct {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #ef4444;
+  text-shadow: 0 2px 12px rgba(239,68,68,0.4);
+  transform: translate(-50%, -50%);
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.eco-store-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1rem 1.75rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #166534, #15803d);
+  color: white;
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 12px 40px rgba(22,101,52,0.35);
+  max-width: 90vw;
+}
+.eco-store-toast-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARD RARITY GLOW ON HOVER (per-rarity border accents)
+   ═══════════════════════════════════════════════════════════ */
+/* Common — subtle gray */
+.eco-store-card[style*="rgba(100,116,139"]:hover {
+  border-color: #94a3b8;
+}
+/* Rare — blue glow */
+.eco-store-card[style*="rgba(56,189,248"]:hover {
+  border-color: #38bdf8;
+}
+/* Epic — purple glow */
+.eco-store-card[style*="rgba(167,139,250"]:hover {
+  border-color: #a78bfa;
+}
+/* Legendary — gold glow */
+.eco-store-card[style*="rgba(251,191,36"]:hover {
+  border-color: #fbbf24;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COLLECTION SYSTEM 
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-collection {
+  background: white;
+  border-radius: 20px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.collection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.collection-title {
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #1e293b;
+}
+.collection-stats {
+  font-weight: 800;
+  color: #fb923c;
+  font-size: 1.1rem;
+}
+.collection-bar-bg {
+  height: 12px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+.collection-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  border-radius: 12px;
+}
+.collection-complete {
+  margin-top: 0.75rem;
+  font-weight: 700;
+  color: #10b981;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGINATION
+   ═══════════════════════════════════════════════════════════ */
+.eco-store-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 14px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  color: #475569;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pagination-btn:hover:not(:disabled) {
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pagination-numbers {
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MYSTERY BOX MODAL POPUP
+   ═══════════════════════════════════════════════════════════ */
+.mystery-box-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.85); /* deep slate */
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.mystery-box-modal-content {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border-radius: 32px;
+  padding: 3rem 2rem;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.1);
+  position: relative;
+  overflow: hidden;
+}
+.mystery-box-modal-content::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+  pointer-events: none;
+  animation: rotateLight 10s linear infinite;
+}
+@keyframes rotateLight {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.mystery-title {
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: #fcd34d;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 2px 10px rgba(251,191,36,0.3);
+}
+.mystery-close-btn {
+  margin-top: 1rem;
+  padding: 0.8rem 2.5rem;
+  border-radius: 100px;
+  background: white;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+  box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+}
+.mystery-close-btn:hover {
+  transform: scale(1.05);
+}

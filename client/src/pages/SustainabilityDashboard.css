@@ -1,0 +1,132 @@
+.sustainability-dashboard-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--eco-bg-subtle, linear-gradient(180deg, #e8f5e9 0%, #f1f8e9 100%));
+}
+
+.sustainability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.sustainability-header h1 {
+  font-family: var(--eco-font-display, "DM Sans", sans-serif);
+  color: var(--eco-primary, #1b5e20);
+  font-size: 1.75rem;
+}
+
+.sustainability-totals h2,
+.green-ratings-section h2,
+.category-impact-section h2 {
+  font-family: var(--eco-font-display, "DM Sans", sans-serif);
+  color: #2e7d32;
+  font-size: 1.25rem;
+  margin-bottom: 20px;
+}
+
+.totals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.total-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(27, 94, 32, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.total-card.co2 { border-left: 4px solid #607d8b; }
+.total-card.water { border-left: 4px solid #2196f3; }
+.total-card.waste { border-left: 4px solid #8bc34a; }
+.total-card.energy { border-left: 4px solid #ff9800; }
+
+.total-icon {
+  font-size: 2rem;
+}
+
+.total-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.total-label {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.green-ratings-section,
+.category-impact-section {
+  margin-bottom: 40px;
+}
+
+.ratings-list,
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rating-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 12px rgba(27, 94, 32, 0.08);
+}
+
+.rating-grade {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.rating-a .rating-grade { background: #4caf50; color: white; }
+.rating-b .rating-grade { background: #8bc34a; color: white; }
+.rating-c .rating-grade { background: #ffc107; color: #333; }
+.rating-d .rating-grade { background: #ff9800; color: white; }
+
+.rating-school {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.category-row {
+  background: white;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(27, 94, 32, 0.08);
+}
+
+.no-sustainability-data {
+  text-align: center;
+  padding: 48px 24px;
+  color: #666;
+}
+
+.sustainability-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--eco-primary, #1b5e20);
+}

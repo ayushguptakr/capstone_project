@@ -1,6 +1,8 @@
 const Quiz = require("../models/Quiz");
 const QuizAttempt = require("../models/QuizAttempt");
 const User = require("../models/User");
+const adaptiveDifficultyEngine = require("../services/adaptiveDifficultyEngine");
+const gamificationService = require("../services/gamificationService");
 
 // Get all active quizzes
 const getQuizzes = async (req, res) => {
@@ -31,7 +33,7 @@ const getQuizById = async (req, res) => {
 // Submit quiz attempt
 const submitQuiz = async (req, res) => {
   try {
-    const { quizId, answers } = req.body;
+    const { quizId, answers, timeTakenPerQuestion } = req.body;
     const studentId = req.user.id;
 
     const quiz = await Quiz.findById(quizId);
@@ -59,26 +61,49 @@ const submitQuiz = async (req, res) => {
     const quizAttempt = new QuizAttempt({
       student: studentId,
       quiz: quizId,
+      category: quiz.category,
+      difficulty: quiz.difficulty,
       answers: processedAnswers,
+      timeTakenPerQuestion: Array.isArray(timeTakenPerQuestion) ? timeTakenPerQuestion : [],
       totalScore,
       percentage
     });
 
     await quizAttempt.save();
 
-    // Update user points
-    await User.findByIdAndUpdate(studentId, {
-      $inc: { points: totalScore }
+    // Award XP/points through central gamification service.
+    await gamificationService.awardPoints({
+      userId: studentId,
+      points: totalScore,
+      source: "quiz",
+      sourceRef: String(quizId),
+      idempotencyKey: `quiz-attempt:${quizAttempt._id}`,
+      metadata: { percentage },
     });
 
     // Check for badges
     await checkAndAwardBadges(studentId, totalScore, percentage);
 
+    // Update adaptive learning profile (non-blocking for user success)
+    let adjustments = null;
+    try {
+      await adaptiveDifficultyEngine.updateFromQuizAttempt(
+        studentId,
+        quiz,
+        processedAnswers,
+        Array.isArray(timeTakenPerQuestion) ? timeTakenPerQuestion : []
+      );
+      adjustments = await adaptiveDifficultyEngine.computeAdjustments(studentId, quiz.category);
+    } catch (e) {
+      // ignore adaptive failures
+    }
+
     res.json({
       message: "Quiz submitted successfully",
       score: totalScore,
       percentage,
-      totalPossible: quiz.totalPoints
+      totalPossible: quiz.totalPoints,
+      adaptive: adjustments
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -136,7 +161,7 @@ const checkAndAwardBadges = async (studentId, score, percentage) => {
   }
 
   // Eco Scholar badge - 500+ total points
-  if (user.points + score >= 500 && !user.badges.some(b => b.title === "Eco Scholar")) {
+  if (user.points >= 500 && !user.badges.some(b => b.title === "Eco Scholar")) {
     newBadges.push({
       title: "Eco Scholar",
       icon: "🌟",

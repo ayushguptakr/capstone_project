@@ -1,0 +1,103 @@
+.teacher-tasks-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--eco-bg-subtle, linear-gradient(180deg, #e8f5e9 0%, #f1f8e9 100%));
+}
+
+.teacher-tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.teacher-tasks-header h1 {
+  font-family: var(--eco-font-display, "DM Sans", sans-serif);
+  color: var(--eco-primary, #1b5e20);
+  font-size: 1.75rem;
+}
+
+.teacher-tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.teacher-task-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(27, 94, 32, 0.1);
+  border: 1px solid rgba(27, 94, 32, 0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.teacher-task-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(27, 94, 32, 0.15);
+}
+
+.teacher-task-category {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eco-secondary, #388e3c);
+  margin-bottom: 8px;
+}
+
+.teacher-task-card h3 {
+  color: #1a1a1a;
+  font-size: 1.2rem;
+  margin: 0 0 12px 0;
+}
+
+.teacher-task-card p {
+  color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.teacher-task-footer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.eco-points, .eco-deadline {
+  font-size: 0.9rem;
+  color: var(--eco-primary, #1b5e20);
+}
+
+.no-tasks-eco {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 24px;
+  background: white;
+  border-radius: 16px;
+  border: 2px dashed rgba(27, 94, 32, 0.3);
+}
+
+.eco-create-btn {
+  margin-top: 16px;
+  padding: 12px 24px;
+  background: var(--eco-primary, #1b5e20);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.eco-create-btn:hover {
+  background: #2e7d32;
+}
+
+.teacher-tasks-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--eco-primary, #1b5e20);
+}

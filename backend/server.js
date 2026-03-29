@@ -48,6 +48,22 @@ app.use("/api/teacher", teacherRoutes);
 const miniGameRoutes = require("./routes/miniGames");
 app.use("/api/mini-games", miniGameRoutes);
 
+// Adaptive difficulty engine
+const adaptiveEngineRoutes = require("./routes/adaptiveEngine");
+app.use("/api/adaptive-engine", adaptiveEngineRoutes);
+
+// Eco-Impact & Sustainability
+const ecoImpactRoutes = require("./routes/ecoImpact");
+app.use("/api/eco-impact", ecoImpactRoutes);
+const sustainabilityAnalyticsRoutes = require("./routes/sustainabilityAnalytics");
+app.use("/api/analytics/sustainability", sustainabilityAnalyticsRoutes);
+const recommendationsRoutes = require("./routes/recommendations");
+app.use("/api/recommendations", recommendationsRoutes);
+const greenCreditsRoutes = require("./routes/greenCredits");
+app.use("/api/green-credits", greenCreditsRoutes);
+const gamificationRoutes = require("./routes/gamification");
+app.use("/api/gamification", gamificationRoutes);
+
 // Health check
 app.get("/", (req, res) => {
   res.json({ message: "Backend running...", status: "ok" });

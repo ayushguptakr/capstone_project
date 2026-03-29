@@ -1,5 +1,15 @@
 const { MiniGame, GameScore } = require("../models/MiniGame");
-const User = require("../models/User");
+const adaptiveDifficultyEngine = require("../services/adaptiveDifficultyEngine");
+const gamificationService = require("../services/gamificationService");
+
+const GAME_ALIAS = {
+  "waste-sorting": "waste sorting",
+  "eco-memory": "eco memory",
+  "climate-hero": "climate hero",
+  "eco-trivia-race": "eco trivia race",
+  "trivia-race": "eco trivia race",
+  "plant-growth": "plant growth",
+};
 
 // Get all available mini-games
 const getMiniGames = async (req, res) => {
@@ -17,19 +27,37 @@ const submitGameScore = async (req, res) => {
     const { gameId, score, timeSpent } = req.body;
     const studentId = req.user.id;
 
-    const game = await MiniGame.findById(gameId);
+    let game = await MiniGame.findById(gameId);
+    if (!game && typeof gameId === "string") {
+      const alias = GAME_ALIAS[gameId.toLowerCase()] || gameId;
+      game = await MiniGame.findOne({
+        name: { $regex: new RegExp(alias.replace(/\s+/g, ".*"), "i") },
+        isActive: true,
+      });
+    }
     if (!game) {
       return res.status(404).json({ message: "Game not found" });
     }
 
     // Calculate points based on score and difficulty
-    let pointsEarned = Math.floor(score * game.pointsReward / 100);
+    let pointsEarned = Math.floor((score * game.pointsReward) / 100);
     if (game.difficulty === "medium") pointsEarned *= 1.5;
     if (game.difficulty === "hard") pointsEarned *= 2;
 
+    // Apply adaptive reward multiplier (based on category performance)
+    let adjustments = null;
+    try {
+      adjustments = await adaptiveDifficultyEngine.computeAdjustments(studentId, game.category);
+      if (adjustments?.rewardMultiplier) {
+        pointsEarned = Math.floor(pointsEarned * adjustments.rewardMultiplier);
+      }
+    } catch (e) {
+      // ignore adaptive failures
+    }
+
     const gameScore = new GameScore({
       student: studentId,
-      game: gameId,
+      game: game._id,
       score,
       timeSpent,
       pointsEarned
@@ -37,15 +65,29 @@ const submitGameScore = async (req, res) => {
 
     await gameScore.save();
 
-    // Update user points
-    await User.findByIdAndUpdate(studentId, {
-      $inc: { points: pointsEarned }
+    // Update adaptive profile with retry frequency (best-effort)
+    try {
+      await adaptiveDifficultyEngine.updateFromGameScore(studentId, game, gameScore);
+      adjustments = adjustments || (await adaptiveDifficultyEngine.computeAdjustments(studentId, game.category));
+    } catch (e) {
+      // ignore
+    }
+
+    // Award XP through central service for level/streak consistency.
+    await gamificationService.awardPoints({
+      userId: studentId,
+      points: pointsEarned,
+      source: "game",
+      sourceRef: String(game._id),
+      idempotencyKey: `game-score:${gameScore._id}`,
+      metadata: { rawScore: score },
     });
 
     res.json({
       message: "Score submitted successfully",
       pointsEarned,
-      totalScore: score
+      totalScore: score,
+      adaptive: adjustments
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

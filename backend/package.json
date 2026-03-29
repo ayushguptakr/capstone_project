@@ -7,7 +7,8 @@
     "start": "node server.js",
     "seed-quizzes": "node seedQuizzes.js",
     "seed-rewards": "node seedRewards.js",
-    "seed-all": "node seedQuizzes.js && node seedRewards.js"
+    "seed-all": "node seedQuizzes.js && node seedRewards.js",
+    "test": "node tests/formulas.test.js && node tests/trustScoreService.test.js && node tests/adaptiveRules.test.js"
   },
   "keywords": [],
   "author": "",

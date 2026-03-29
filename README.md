@@ -30,6 +30,17 @@ This platform bridges the gap between environmental knowledge and real-world act
 - **Teachers**: Create quizzes/tasks, verify submissions, view analytics
 - **Admin**: Platform management and oversight
 
+### ✅ Eco-Impact & Sustainability (Extended Modules)
+- **Eco-Impact Quantification Engine**: Converts eco-tasks into CO₂, water, waste, energy metrics; PSI and configurable coefficients; `eco_impact_logs` with student/class/school aggregation
+- **Dynamic Sustainability Ranking**: Adjusted score (time decay, consistency, population normalizer); APIs: `/api/leaderboard/student`, `/class`, `/school`
+- **Hybrid Verification**: Trust score (0–100), duplicate image detection, timestamp/geo checks; `flagForReview` for manual review
+- **Sustainability Analytics**: Totals, monthly trends, category impact, School Green Rating (A/B/C); `/api/analytics/sustainability/dashboard`
+- **Adaptive Recommendations**: Task suggestions by weak category and local focus; `/api/recommendations/tasks`
+- **Green Credits**: Earned from impact, redeemable; balance and report: `/api/green-credits/balance`, `/report`
+- **Adaptive Eco‑Game Difficulty Engine**: Tracks quiz accuracy + timing + mistakes and mini-game retries; auto-adjusts difficulty, hints, reward multiplier, and task complexity; adaptive APIs: `/api/adaptive-engine/me`, `/api/quizzes/adaptive`, `/api/mini-games/adaptive`
+
+**How to verify:** See **`backend/docs/FEATURE_VERIFICATION.md`** for a full checklist and how to test each feature via API.
+
 ## 🛠️ Technology Stack
 
 ### Backend
@@ -186,7 +197,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - **Project Type**: Capstone Project
 - **Institution**: LPU (Lovely Professional University)
-- **Academic Year**: 2024-2025
+- **Academic Year**: 2025-2026
 
 ## 📞 Support
 

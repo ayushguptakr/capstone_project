@@ -1,0 +1,73 @@
+.redemption-history-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--eco-bg-subtle, linear-gradient(180deg, #e8f5e9 0%, #f1f8e9 100%));
+}
+
+.redemption-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.redemption-header h1 {
+  font-family: var(--eco-font-display, "DM Sans", sans-serif);
+  color: var(--eco-primary, #1b5e20);
+  font-size: 1.75rem;
+}
+
+.redemption-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.redemption-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 2px 12px rgba(27, 94, 32, 0.08);
+  border: 1px solid rgba(27, 94, 32, 0.12);
+}
+
+.redemption-reward {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.redemption-details {
+  display: flex;
+  gap: 16px;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.redemption-status {
+  padding: 4px 12px;
+  background: rgba(56, 142, 60, 0.15);
+  color: var(--eco-primary, #1b5e20);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.no-redemptions {
+  text-align: center;
+  padding: 48px 24px;
+  background: white;
+  border-radius: 16px;
+  color: #666;
+}
+
+.redemption-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--eco-primary, #1b5e20);
+}

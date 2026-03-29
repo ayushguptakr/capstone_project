@@ -10,14 +10,24 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["student", "teacher", "admin"],
+      enum: ["student", "teacher", "admin", "sponsor"],
       default: "student",
     },
-
     school: { type: String },
+    /** Optional: for class-level aggregation (e.g. "Class 10-A"). */
+    className: { type: String },
+    /** Optional: normalized class and section support for filtering/grouping. */
+    class: { type: String },
+    section: { type: String },
     points: { type: Number, default: 0 },
+    /** Green Credits from environmental impact (redeemable, certificates, reports). */
+    greenCredits: { type: Number, default: 0 },
     level: { type: Number, default: 1 },
     experiencePoints: { type: Number, default: 0 },
+    streakCurrent: { type: Number, default: 0 },
+    streakLastActiveAt: { type: Date },
+    lastActivityAt: { type: Date },
+    equippedAvatar: { type: String, default: "User" },
 
     badges: [
       {

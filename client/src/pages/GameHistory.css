@@ -1,0 +1,47 @@
+.game-history-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--eco-bg-subtle, linear-gradient(180deg, #e8f5e9 0%, #f1f8e9 100%));
+}
+
+.game-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.game-history-header h1 {
+  font-family: var(--eco-font-display);
+  color: var(--eco-primary);
+  font-size: 1.75rem;
+}
+
+.game-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.game-history-card {
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 2px 12px rgba(27,94,32,0.08);
+}
+
+.game-name { font-weight: 600; }
+.game-details { display: flex; gap: 16px; color: #666; font-size: 0.9rem; }
+
+.game-history-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--eco-primary);
+}

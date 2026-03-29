@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CreateQuiz.css";
+import { apiRequest } from "../api/httpClient";
 
 function CreateQuiz() {
   const navigate = useNavigate();
@@ -81,26 +82,16 @@ function CreateQuiz() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/quizzes/create", {
+      await apiRequest("/api/quizzes/create", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(quiz),
+        body: quiz,
+        retries: 0,
       });
-
-      if (response.ok) {
-        alert("Quiz created successfully!");
-        navigate("/dashboard");
-      } else {
-        const error = await response.json();
-        alert(error.message || "Failed to create quiz");
-      }
+      alert("Quiz created successfully!");
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error creating quiz:", error);
-      alert("Failed to create quiz");
+      alert(error.message || "Failed to create quiz");
     } finally {
       setLoading(false);
     }

@@ -5,15 +5,21 @@ const Submission = require("../models/Submission");
 // Get global leaderboard
 const getLeaderboard = async (req, res) => {
   try {
-    const { limit = 10, school } = req.query;
+    const { limit = 50, school, class: classValue, section } = req.query;
     
     let filter = { role: "student" };
     if (school) {
       filter.school = school;
     }
+    if (classValue) {
+      filter.$or = [{ class: classValue }, { className: new RegExp(String(classValue), "i") }];
+    }
+    if (section) {
+      filter.section = section;
+    }
 
     const leaderboard = await User.find(filter)
-      .select("name school points badges")
+      .select("name school className class section points level badges")
       .sort({ points: -1 })
       .limit(parseInt(limit));
 
@@ -33,7 +39,9 @@ const getStudentProgress = async (req, res) => {
   try {
     const studentId = req.user.id;
     
-    const student = await User.findById(studentId).select("name points badges school");
+    const student = await User.findById(studentId).select(
+      "name points badges school className class section level experiencePoints streakCurrent streakLastActiveAt lastActivityAt"
+    );
     
     // Get student's rank
     const higherRankedCount = await User.countDocuments({

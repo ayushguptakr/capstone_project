@@ -6,12 +6,14 @@ const {
   createQuiz,
   getStudentAttempts
 } = require("../controllers/quizController");
+const { getAdaptiveQuizzes } = require("../controllers/adaptiveContentController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 // Public routes (protected by auth)
 router.get("/", protect, getQuizzes);
+router.get("/adaptive", protect, getAdaptiveQuizzes);
 router.get("/:id", protect, getQuizById);
 router.post("/submit", protect, submitQuiz);
 router.get("/attempts/my", protect, getStudentAttempts);

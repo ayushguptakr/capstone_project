@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ClimateHeroGame.css";
+import useFeedback from "../hooks/useFeedback";
+import useSound from "../hooks/useSound";
+import { getXPPositionFromEvent } from "../utils/xpPosition";
+import { apiRequest } from "../api/httpClient";
 
 function ClimateHeroGame() {
   const [score, setScore] = useState(0);
@@ -10,6 +14,8 @@ function ClimateHeroGame() {
   const [heroPosition, setHeroPosition] = useState(50);
   const [timeLeft, setTimeLeft] = useState(45);
   const navigate = useNavigate();
+  const { triggerXP, triggerSuccess } = useFeedback();
+  const { playClick } = useSound();
 
   useEffect(() => {
     const gameLoop = setInterval(() => {
@@ -43,6 +49,7 @@ function ClimateHeroGame() {
       if (item.y > 85 && item.y < 95 && Math.abs(item.x - heroPosition) < 8) {
         if (item.isGood) {
           setScore(prev => prev + 15);
+          triggerXP(15, { x: window.innerWidth * 0.5, y: window.innerHeight * 0.45 });
         } else {
           setScore(prev => Math.max(0, prev - 10));
           setLives(prev => prev - 1 <= 0 ? (endGame(), 0) : prev - 1);
@@ -63,12 +70,12 @@ function ClimateHeroGame() {
 
   const endGame = async () => {
     setGameOver(true);
+    triggerSuccess();
     try {
-      const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/mini-games/submit-score", {
+      await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ gameId: "climate-hero", score, timeSpent: 45 - timeLeft })
+        body: { gameId: "climate-hero", score, timeSpent: 45 - timeLeft },
+        retries: 0,
       });
     } catch (error) {}
   };
@@ -83,8 +90,8 @@ function ClimateHeroGame() {
             <span className="score-label">points</span>
           </div>
           <div className="game-actions">
-            <button onClick={() => window.location.reload()} className="play-again-btn">🔄 Play Again</button>
-            <button onClick={() => navigate("/mini-games")} className="back-btn">← Back</button>
+            <button onClick={() => { playClick(); window.location.reload(); }} className="play-again-btn">🔄 Play Again</button>
+            <button onClick={() => { playClick(); navigate("/mini-games"); }} className="back-btn">← Back</button>
           </div>
         </div>
       </div>
@@ -111,8 +118,24 @@ function ClimateHeroGame() {
         <div className="hero" style={{ left: `${heroPosition}%` }}>🦸</div>
       </div>
       <div className="controls">
-        <button onClick={() => setHeroPosition(prev => Math.max(5, prev - 10))}>← Left</button>
-        <button onClick={() => setHeroPosition(prev => Math.min(95, prev + 10))}>Right →</button>
+        <button
+          onClick={(e) => {
+            playClick();
+            setHeroPosition((prev) => Math.max(5, prev - 10));
+            triggerXP(1, getXPPositionFromEvent(e, { y: window.innerHeight * 0.82 }));
+          }}
+        >
+          ← Left
+        </button>
+        <button
+          onClick={(e) => {
+            playClick();
+            setHeroPosition((prev) => Math.min(95, prev + 10));
+            triggerXP(1, getXPPositionFromEvent(e, { y: window.innerHeight * 0.82 }));
+          }}
+        >
+          Right →
+        </button>
       </div>
     </div>
   );

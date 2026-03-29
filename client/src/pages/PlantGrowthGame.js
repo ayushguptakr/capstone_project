@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PlantGrowthGame.css";
+import useFeedback from "../hooks/useFeedback";
+import useSound from "../hooks/useSound";
+import { apiRequest } from "../api/httpClient";
 
 function PlantGrowthGame() {
   const [plantStage, setPlantStage] = useState(0);
@@ -11,6 +14,8 @@ function PlantGrowthGame() {
   const [message, setMessage] = useState("Take care of your plant!");
   const [timeLeft, setTimeLeft] = useState(60);
   const navigate = useNavigate();
+  const { triggerXPFromEvent, triggerSuccess } = useFeedback();
+  const { playClick } = useSound();
 
   const plantStages = ["🌱", "🌿", "🪴", "🌳", "🌲"];
 
@@ -61,12 +66,12 @@ function PlantGrowthGame() {
   const endGame = async () => {
     setGameOver(true);
     const finalScore = score + (plantStage * 100);
+    triggerSuccess();
     try {
-      const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/mini-games/submit-score", {
+      await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ gameId: "plant-growth", score: finalScore, timeSpent: 60 - timeLeft })
+        body: { gameId: "plant-growth", score: finalScore, timeSpent: 60 - timeLeft },
+        retries: 0,
       });
     } catch (error) {}
   };
@@ -84,8 +89,8 @@ function PlantGrowthGame() {
           </div>
           <p>Plant Stage: {plantStage + 1}/{plantStages.length}</p>
           <div className="game-actions">
-            <button onClick={() => window.location.reload()} className="play-again-btn">🔄 Play Again</button>
-            <button onClick={() => navigate("/mini-games")} className="back-btn">← Back</button>
+            <button onClick={() => { playClick(); window.location.reload(); }} className="play-again-btn">🔄 Play Again</button>
+            <button onClick={() => { playClick(); navigate("/mini-games"); }} className="back-btn">← Back</button>
           </div>
         </div>
       </div>
@@ -115,7 +120,16 @@ function PlantGrowthGame() {
           <div className="resource-bar">
             <div className="resource-fill water" style={{ width: `${water}%` }}></div>
           </div>
-          <button onClick={addWater} className="resource-btn">Add Water</button>
+          <button
+            onClick={(e) => {
+              playClick();
+              addWater();
+              triggerXPFromEvent(2, e, { y: window.innerHeight * 0.7 });
+            }}
+            className="resource-btn"
+          >
+            Add Water
+          </button>
         </div>
 
         <div className="resource">
@@ -123,7 +137,16 @@ function PlantGrowthGame() {
           <div className="resource-bar">
             <div className="resource-fill sunlight" style={{ width: `${sunlight}%` }}></div>
           </div>
-          <button onClick={addSunlight} className="resource-btn">Add Sunlight</button>
+          <button
+            onClick={(e) => {
+              playClick();
+              addSunlight();
+              triggerXPFromEvent(2, e, { y: window.innerHeight * 0.7 });
+            }}
+            className="resource-btn"
+          >
+            Add Sunlight
+          </button>
         </div>
       </div>
 

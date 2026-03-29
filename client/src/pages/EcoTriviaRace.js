@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./EcoTriviaRace.css";
+import useFeedback from "../hooks/useFeedback";
+import useSound from "../hooks/useSound";
+import { apiRequest } from "../api/httpClient";
 
 const questions = [
   { q: "Which gas do trees absorb?", a: ["CO2", "O2", "N2", "H2"], c: 0 },
@@ -22,6 +25,8 @@ function EcoTriviaRace() {
   const [gameOver, setGameOver] = useState(false);
   const [streak, setStreak] = useState(0);
   const navigate = useNavigate();
+  const { triggerXPFromEvent, triggerSuccess } = useFeedback();
+  const { playClick } = useSound();
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -32,11 +37,13 @@ function EcoTriviaRace() {
     return () => clearTimeout(timer);
   }, [timeLeft]);
 
-  const handleAnswer = (index) => {
+  const handleAnswer = (index, event) => {
+    playClick();
     if (index === questions[currentQ].c) {
       const points = 10 + (timeLeft * 2) + (streak * 5);
       setScore(score + points);
       setStreak(streak + 1);
+      triggerXPFromEvent(points, event, { y: window.innerHeight * 0.45 });
     } else {
       setStreak(0);
     }
@@ -54,12 +61,12 @@ function EcoTriviaRace() {
 
   const endGame = async () => {
     setGameOver(true);
+    triggerSuccess();
     try {
-      const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/mini-games/submit-score", {
+      await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ gameId: "eco-trivia-race", score, timeSpent: (questions.length * 10) - timeLeft })
+        body: { gameId: "eco-trivia-race", score, timeSpent: (questions.length * 10) - timeLeft },
+        retries: 0,
       });
     } catch (error) {}
   };
@@ -75,8 +82,8 @@ function EcoTriviaRace() {
           </div>
           <p>Questions: {currentQ + 1}/{questions.length}</p>
           <div className="game-actions">
-            <button onClick={() => window.location.reload()} className="play-again-btn">🔄 Play Again</button>
-            <button onClick={() => navigate("/mini-games")} className="back-btn">← Back</button>
+            <button onClick={() => { playClick(); window.location.reload(); }} className="play-again-btn">🔄 Play Again</button>
+            <button onClick={() => { playClick(); navigate("/mini-games"); }} className="back-btn">← Back</button>
           </div>
         </div>
       </div>
@@ -103,7 +110,7 @@ function EcoTriviaRace() {
         <h2>{questions[currentQ].q}</h2>
         <div className="answers-grid">
           {questions[currentQ].a.map((answer, index) => (
-            <button key={index} className="answer-btn" onClick={() => handleAnswer(index)}>
+            <button key={index} className="answer-btn" onClick={(e) => handleAnswer(index, e)}>
               {answer}
             </button>
           ))}

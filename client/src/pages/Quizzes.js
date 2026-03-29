@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Quizzes.css";
+import { motion } from "framer-motion";
+import { Brain, Recycle, Zap, Droplet, Sprout, Globe, BookOpen, ListChecks, ArrowLeft } from "lucide-react";
+import { Badge, IconBox } from "../components";
+import { apiRequest } from "../api/httpClient";
+
+const categoryIcons = {
+  "waste-management": Recycle,
+  energy: Zap,
+  water: Droplet,
+  biodiversity: Sprout,
+  climate: Globe,
+};
 
 function Quizzes() {
   const [quizzes, setQuizzes] = useState([]);
@@ -8,106 +19,86 @@ function Quizzes() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchQuizzes();
+    apiRequest("/api/quizzes")
+      .then(setQuizzes)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  const fetchQuizzes = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/quizzes", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setQuizzes(data);
-      }
-    } catch (error) {
-      console.error("Error fetching quizzes:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getCategoryIcon = (category) => {
-    const icons = {
-      "waste-management": "♻️",
-      "energy": "⚡",
-      "water": "💧",
-      "biodiversity": "🌿",
-      "climate": "🌍"
-    };
-    return icons[category] || "📚";
-  };
-
-  const getDifficultyColor = (difficulty) => {
-    const colors = {
-      easy: "#4CAF50",
-      medium: "#FF9800",
-      hard: "#F44336"
-    };
-    return colors[difficulty] || "#2196F3";
-  };
-
-  if (loading) return <div className="loading">Loading quizzes...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="w-12 h-12 border-4 border-eco-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
-    <div className="quizzes-container">
-      <div className="quizzes-header">
-        <h1>🧠 Eco-Quizzes</h1>
-        <p>Test your environmental knowledge and earn points!</p>
-        <button className="back-btn" onClick={() => navigate("/dashboard")}>
-          ← Back to Dashboard
-        </button>
-      </div>
-
-      <div className="quizzes-grid">
-        {quizzes.map((quiz) => (
-          <div key={quiz._id} className="quiz-card">
-            <div className="quiz-header">
-              <span className="quiz-icon">{getCategoryIcon(quiz.category)}</span>
-              <h3>{quiz.title}</h3>
-            </div>
-            
-            <p className="quiz-description">{quiz.description}</p>
-            
-            <div className="quiz-info">
-              <div className="quiz-meta">
-                <span 
-                  className="difficulty-badge"
-                  style={{ backgroundColor: getDifficultyColor(quiz.difficulty) }}
-                >
-                  {quiz.difficulty.toUpperCase()}
-                </span>
-                <span className="points-badge">
-                  🏆 {quiz.totalPoints} pts
-                </span>
-              </div>
-              
-              <div className="quiz-stats">
-                <span>📝 {quiz.questions.length} questions</span>
-                <span>⏱️ ~{quiz.questions.length * 2} min</span>
-              </div>
-            </div>
-
-            <button 
-              className="take-quiz-btn"
-              onClick={() => navigate(`/quiz/${quiz._id}`)}
-            >
-              Start Quiz
-            </button>
+    <div className="min-h-screen pb-20">
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-display font-bold text-2xl text-eco-primary flex items-center gap-2">
+              <IconBox color="blue" size="sm"><Brain className="w-5 h-5" strokeWidth={2} /></IconBox>
+              Eco Quizzes
+            </h1>
+            <p className="text-gray-600 mt-1">Test your knowledge & earn XP!</p>
           </div>
-        ))}
-      </div>
-
-      {quizzes.length === 0 && (
-        <div className="no-quizzes">
-          <h3>No quizzes available yet</h3>
-          <p>Check back later for new eco-challenges!</p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/dashboard")}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-eco-primary text-white font-semibold"
+          >
+            <ArrowLeft className="w-4 h-4" /> Dashboard
+          </motion.button>
         </div>
-      )}
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          {quizzes.length === 0 ? (
+            <div className="col-span-2 text-center py-12 text-gray-500 bg-white rounded-3xl shadow-card">
+              No quizzes yet. Check back soon!
+            </div>
+          ) : (
+            quizzes.map((quiz, i) => {
+              const CatIcon = categoryIcons[quiz.category] || BookOpen;
+              return (
+                <motion.div
+                  key={quiz._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  whileHover={{ scale: 1.02, y: -4 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate(`/quiz/${quiz._id}`)}
+                  className="bg-white rounded-3xl p-6 shadow-card border-2 border-eco-pale/50 cursor-pointer hover:shadow-card-hover"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <IconBox color="blue" size="lg" className="rounded-2xl">
+                      <CatIcon className="w-10 h-10" strokeWidth={2} />
+                    </IconBox>
+                    <Badge variant={(quiz.difficulty || "easy").toLowerCase()}>{quiz.difficulty || "Easy"}</Badge>
+                  </div>
+                  <h3 className="font-display font-bold text-lg text-gray-800 mb-2">{quiz.title}</h3>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{quiz.description}</p>
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <span className="flex items-center gap-1"><ListChecks className="w-4 h-4" /> {quiz.questions?.length || 0} questions</span>
+                    <span className="font-semibold text-eco-primary">+{quiz.totalPoints || 0} XP</span>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="w-full py-3 rounded-2xl bg-eco-secondary text-white font-bold"
+                  >
+                    Start Quiz
+                  </motion.button>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+      </div>
     </div>
   );
 }

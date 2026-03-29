@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./EcoMemoryGame.css";
+import useFeedback from "../hooks/useFeedback";
+import useSound from "../hooks/useSound";
+import { apiRequest } from "../api/httpClient";
 
 const ecoCards = [
   { id: 1, content: "🌱", fact: "Plants produce oxygen" },
@@ -26,6 +29,8 @@ function EcoMemoryGame() {
   const [gameOver, setGameOver] = useState(false);
   const [timeLeft, setTimeLeft] = useState(90);
   const navigate = useNavigate();
+  const { triggerXPFromEvent, triggerSuccess } = useFeedback();
+  const { playClick } = useSound();
 
   useEffect(() => {
     initializeGame();
@@ -53,7 +58,8 @@ function EcoMemoryGame() {
     setCards(shuffled);
   };
 
-  const handleCardClick = (index) => {
+  const handleCardClick = (index, event) => {
+    playClick();
     if (flippedCards.length === 2 || flippedCards.includes(index) || matchedCards.includes(index)) {
       return;
     }
@@ -68,6 +74,7 @@ function EcoMemoryGame() {
       if (cards[first].content === cards[second].content) {
         setMatchedCards(prev => [...prev, first, second]);
         setScore(prev => prev + 20);
+        triggerXPFromEvent(20, event, { y: window.innerHeight * 0.42 });
         setFlippedCards([]);
       } else {
         setTimeout(() => setFlippedCards([]), 1000);
@@ -78,20 +85,17 @@ function EcoMemoryGame() {
   const endGame = async () => {
     setGameOver(true);
     const finalScore = matchedCards.length === cards.length ? score + (timeLeft * 2) : score;
+    triggerSuccess();
     
     try {
-      const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/mini-games/submit-score", {
+      await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+        body: {
           gameId: "eco-memory",
           score: finalScore,
           timeSpent: 90 - timeLeft
-        }),
+        },
+        retries: 0,
       });
     } catch (error) {
       console.error("Error submitting score:", error);
@@ -111,10 +115,10 @@ function EcoMemoryGame() {
           <p>Matches: {matchedCards.length / 2} / {cards.length / 2}</p>
           <p>Moves: {moves}</p>
           <div className="game-actions">
-            <button onClick={() => window.location.reload()} className="play-again-btn">
+            <button onClick={() => { playClick(); window.location.reload(); }} className="play-again-btn">
               🔄 Play Again
             </button>
-            <button onClick={() => navigate("/mini-games")} className="back-btn">
+            <button onClick={() => { playClick(); navigate("/mini-games"); }} className="back-btn">
               ← Back to Games
             </button>
           </div>
@@ -150,7 +154,7 @@ function EcoMemoryGame() {
             className={`memory-card ${
               flippedCards.includes(index) || matchedCards.includes(index) ? 'flipped' : ''
             } ${matchedCards.includes(index) ? 'matched' : ''}`}
-            onClick={() => handleCardClick(index)}
+            onClick={(e) => handleCardClick(index, e)}
           >
             <div className="card-front">?</div>
             <div className="card-back">
@@ -163,7 +167,7 @@ function EcoMemoryGame() {
 
       <button 
         className="quit-btn"
-        onClick={() => navigate("/mini-games")}
+        onClick={() => { playClick(); navigate("/mini-games"); }}
       >
         ← Quit Game
       </button>
