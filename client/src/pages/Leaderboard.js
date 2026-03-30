@@ -94,7 +94,7 @@ function Leaderboard() {
 
   const tabs = [{ id: "students", label: "Students", Icon: Trophy }, { id: "schools", label: "Schools", Icon: School }];
 
-  const xp = Number(userProgress?.student?.points || 0);
+
 
   const rankTone = (rank) =>
     rank === 1

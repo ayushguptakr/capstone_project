@@ -121,7 +121,7 @@ function MascotCustomize() {
     return equippedSkins;
   }, [equippedSkins, previewOverride]);
 
-  const points = user?.points || 0;
+
 
   return (
     <div className="mascot-customize">

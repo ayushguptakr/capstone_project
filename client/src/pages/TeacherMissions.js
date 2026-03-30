@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, ListTodo, Map, Users, Star, Clock } from "lucide-react";
+import { Plus, X, Map, Users, Star } from "lucide-react";
 import TeacherShell from "../components/TeacherShell";
 import { apiRequest } from "../api/httpClient";
 
