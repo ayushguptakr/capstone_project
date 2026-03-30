@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Upload, ArrowLeft, Paperclip } from "lucide-react";
+import { Upload, ArrowLeft } from "lucide-react";
 import { IconBox } from "../components";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";

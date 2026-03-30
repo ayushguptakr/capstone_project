@@ -33,7 +33,7 @@ function TeacherDashboard() {
     load();
   }, []);
 
-  const students = analytics?.students || [];
+  const students = useMemo(() => analytics?.students || [], [analytics?.students]);
   const createdTaskCount = analytics?.contentCreated?.tasks ?? 0;
   const createdQuizCount = analytics?.contentCreated?.quizzes ?? 0;
   const pendingCount = verificationQueue.length;
