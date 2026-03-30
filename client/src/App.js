@@ -11,7 +11,6 @@ import Quizzes from "./pages/Quizzes";
 import TakeQuiz from "./pages/TakeQuiz";
 import Leaderboard from "./pages/Leaderboard";
 import CreateQuiz from "./pages/CreateQuiz";
-import Marketplace from "./pages/Marketplace";
 import EcoStore from "./pages/EcoStore";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherSubmissions from "./pages/TeacherSubmissions";

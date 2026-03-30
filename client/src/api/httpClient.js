@@ -1,5 +1,7 @@
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function withTimeout(promise, timeoutMs = 12000) {
   let timer;
   const timeout = new Promise((_, reject) => {
@@ -64,7 +66,7 @@ export async function apiRequest(path, options = {}) {
     } catch (error) {
       lastError = error;
       if (attempt === retries) break;
-      await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
+      await delay(250 * (attempt + 1));
     }
     attempt += 1;
   }
