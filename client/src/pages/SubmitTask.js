@@ -59,7 +59,7 @@ function SubmitTask() {
       alert("Submission uploaded! 🌱");
       triggerSuccess();
       triggerXPFromEvent(10, e);
-      navigate("/mysubmissions");
+      navigate("/missions");
     } catch (err) {
       alert(err.response?.data?.message || "Submission failed!");
     } finally {
@@ -81,7 +81,7 @@ function SubmitTask() {
             </IconBox>
           </div>
           <h1 className="font-display font-bold text-xl text-eco-primary text-center mb-6">
-            Submit Task Proof
+            Submit Mission Proof
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-5">

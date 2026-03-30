@@ -3,7 +3,7 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
-import Tasks from "./pages/Tasks";
+import Missions from "./pages/Missions";
 import Submissions from "./pages/Submissions";
 import SubmitTask from "./pages/SubmitTask";
 import CreateTask from "./pages/CreateTask";
@@ -113,10 +113,10 @@ function App() {
 
         {/* Student (and admin/sponsor) */}
         <Route
-          path="/tasks"
+          path="/missions"
           element={
             <RequireStudent>
-              <Tasks />
+              <Missions />
             </RequireStudent>
           }
         />

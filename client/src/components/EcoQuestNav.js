@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getStoredUser, isAuthenticated } from "../utils/authStorage";
 import useSound from "../hooks/useSound";
+import { apiRequest } from "../api/httpClient";
 import {
   LayoutDashboard,
   BookOpen,
@@ -19,7 +20,7 @@ import * as AllIcons from "lucide-react";
 import { EcoLogo } from "./EcoLogo";
 
 /** Logged-in: center nav (Quiz, Games, Leaderboard). */
-const appNavItems = (dashPath, showGames) => [
+const appNavItems = (dashPath, showGames, activeMissionsCount = 0) => [
   {
     to: dashPath,
     label: "Dashboard",
@@ -39,6 +40,13 @@ const appNavItems = (dashPath, showGames) => [
           label: "Games",
           icon: Gamepad2,
           match: (p) => p.startsWith("/mini-games") || p.startsWith("/mini-game"),
+        },
+        {
+          to: "/missions",
+          label: "Missions",
+          icon: Map,
+          match: (p) => p.startsWith("/missions") || p.startsWith("/submit"),
+          badge: activeMissionsCount > 0 ? activeMissionsCount : 0,
         },
         {
           to: "/store",
@@ -70,15 +78,33 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const { muted, toggleMute, playClick } = useSound();
+  const [activeMissionsCount, setActiveMissionsCount] = useState(0);
 
   const dashPath = user?.role === "teacher" ? "/teacher-dashboard" : "/dashboard";
   const xpDisplay = typeof xp === "number" ? xp.toLocaleString() : "0";
   const userSkins = user?.equippedSkins || {};
 
   const showGames = user?.role === "student";
-  const appLinks = useMemo(() => appNavItems(dashPath, showGames), [dashPath, showGames]);
+  const appLinks = useMemo(() => appNavItems(dashPath, showGames, activeMissionsCount), [dashPath, showGames, activeMissionsCount]);
 
   const showAppBar = variant === "app" || (variant === "landing" && loggedIn);
+
+  useEffect(() => {
+    if (showGames && loggedIn) {
+      Promise.all([
+        apiRequest("/api/tasks").catch(() => []),
+        apiRequest("/api/submissions/my").catch(() => [])
+      ]).then(([tasksResp, subResp]) => {
+        const tList = Array.isArray(tasksResp) ? tasksResp : tasksResp?.tasks || [];
+        const sList = Array.isArray(subResp) ? subResp : subResp?.submissions || [];
+        const active = tList.filter(t => {
+          const sub = sList.find(s => s.task?._id === t._id || s.task === t._id);
+          return !sub || sub.status === "rejected";
+        });
+        setActiveMissionsCount(active.length);
+      });
+    }
+  }, [showGames, loggedIn]);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -106,7 +132,7 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
 
           <nav className="flex flex-1 justify-center min-w-0 order-3 sm:order-none w-full sm:w-auto">
             <ul className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar max-w-full">
-              {appLinks.map(({ to, label, icon: Icon, match }) => {
+              {appLinks.map(({ to, label, icon: Icon, match, badge }) => {
                 const active = match(pathname);
                 return (
                   <li key={to + label}>
@@ -120,7 +146,14 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
                       }`}
                     >
                       <Icon className="w-4 h-4 shrink-0 opacity-85" strokeWidth={2} />
-                      {label}
+                      <span className="relative">
+                        {label}
+                        {badge > 0 && (
+                          <span className="absolute -top-1.5 -right-3.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm ring-1 ring-white">
+                            {badge}
+                          </span>
+                        )}
+                      </span>
                     </Link>
                   </li>
                 );
