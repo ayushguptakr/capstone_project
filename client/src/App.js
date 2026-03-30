@@ -33,6 +33,7 @@ import RedemptionHistory from "./pages/RedemptionHistory";
 import SustainabilityDashboard from "./pages/SustainabilityDashboard";
 import GameHistory from "./pages/GameHistory";
 import Profile from "./pages/Profile";
+import MascotCustomize from "./pages/MascotCustomize";
 import RequireAuth from "./components/RequireAuth";
 import RequireStudent from "./components/RequireStudent";
 import RequireTeacher from "./components/RequireTeacher";
@@ -74,6 +75,14 @@ function App() {
             <RequireAuth>
               <Profile />
             </RequireAuth>
+          }
+        />
+        <Route
+          path="/my-mascot"
+          element={
+            <RequireStudent>
+              <MascotCustomize />
+            </RequireStudent>
           }
         />
 

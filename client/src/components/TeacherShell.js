@@ -17,6 +17,7 @@ import {
   School,
   BarChart3,
 } from "lucide-react";
+import { EcoLogo } from "./EcoLogo";
 
 const NAV_ITEMS = [
   { label: "Dashboard", to: "/teacher-dashboard", Icon: LayoutDashboard },
@@ -89,7 +90,10 @@ export default function TeacherShell({
         }`}
       >
         <div className="h-16 border-b border-slate-200 px-4 flex items-center justify-between">
-          <div className="font-display font-bold text-lg">EcoQuest Teacher</div>
+          <div className="flex items-center gap-1">
+            <EcoLogo size="sm" withText={true} showTagline={false} animated={false} />
+            <span className="font-display font-semibold text-sm text-slate-500 ml-0.5">Teacher</span>
+          </div>
           <button className="lg:hidden p-2 rounded-xl hover:bg-slate-100" onClick={() => setOpen(false)}>
             <X className="w-4 h-4" />
           </button>

@@ -22,7 +22,7 @@ import {
   ClipboardCheck,
   School,
 } from "lucide-react";
-import { EcoQuestNav } from "../components";
+import { EcoQuestNav, EcoLogo } from "../components";
 import {
   FadeInSection,
   HoverCard,
@@ -586,11 +586,8 @@ function Footer() {
   return (
     <footer className="bg-white border-t border-gray-100 py-12 px-6">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-6">
-        <a href="#top" className="flex items-center gap-2.5">
-          <span className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#5E9F57] to-eco-primary flex items-center justify-center shadow-sm">
-            <Leaf className="w-4 h-4 text-white" strokeWidth={2.5} />
-          </span>
-          <span className="font-display font-bold text-lg text-[#5E9F57]">EcoQuest</span>
+        <a href="#top" className="flex items-center">
+          <EcoLogo size="sm" withText={true} showTagline={false} animated={false} />
         </a>
         <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
           <Link to="/login" className="hover:text-[#5E9F57] transition font-medium">

@@ -93,7 +93,7 @@ exports.login = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select(
-      "name role email school className class section points level experiencePoints streakCurrent streakLastActiveAt lastActivityAt badges equippedAvatar"
+      "name role email school className class section points level experiencePoints streakCurrent streakLastActiveAt lastActivityAt badges equippedAvatar equippedSkins"
     );
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({ user });
@@ -113,6 +113,27 @@ exports.updateAvatar = async (req, res) => {
       { new: true }
     ).select("-password -__v");
     res.json({ message: "Avatar updated", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// -------------------- UPDATE MASCOT SKINS --------------------
+exports.updateSkins = async (req, res) => {
+  try {
+    const { category, skinId } = req.body;
+    const validCategories = ["hat", "accessory", "effect", "evolution"];
+    if (!category || !validCategories.includes(category)) {
+      return res.status(400).json({ message: "Invalid category. Must be: hat, accessory, effect, or evolution" });
+    }
+    // skinId can be null (to unequip)
+    const updateKey = `equippedSkins.${category}`;
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { [updateKey]: skinId || null },
+      { new: true }
+    ).select("-password -__v");
+    res.json({ message: "Skin updated", user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,0 +1,147 @@
+/* ─── Mascot Customize Page ───────────────────── */
+.mascot-customize {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #E8F5E9 0%, #F9FAF7 50%, #FFFDE7 100%);
+  padding-bottom: 6rem;
+}
+
+.mascot-customize .preview-card {
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.7);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 60px -20px rgba(16,185,129,0.18);
+  padding: 2rem;
+}
+
+.mascot-customize .category-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.mascot-customize .category-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: rgba(255,255,255,0.4);
+  color: #6B7280;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.mascot-customize .category-tab:hover {
+  background: rgba(255,255,255,0.65);
+  border-color: rgba(16,185,129,0.25);
+}
+
+.mascot-customize .category-tab.active {
+  background: rgba(255,255,255,0.8);
+  border-color: #22C55E;
+  color: #16A34A;
+  box-shadow: 0 4px 16px -6px rgba(34,197,94,0.35);
+}
+
+.mascot-customize .skin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.mascot-customize .skin-card {
+  position: relative;
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,255,255,0.7);
+  border-radius: 1.25rem;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.mascot-customize .skin-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px -12px rgba(16,185,129,0.3);
+}
+
+.mascot-customize .skin-card.equipped {
+  border-color: #22C55E;
+  background: rgba(209,250,229,0.5);
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+}
+
+.mascot-customize .skin-card.locked {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.mascot-customize .skin-card.locked:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.mascot-customize .skin-preview-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 1rem;
+  background: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mascot-customize .rarity-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mascot-customize .equip-btn {
+  width: 100%;
+  padding: 0.375rem 0;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mascot-customize .equip-btn.equip {
+  background: linear-gradient(to right, #22C55E, #16A34A);
+  color: white;
+}
+
+.mascot-customize .equip-btn.equip:hover {
+  filter: brightness(1.08);
+}
+
+.mascot-customize .equip-btn.unequip {
+  background: rgba(239,68,68,0.1);
+  color: #EF4444;
+  border: 1px solid rgba(239,68,68,0.25);
+}
+
+.mascot-customize .equip-btn.locked-btn {
+  background: rgba(156,163,175,0.15);
+  color: #9CA3AF;
+  cursor: not-allowed;
+}

@@ -14,6 +14,7 @@ const rewardSchema = new mongoose.Schema(
         "power-ups",
         "eco-rewards",
         "mystery",
+        "skins",
         // legacy categories kept for backward compat
         "eco-products",
         "certificates",

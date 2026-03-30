@@ -28,6 +28,12 @@ const userSchema = new mongoose.Schema(
     streakLastActiveAt: { type: Date },
     lastActivityAt: { type: Date },
     equippedAvatar: { type: String, default: "User" },
+    equippedSkins: {
+      hat: { type: String, default: null },
+      accessory: { type: String, default: null },
+      effect: { type: String, default: null },
+      evolution: { type: String, default: null },
+    },
 
     badges: [
       {

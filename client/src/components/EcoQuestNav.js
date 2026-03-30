@@ -74,6 +74,7 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
 
   const dashPath = user?.role === "teacher" ? "/teacher-dashboard" : "/dashboard";
   const xpDisplay = typeof xp === "number" ? xp.toLocaleString() : "0";
+  const userSkins = user?.equippedSkins || {};
 
   const showGames = user?.role === "student";
   const appLinks = useMemo(() => appNavItems(dashPath, showGames), [dashPath, showGames]);
@@ -101,7 +102,7 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <Link to="/" className="flex items-center shrink-0">
-            <EcoLogo className="w-10 h-10" withText={true} animated={true} currentXp={xp} />
+            <EcoLogo className="w-10 h-10" withText={true} animated={true} currentXp={xp} equippedSkins={userSkins} />
           </Link>
 
           <nav className="flex flex-1 justify-center min-w-0 order-3 sm:order-none w-full sm:w-auto">
@@ -222,7 +223,7 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <a href="#top" className="flex items-center shrink-0">
-          <EcoLogo className="w-10 h-10" withText={true} animated={true} currentXp={xp} />
+          <EcoLogo className="w-10 h-10" withText={true} animated={true} currentXp={xp} equippedSkins={userSkins} />
         </a>
 
         <nav className="flex flex-1 justify-center min-w-0 order-3 sm:order-none w-full sm:w-auto">

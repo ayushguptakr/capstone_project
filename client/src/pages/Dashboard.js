@@ -450,7 +450,7 @@ function Dashboard() {
     { Icon: Gamepad2, label: "Games", path: "/mini-games", color: "yellow" },
     { Icon: ShoppingBag, label: "Store", path: "/store", color: "green" },
     { Icon: Trophy, label: "Leaderboard", path: "/leaderboard", color: "yellow" },
-    { Icon: Upload, label: "Submissions", path: "/mysubmissions", color: "blue" },
+    { Icon: Sparkles, label: "My Mascot", path: "/my-mascot", color: "green" },
   ];
 
   const teacherActions = [

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy } from "lucide-react";
-import { ProgressBar, Confetti } from "../components";
+import { ProgressBar, Confetti, EcoLoader, SproutyQuizBuddy } from "../components";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import { apiRequest } from "../api/httpClient";
@@ -18,6 +18,8 @@ function TakeQuiz() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [sproutyMood, setSproutyMood] = useState("idle");
+  const [sproutyCaption, setSproutyCaption] = useState("");
   const { triggerXPFromEvent, triggerSuccess } = useFeedback();
   const { playClick } = useSound();
 
@@ -37,10 +39,29 @@ function TakeQuiz() {
     const next = [...answers];
     next[currentQuestion] = { selectedAnswer: idx };
     setAnswers(next);
+
+    // Check correctness for Sprouty reaction
+    const question = quiz?.questions?.[currentQuestion];
+    if (question) {
+      const isCorrect = idx === question.correctAnswer;
+      setSproutyMood(isCorrect ? "correct" : "wrong");
+      setSproutyCaption(
+        isCorrect
+          ? ["Great job!", "You got it!", "Amazing!", "Eco genius!"][Math.floor(Math.random() * 4)]
+          : ["Keep trying!", "Almost there!", "You can do it!", "Don't give up!"][Math.floor(Math.random() * 4)]
+      );
+      // Auto-reset after animation
+      setTimeout(() => {
+        setSproutyMood("idle");
+        setSproutyCaption("");
+      }, 1500);
+    }
   };
 
   const handleNext = () => {
     playClick();
+    setSproutyMood("idle");
+    setSproutyCaption("");
     if (currentQuestion < (quiz?.questions?.length || 1) - 1) {
       setCurrentQuestion((q) => q + 1);
       setSelectedAnswer(answers[currentQuestion + 1]?.selectedAnswer ?? null);
@@ -49,6 +70,8 @@ function TakeQuiz() {
 
   const handlePrevious = () => {
     playClick();
+    setSproutyMood("idle");
+    setSproutyCaption("");
     if (currentQuestion > 0) {
       setCurrentQuestion((q) => q - 1);
       setSelectedAnswer(answers[currentQuestion - 1]?.selectedAnswer ?? null);
@@ -79,12 +102,7 @@ function TakeQuiz() {
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-        className="w-12 h-12 border-4 border-eco-primary border-t-transparent rounded-full" />
-    </div>
-  );
+  if (loading) return <EcoLoader text="Loading Quiz..." />;
   if (!quiz) return <div className="min-h-screen flex items-center justify-center text-gray-600">Quiz not found</div>;
 
   if (result) {
@@ -161,6 +179,12 @@ function TakeQuiz() {
           className="bg-white rounded-3xl p-6 shadow-card border-2 border-eco-pale"
         >
           <h2 className="font-display font-semibold text-lg text-gray-800 mb-6">{question.question}</h2>
+
+          {/* Sprouty Quiz Buddy */}
+          <div className="flex justify-center mb-5">
+            <SproutyQuizBuddy mood={sproutyMood} caption={sproutyCaption} />
+          </div>
+
           <div className="space-y-3">
             {question.options.map((opt, idx) => (
               <motion.button

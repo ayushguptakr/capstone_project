@@ -9,5 +9,5 @@ export { default as StatCard } from "./StatCard";
 export { default as FeatureCard } from "./FeatureCard";
 export { default as ActionButton } from "./ActionButton";
 export { default as EcoQuestNav } from "./EcoQuestNav";
-export { EcoLogo, EcoLoader } from "./EcoLogo";
+export { EcoLogo, EcoLoader, SproutyQuizBuddy } from "./EcoLogo";
 export * from "./motion";
