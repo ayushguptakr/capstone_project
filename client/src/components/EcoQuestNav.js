@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { getStoredUser, isAuthenticated } from "../utils/authStorage";
 import useSound from "../hooks/useSound";
 import {
-  Leaf,
   LayoutDashboard,
   BookOpen,
   Trophy,

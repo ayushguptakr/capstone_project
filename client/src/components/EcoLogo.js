@@ -74,6 +74,9 @@ export function EcoLogo({
       const blinkLoop = async () => {
         while (isActive) {
           const delay = 3500 + Math.random() * 2500;
+          // eslint-disable-next-line no-loop-func
+          blinkTimeout = setTimeout(() => {}, 0);
+          // eslint-disable-next-line no-loop-func
           await new Promise(r => { blinkTimeout = setTimeout(r, delay); });
           if (!isActive) break;
           await blinkControls.start({

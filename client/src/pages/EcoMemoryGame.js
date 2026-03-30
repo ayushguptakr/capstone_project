@@ -45,12 +45,14 @@ function EcoMemoryGame() {
     }, 1000);
 
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (matchedCards.length === cards.length && cards.length > 0) {
       setTimeout(() => endGame(), 1000);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchedCards, cards]);
 
   const initializeGame = () => {

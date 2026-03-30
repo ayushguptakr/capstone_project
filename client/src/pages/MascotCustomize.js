@@ -11,7 +11,7 @@ import "./MascotCustomize.css";
 
 function MascotCustomize() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(() => getStoredUser());
+  const [user] = useState(() => getStoredUser());
   const [activeTab, setActiveTab] = useState("hat");
   const [equippedSkins, setEquippedSkins] = useState({
     hat: null, accessory: null, effect: null, evolution: null,

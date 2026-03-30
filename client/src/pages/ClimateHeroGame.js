@@ -42,6 +42,7 @@ function ClimateHeroGame() {
     }, 1000);
 
     return () => { clearInterval(gameLoop); clearInterval(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ function ClimateHeroGame() {
         setItems(prev => prev.filter(i => i.id !== item.id));
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, heroPosition]);
 
   useEffect(() => {

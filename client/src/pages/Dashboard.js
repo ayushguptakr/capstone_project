@@ -6,7 +6,6 @@ import {
   Gamepad2,
   ShoppingBag,
   Trophy,
-  Upload,
   Plus,
   BarChart3,
   Globe,
@@ -98,7 +97,7 @@ function formatCountdown(totalSeconds) {
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { triggerXP, triggerXPFromEvent, triggerBadgeUnlock, triggerLevelUp, triggerSuccess } =
+  const { triggerXPFromEvent, triggerBadgeUnlock, triggerLevelUp, triggerSuccess } =
     useFeedback();
   const { playClick } = useSound();
   const [user, setUser] = useState(() => getStoredUser());

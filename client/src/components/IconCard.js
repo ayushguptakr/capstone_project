@@ -11,7 +11,7 @@ export default function IconCard({
   onClick,
   delay = 0,
 }) {
-  const Wrapper = onClick ? motion.div : motion.div;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
