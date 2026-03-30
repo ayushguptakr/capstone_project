@@ -9,7 +9,7 @@ function Leaderboard() {
   const [activeTab, setActiveTab] = useState("students");
   const [globalLeaderboard, setGlobalLeaderboard] = useState([]);
   const [schoolLeaderboard, setSchoolLeaderboard] = useState([]);
-  const [userProgress, setUserProgress] = useState(null);
+
   const [timeRange, setTimeRange] = useState("all");
   const [classFilter, setClassFilter] = useState("all");
   const [sectionFilter, setSectionFilter] = useState("all");
@@ -72,12 +72,10 @@ function Leaderboard() {
     Promise.all([
       apiRequest("/api/leaderboard"),
       apiRequest("/api/leaderboard/schools"),
-      apiRequest("/api/leaderboard/progress"),
     ])
-      .then(([a, b, c]) => {
+      .then(([a, b]) => {
         setGlobalLeaderboard(a || []);
         setSchoolLeaderboard(b || []);
-        setUserProgress(c || null);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
