@@ -12,11 +12,21 @@ function SubmitTask() {
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+  const [geo, setGeo] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [drag, setDrag] = useState(false);
   const { triggerSuccess, triggerXPFromEvent } = useFeedback();
   const { playClick } = useSound();
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => console.log("Geolocation not available or denied")
+      );
+    }
+  }, []);
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -48,6 +58,11 @@ function SubmitTask() {
       const formData = new FormData();
       formData.append("taskId", taskId);
       formData.append("text", text);
+      formData.append("submittedAt", new Date().toISOString());
+      if (geo) {
+        formData.append("lat", geo.lat);
+        formData.append("lng", geo.lng);
+      }
       if (file) formData.append("file", file);
 
       await apiRequest("/api/submissions/submit", {

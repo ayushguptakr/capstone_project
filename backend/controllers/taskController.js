@@ -3,7 +3,7 @@ const Task = require("../models/Task");
 // Create task (teacher/admin); optional impact_model, category, difficulty
 exports.createTask = async (req, res) => {
   try {
-    const { title, description, points, deadline, impact_model, category, difficulty } = req.body;
+    const { title, description, points, deadline, impact_model, category, difficulty, whyItMatters, proofType, targetClass } = req.body;
 
     const task = await Task.create({
       title,
@@ -23,6 +23,9 @@ exports.createTask = async (req, res) => {
       }),
       ...(category != null && { category }),
       ...(difficulty != null && { difficulty }),
+      ...(whyItMatters && { whyItMatters }),
+      ...(proofType && { proofType }),
+      ...(targetClass && { targetClass }),
     });
 
     res.json({ message: "Task created", task });
@@ -34,7 +37,15 @@ exports.createTask = async (req, res) => {
 // Get all tasks (students)
 exports.getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find().sort({ createdAt: -1 });
+    const { targetClass } = req.query;
+    const filter = {};
+    if (targetClass) {
+      filter.$or = [{ targetClass: targetClass }, { targetClass: null }, { targetClass: "" }];
+    } else {
+      filter.$or = [{ targetClass: null }, { targetClass: "" }];
+    }
+
+    const tasks = await Task.find(filter).sort({ createdAt: -1 });
     res.json(tasks);
   } catch (err) {
     res.status(500).json({ error: err.message });

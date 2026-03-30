@@ -14,6 +14,7 @@ import { Badge, IconBox, EcoLoader } from "../components";
 import { apiRequest } from "../api/httpClient";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
+import confetti from "canvas-confetti";
 
 function getDifficultyColor(d) {
   const diff = (d || "easy").toLowerCase();
@@ -210,6 +211,11 @@ export default function Missions() {
                         <button
                           onClick={(e) => { 
                             playSuccess(); 
+                            confetti({
+                              particleCount: 100,
+                              spread: 70,
+                              origin: { y: 0.6 }
+                            });
                             triggerXPFromEvent(0, e, { y: window.innerHeight * 0.4 }); 
                           }}
                           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold border border-emerald-200 text-sm transition-colors"

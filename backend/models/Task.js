@@ -23,6 +23,12 @@ const taskSchema = new mongoose.Schema(
     points: { type: Number, default: 10 },
     deadline: { type: Date },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    /** Context for students on why the mission helps the planet. */
+    whyItMatters: { type: String, default: "This mission helps protect our local ecosystem!" },
+    /** Determines if the student must upload an image, video, text, or any variation. */
+    proofType: { type: String, enum: ["image", "video", "text", "any"], default: "any" },
+    /** If set, only students in this specific class/section can view/start the mission. */
+    targetClass: { type: String, default: null },
     /** Eco-impact: optional. If missing, regional/default coefficients can be used. */
     impact_model: impactModelSchema,
     /** Category for analytics and recommendations (e.g. water, waste, energy, biodiversity). */

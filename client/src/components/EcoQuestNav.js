@@ -82,6 +82,18 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
 
   const dashPath = user?.role === "teacher" ? "/teacher-dashboard" : "/dashboard";
   const xpDisplay = typeof xp === "number" ? xp.toLocaleString() : "0";
+
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    playClick();
+    if (!loggedIn) {
+      navigate("/");
+    } else if (pathname !== dashPath) {
+      navigate(dashPath);
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
   const userSkins = user?.equippedSkins || {};
 
   const showGames = user?.role === "student";
@@ -126,9 +138,13 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
         className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm"
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          <Link to="/" className="flex items-center shrink-0">
+          <motion.button 
+            onClick={handleLogoClick} 
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center shrink-0 cursor-pointer outline-none"
+          >
             <EcoLogo className="w-10 h-10" withText={true} animated={true} currentXp={xp} equippedSkins={userSkins} />
-          </Link>
+          </motion.button>
 
           <nav className="flex flex-1 justify-center min-w-0 order-3 sm:order-none w-full sm:w-auto">
             <ul className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar max-w-full">
@@ -254,9 +270,13 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
       className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-        <a href="#top" className="flex items-center shrink-0">
+        <motion.button 
+          onClick={handleLogoClick} 
+          whileHover={{ scale: 1.05 }}
+          className="flex items-center shrink-0 cursor-pointer outline-none"
+        >
           <EcoLogo className="w-10 h-10" withText={true} animated={true} currentXp={xp} equippedSkins={userSkins} />
-        </a>
+        </motion.button>
 
         <nav className="flex flex-1 justify-center min-w-0 order-3 sm:order-none w-full sm:w-auto">
           <ul className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto pb-1 sm:pb-0 no-scrollbar max-w-full">

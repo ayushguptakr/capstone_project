@@ -6,7 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Missions from "./pages/Missions";
 import Submissions from "./pages/Submissions";
 import SubmitTask from "./pages/SubmitTask";
-import CreateTask from "./pages/CreateTask";
+// Removed CreateTask import
 import Quizzes from "./pages/Quizzes";
 import TakeQuiz from "./pages/TakeQuiz";
 import Leaderboard from "./pages/Leaderboard";
@@ -27,7 +27,7 @@ import EcoMemoryGame from "./pages/EcoMemoryGame";
 import ClimateHeroGame from "./pages/ClimateHeroGame";
 import EcoTriviaRace from "./pages/EcoTriviaRace";
 import PlantGrowthGame from "./pages/PlantGrowthGame";
-import TeacherTasks from "./pages/TeacherTasks";
+import TeacherMissions from "./pages/TeacherMissions";
 import RedemptionHistory from "./pages/RedemptionHistory";
 import SustainabilityDashboard from "./pages/SustainabilityDashboard";
 import GameHistory from "./pages/GameHistory";
@@ -219,14 +219,7 @@ function App() {
         />
 
         {/* Teacher (and admin) */}
-        <Route
-          path="/create-task"
-          element={
-            <RequireTeacher>
-              <CreateTask />
-            </RequireTeacher>
-          }
-        />
+        {/* Removed legacy /create-task Route */}
         <Route
           path="/create-quiz"
           element={
@@ -236,10 +229,10 @@ function App() {
           }
         />
         <Route
-          path="/mytasks"
+          path="/teacher-tasks"
           element={
             <RequireTeacher>
-              <TeacherTasks />
+              <TeacherMissions />
             </RequireTeacher>
           }
         />
