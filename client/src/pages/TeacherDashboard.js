@@ -5,11 +5,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -42,7 +37,7 @@ function TeacherDashboard() {
   const createdTaskCount = analytics?.contentCreated?.tasks ?? 0;
   const createdQuizCount = analytics?.contentCreated?.quizzes ?? 0;
   const pendingCount = verificationQueue.length;
-  const activeToday = analytics?.activeStudentsToday ?? 0;
+
   const inactiveStudents = students.filter((s) => (s.points || 0) < 40).slice(0, analytics?.inactiveStudentsCount || 9999);
 
   const classRows = useMemo(() => {
@@ -63,7 +58,7 @@ function TeacherDashboard() {
       const completion = Math.max(20, Math.min(100, Math.round(avgXP / 9)));
       return { ...row, avgXP, engagement, completion };
     });
-  }, [students]);
+  }, [students, analytics?.classMetrics]);
 
   const classLeaderboard = useMemo(() => {
     return classRows
@@ -115,18 +110,6 @@ function TeacherDashboard() {
     Completion: c.completion,
   }));
 
-  const xpDistribution = [
-    { name: "0-200 XP", value: students.filter((s) => (s.points || 0) <= 200).length || 1 },
-    { name: "201-600 XP", value: students.filter((s) => (s.points || 0) > 200 && (s.points || 0) <= 600).length || 1 },
-    { name: "600+ XP", value: students.filter((s) => (s.points || 0) > 600).length || 1 },
-  ];
-
-  const trendData = [
-    { week: "W1", engagement: 78, completion: 72 },
-    { week: "W2", engagement: 82, completion: 76 },
-    { week: "W3", engagement: 69, completion: 68 },
-    { week: "W4", engagement: 74, completion: 73 },
-  ];
 
   if (loading) {
     return (
