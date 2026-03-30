@@ -73,4 +73,3 @@ export async function apiRequest(path, options = {}) {
   throw lastError;
 }
 
-export { API_BASE_URL };
