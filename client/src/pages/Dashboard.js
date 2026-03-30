@@ -356,11 +356,7 @@ function Dashboard() {
     });
   };
 
-  if (!user) {
-    return <EcoLoader />;
-  }
-
-  const firstName = user.name?.split(" ")[0] || "Eco Hero";
+  const firstName = user?.name?.split(" ")[0] || "Eco Hero";
 
   useEffect(() => {
     const full = "Good Evening,";
@@ -461,6 +457,10 @@ function Dashboard() {
     { Icon: BookOpen, label: "My Tasks", path: "/mytasks", color: "green" },
     { Icon: Eye, label: "Submissions", path: "/submissions", color: "blue" },
   ];
+
+  if (!user) {
+    return <EcoLoader />;
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#E8F5E9] via-[#F9FAF7] to-[#FFFDE7] pb-24">
