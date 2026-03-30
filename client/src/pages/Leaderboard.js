@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Trophy, School, Sparkles, Crown, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { EcoQuestNav, IconBox } from "../components";
+import { IconBox } from "../components";
 import { apiRequest } from "../api/httpClient";
 import { getStoredUser } from "../utils/authStorage";
 
@@ -112,7 +112,7 @@ function Leaderboard() {
 
   return (
     <div className="min-h-screen bg-[#F6FAF6] pb-20">
-      <EcoQuestNav variant="app" xp={xp} />
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         <div className="mb-6">
           <h1 className="font-display font-bold text-3xl text-[#1f2d26] flex items-center gap-2">

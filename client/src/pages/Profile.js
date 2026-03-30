@@ -13,7 +13,7 @@ import {
   Leaf,
 } from "lucide-react";
 import * as AllIcons from "lucide-react";
-import { EcoQuestNav, EcoLoader } from "../components";
+import { EcoLoader } from "../components";
 import { getStoredUser } from "../utils/authStorage";
 import { fetchGamificationMe } from "../api/gamificationApi";
 import { apiRequest } from "../api/httpClient";
@@ -156,7 +156,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-[#F9FAF7] pb-16">
-      <EcoQuestNav variant="app" xp={points} />
+
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <motion.div

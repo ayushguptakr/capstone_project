@@ -6,6 +6,7 @@ import {
   CheckCircle2, 
   Clock, 
   ArrowRight, 
+  ArrowLeft,
   Star,
   Shield,
   Search
@@ -95,7 +96,17 @@ export default function Missions() {
             </div>
           </div>
 
-          <div className="flex gap-3 bg-[#f0f6f1] p-2 xl:p-3 items-center rounded-2xl shadow-inner w-full md:w-auto overflow-x-auto no-scrollbar">
+          <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate("/dashboard")}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-sm shadow-sm hover:bg-slate-50 transition shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" /> Dashboard
+            </motion.button>
+
+            <div className="flex gap-3 bg-[#f0f6f1] p-2 xl:p-3 items-center rounded-2xl shadow-inner w-full md:w-auto overflow-x-auto no-scrollbar">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -117,6 +128,7 @@ export default function Missions() {
                 </button>
               );
             })}
+            </div>
           </div>
         </div>
       </section>

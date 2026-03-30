@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import * as AllIcons from "lucide-react";
 import { Shuffle, Lock, Check, ShoppingBag, ArrowLeft } from "lucide-react";
-import { EcoQuestNav, EcoLogo } from "../components";
+import { EcoLogo } from "../components";
 import { SPROUTY_SKINS, SKIN_CATEGORIES, getSkinsByType, RARITY_COLORS } from "../data/sproutySkins";
 import { getStoredUser } from "../utils/authStorage";
 import { apiRequest } from "../api/httpClient";
@@ -125,7 +125,7 @@ function MascotCustomize() {
 
   return (
     <div className="mascot-customize">
-      <EcoQuestNav variant="app" xp={points} />
+
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}

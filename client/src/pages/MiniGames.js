@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Gamepad2, Recycle, Brain, Globe, Zap, Sprout, BarChart3, Clock3, ArrowRight } from "lucide-react";
-import { Badge, EcoQuestNav, IconBox } from "../components";
+import { Badge, IconBox } from "../components";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 
@@ -29,7 +29,7 @@ function MiniGames() {
 
   return (
     <div className="min-h-screen bg-[#F6FAF6] pb-20">
-      <EcoQuestNav variant="app" />
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         <div className="mb-6">
           <div>

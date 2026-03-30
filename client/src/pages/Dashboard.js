@@ -30,7 +30,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { EcoQuestNav, EcoLoader } from "../components";
+import { EcoLoader } from "../components";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import { getStoredUser } from "../utils/authStorage";
@@ -469,7 +469,7 @@ function Dashboard() {
         <div className="absolute bottom-[-7rem] left-[-3rem] w-[30rem] h-[30rem] rounded-full bg-lime-200/15 blur-[95px]" />
       </div>
 
-      <EcoQuestNav variant="app" xp={points} />
+
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <motion.div

@@ -19,7 +19,7 @@ import {
   Package,
   Target,
 } from "lucide-react";
-import { EcoQuestNav, Confetti } from "../components";
+import { Confetti } from "../components";
 import { apiRequest } from "../api/httpClient";
 import "./EcoStore.css";
 
@@ -499,23 +499,19 @@ export default function EcoStore() {
 
   if (loading) {
     return (
-      <>
-        <EcoQuestNav variant="app" xp={0} />
-        <div className="eco-store-loading">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-            className="eco-store-spinner"
-          />
-          <p className="mt-4 text-gray-500 font-semibold">Loading Eco Store…</p>
-        </div>
-      </>
+      <div className="eco-store-loading">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="eco-store-spinner"
+        />
+        <p className="mt-4 text-gray-500 font-semibold">Loading Eco Store…</p>
+      </div>
     );
   }
 
   return (
     <>
-      <EcoQuestNav variant="app" xp={userPoints} />
 
       <Confetti show={showConfetti} onComplete={() => setShowConfetti(false)} />
 
