@@ -18,7 +18,7 @@ import useSound from "../hooks/useSound";
 import confetti from "canvas-confetti";
 
 function getDifficultyColor(d) {
-  const diff = (d || "easy").toLowerCase();
+  const diff = String(d || "easy").toLowerCase();
   if (diff === "hard") return "red";
   if (diff === "medium") return "yellow";
   return "green";

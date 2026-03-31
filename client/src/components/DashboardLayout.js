@@ -9,8 +9,9 @@ export default function DashboardLayout() {
 
   // Sync latest XP on layout mount to ensure accuracy across tabs
   useEffect(() => {
-    apiRequest("/api/users/profile")
-      .then(user => {
+    apiRequest("/api/auth/me")
+      .then(res => {
+        const user = res?.user || res;
         if (user && typeof user.points === "number") {
           setGlobalXp(user.points);
           // Sync storage silently
