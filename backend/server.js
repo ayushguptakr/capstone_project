@@ -72,6 +72,10 @@ app.use("/api/admin", adminRoutes);
 const principalRoutes = require("./routes/principalRoutes");
 app.use("/api/principal", principalRoutes);
 
+// Events (Public/Shared for authenticated users)
+const eventRoutes = require("./routes/eventRoutes");
+app.use("/api/events", eventRoutes);
+
 // Health check
 app.get("/", (req, res) => {
   res.json({ message: "Backend running...", status: "ok" });

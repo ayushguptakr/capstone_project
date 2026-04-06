@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldAlert, Trophy, Users, ClipboardCheck } from "lucide-react";
+import { ShieldAlert, Trophy, Users, ClipboardCheck, Award } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -12,18 +12,24 @@ import {
 } from "recharts";
 import TeacherShell from "../components/TeacherShell";
 import { fetchTeacherBootstrap } from "../api/teacherApi";
+import { apiRequest } from "../api/httpClient";
 
 function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
   const [verificationQueue, setVerificationQueue] = useState([]);
+  const [events, setEvents] = useState([]);
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchTeacherBootstrap();
+        const [data, eventsData] = await Promise.all([
+          fetchTeacherBootstrap(),
+          apiRequest("/api/events").catch(() => ({ events: [] }))
+        ]);
         setAnalytics(data.analytics);
         setVerificationQueue(data.verificationQueue);
+        setEvents(eventsData.events || []);
       } catch (error) {
         console.error(error);
       } finally {
@@ -230,6 +236,30 @@ function TeacherDashboard() {
                 No teacher leaderboard data yet.
               </div>
             ) : null}
+          </div>
+        </article>
+        
+        <article className="rounded-2xl bg-white border border-slate-200 p-5">
+          <h2 className="font-display font-bold text-xl mb-3 flex items-center gap-2">
+            <Award className="w-5 h-5 text-purple-500" /> Active School Events
+          </h2>
+          <div className="space-y-3 overflow-y-auto max-h-64 no-scrollbar">
+            {events.map((ev) => (
+              <div key={ev._id} className="rounded-xl bg-gradient-to-r from-purple-50 to-fuchsia-50 border border-purple-100 p-3 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-1">
+                  <p className="font-bold text-purple-900 leading-tight pr-2">{ev.title}</p>
+                  <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-purple-200 text-purple-800 shrink-0">{ev.type}</span>
+                </div>
+                <p className="text-purple-700 text-xs font-semibold mt-1 opacity-80 uppercase tracking-wide">
+                  Scope: {ev.scope || "school-wide"}
+                </p>
+              </div>
+            ))}
+            {events.length === 0 && (
+              <div className="text-sm text-slate-500 text-center py-6 border border-dashed border-slate-200 rounded-xl">
+                No active events from Principal.
+              </div>
+            )}
           </div>
         </article>
       </section>

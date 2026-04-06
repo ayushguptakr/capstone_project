@@ -113,6 +113,7 @@ function Dashboard() {
   const [gamificationEvents, setGamificationEvents] = useState([]);
   const [activeBadge, setActiveBadge] = useState(null);
   const [dailySecondsLeft, setDailySecondsLeft] = useState(6 * 60 * 60);
+  const [activeSchoolEvents, setActiveSchoolEvents] = useState([]);
   const [typedGreeting, setTypedGreeting] = useState("");
   const [levelFlash, setLevelFlash] = useState(false);
   const prevLevelRef = useRef(null);
@@ -173,14 +174,16 @@ function Dashboard() {
           }
         }
         if (user.role === "student") {
-          const [progressData, attemptsData, submissionsData] = await Promise.all([
+          const [progressData, attemptsData, submissionsData, schoolEventsData] = await Promise.all([
             apiRequest("/api/leaderboard/progress"),
             apiRequest("/api/quizzes/attempts/my"),
             apiRequest("/api/submissions/my"),
+            apiRequest("/api/events").catch(()=>({events: []}))
           ]);
           setProgress(progressData);
           setAttempts(attemptsData);
           setMySubs(submissionsData);
+          setActiveSchoolEvents(schoolEventsData?.events || []);
         }
       } catch (e) {
         console.error(e);
@@ -839,6 +842,36 @@ function Dashboard() {
                     />
                   </div>
                 </div>
+              </div>
+            </motion.section>
+
+            <motion.section
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.14 }}
+              className="rounded-3xl bg-white/40 backdrop-blur-2xl border border-white/70 shadow-[0_20px_60px_-20px_rgba(16,185,129,0.18)] p-6 sm:p-8 mb-8"
+            >
+              <h2 className="font-display font-bold text-xl text-[#2D332F] mb-6 flex items-center gap-2">
+                <Award className="w-6 h-6 text-purple-600" strokeWidth={2.2} />
+                School Events
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {activeSchoolEvents.map((ev) => (
+                  <div key={ev._id} className="rounded-2xl bg-gradient-to-br from-purple-50/70 to-fuchsia-50/70 border border-purple-200/60 p-5 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="font-display font-bold text-lg text-purple-900 leading-tight pr-2">{ev.title}</p>
+                      <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-purple-200/80 text-purple-800 shrink-0">{ev.type}</span>
+                    </div>
+                    <p className="text-purple-700/80 text-xs font-semibold uppercase tracking-wide">
+                      Scope: {ev.scope || "school-wide"}
+                    </p>
+                  </div>
+                ))}
+                {activeSchoolEvents.length === 0 && (
+                  <div className="col-span-full text-slate-500 font-medium text-center py-6 border border-dashed border-slate-300 rounded-2xl bg-white/40">
+                    No active school events right now. Check back later!
+                  </div>
+                )}
               </div>
             </motion.section>
 
