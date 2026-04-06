@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { LogOut, School as SchoolIcon, Users, Plus, Trash2, Edit, UserPlus, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { LogOut, School as SchoolIcon, Users, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
 import { clearAuth } from "../utils/authStorage";
 

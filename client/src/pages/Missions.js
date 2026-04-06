@@ -8,8 +8,6 @@ import {
   ArrowRight, 
   ArrowLeft,
   Star,
-  Shield,
-  Search,
   Gamepad2,
   Brain,
   ShoppingBag,
@@ -17,7 +15,6 @@ import {
   Zap,
   Leaf,
   Target,
-  Play,
   Hourglass,
   Sparkles
 } from "lucide-react";
