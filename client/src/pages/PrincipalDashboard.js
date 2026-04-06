@@ -83,10 +83,13 @@ export default function PrincipalDashboard() {
     e.preventDefault();
     if (!newEventTitle) return;
     try {
-      await apiRequest("/api/principal/events", "POST", {
-        title: newEventTitle,
-        type: newEventType,
-        scope: newEventScope
+      await apiRequest("/api/principal/events", {
+        method: "POST",
+        body: {
+          title: newEventTitle,
+          type: newEventType,
+          scope: newEventScope
+        }
       });
       setNewEventTitle("");
       fetchEvents();
