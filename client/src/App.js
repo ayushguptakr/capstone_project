@@ -35,8 +35,16 @@ import MascotCustomize from "./pages/MascotCustomize";
 import RequireAuth from "./components/RequireAuth";
 import RequireStudent from "./components/RequireStudent";
 import RequireTeacher from "./components/RequireTeacher";
+import RequirePrincipal from "./components/RequirePrincipal";
+import RequireAdmin from "./components/RequireAdmin";
 import GuestOnly from "./components/GuestOnly";
 import DashboardLayout from "./components/DashboardLayout";
+import PrincipalDashboard from "./pages/PrincipalDashboard";
+import AdminLayout from "./components/AdminLayout";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminSchools from "./pages/AdminSchools";
+import AdminUsers from "./pages/AdminUsers";
+import SetPassword from "./pages/SetPassword";
 
 function App() {
   return (
@@ -46,6 +54,9 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
         <Route path="/signup" element={<GuestOnly><Signup /></GuestOnly>} />
+
+        {/* First-login password reset (any authenticated role) */}
+        <Route path="/set-password" element={<RequireAuth><SetPassword /></RequireAuth>} />
 
         {/* ============================================================
             STUDENT ROUTES — wrapped in DashboardLayout (persistent nav)
@@ -102,6 +113,24 @@ function App() {
         <Route path="/teacher/announcements" element={<RequireTeacher><TeacherAnnouncements /></RequireTeacher>} />
         <Route path="/teacher/classes" element={<RequireTeacher><TeacherClasses /></RequireTeacher>} />
         <Route path="/teacher/settings" element={<RequireTeacher><TeacherSettings /></RequireTeacher>} />
+
+        {/* ============================================================
+            PRINCIPAL ROUTES
+            ============================================================ */}
+        <Route path="/principal/dashboard" element={<RequirePrincipal><PrincipalDashboard /></RequirePrincipal>} />
+        <Route path="/principal" element={<Navigate to="/principal/dashboard" replace />} />
+
+        {/* ============================================================
+            ADMIN PANEL — multi-page, own layout, no gamification
+            ============================================================ */}
+        <Route element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/schools" element={<AdminSchools />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+        </Route>
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/developer/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/developer" element={<Navigate to="/admin/dashboard" replace />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />

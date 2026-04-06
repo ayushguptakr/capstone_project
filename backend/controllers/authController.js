@@ -45,6 +45,8 @@ exports.signup = async (req, res) => {
         level: user.level || 1,
         streakCurrent: user.streakCurrent || 0,
         equippedAvatar: user.equippedAvatar || "User",
+        isFirstLogin: user.isFirstLogin,
+        schoolId: user.schoolId || null,
       },
       token: generateToken(user._id, user.role),
     });
@@ -81,6 +83,8 @@ exports.login = async (req, res) => {
         level: user.level || 1,
         streakCurrent: user.streakCurrent || 0,
         equippedAvatar: user.equippedAvatar || "User",
+        isFirstLogin: user.isFirstLogin,
+        schoolId: user.schoolId || null,
       },
       token: generateToken(user._id, user.role),
     });
@@ -134,6 +138,26 @@ exports.updateSkins = async (req, res) => {
       { new: true }
     ).select("-password -__v");
     res.json({ message: "Skin updated", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// -------------------- SET NEW PASSWORD (FIRST LOGIN) --------------------
+exports.setNewPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ message: "Password is required" });
+
+    // The user model pre-save hook handles bcrypt hashing
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.password = password;
+    user.isFirstLogin = false;
+    await user.save();
+
+    res.json({ message: "Password updated successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -64,6 +64,14 @@ app.use("/api/green-credits", greenCreditsRoutes);
 const gamificationRoutes = require("./routes/gamification");
 app.use("/api/gamification", gamificationRoutes);
 
+// Admin / Developer
+const adminRoutes = require("./routes/adminRoutes");
+app.use("/api/admin", adminRoutes);
+
+// Principal
+const principalRoutes = require("./routes/principalRoutes");
+app.use("/api/principal", principalRoutes);
+
 // Health check
 app.get("/", (req, res) => {
   res.json({ message: "Backend running...", status: "ok" });

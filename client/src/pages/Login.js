@@ -31,8 +31,23 @@ function Login() {
       const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
       localStorage.setItem("user", JSON.stringify(res.data.user));
       localStorage.setItem("token", res.data.token);
-      const role = res.data.user?.role;
-      navigate(role === "teacher" ? "/teacher-dashboard" : "/dashboard");
+
+      const user = res.data.user;
+
+      // First-login intercept
+      if (user.isFirstLogin) {
+        navigate("/set-password");
+        return;
+      }
+
+      // Role-based redirection
+      const roleHome = {
+        student: "/dashboard",
+        teacher: "/teacher-dashboard",
+        principal: "/principal/dashboard",
+        admin: "/admin/dashboard",
+      };
+      navigate(roleHome[user.role] || "/dashboard");
     } catch (err) {
       setIsLoading(false);
       setSubmitError(err.response?.data?.message || "Login failed. Check your details and try again.");
@@ -57,7 +72,7 @@ function Login() {
           Welcome back
         </h1>
         <p className="mt-2 text-center text-gray-600 font-body text-sm sm:text-base leading-relaxed">
-          Pick up your quest—small wins for you, big wins for the planet{" "}
+          Student, Teacher, and Principal access{" "}
           <span aria-hidden>🌍</span>
         </p>
 

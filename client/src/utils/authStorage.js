@@ -32,3 +32,13 @@ export function isStudentRole(role) {
 export function isTeacherRole(role) {
   return role === "teacher" || role === "admin";
 }
+
+/** Principal-facing features. */
+export function isPrincipalRole(role) {
+  return role === "principal" || role === "admin";
+}
+
+/** Admin/Developer-facing features. */
+export function isAdminRole(role) {
+  return role === "admin";
+}

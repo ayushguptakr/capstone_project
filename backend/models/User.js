@@ -10,10 +10,12 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["student", "teacher", "admin", "sponsor"],
+      enum: ["student", "teacher", "admin", "sponsor", "principal"],
       default: "student",
     },
     school: { type: String },
+    schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "School" },
+    isFirstLogin: { type: Boolean, default: true },
     /** Optional: for class-level aggregation (e.g. "Class 10-A"). */
     className: { type: String },
     /** Optional: normalized class and section support for filtering/grouping. */
