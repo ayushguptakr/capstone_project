@@ -18,7 +18,8 @@ import {
   Leaf,
   Target,
   Play,
-  Hourglass
+  Hourglass,
+  Sparkles
 } from "lucide-react";
 import { Badge, IconBox, EcoLoader, SproutyQuizBuddy } from "../components";
 import { apiRequest } from "../api/httpClient";
