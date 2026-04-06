@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const School = require("../models/School");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
@@ -7,10 +8,20 @@ const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
+// -------------------- PUBLIC SCHOOLS --------------------
+exports.getPublicSchools = async (req, res) => {
+  try {
+    const schools = await School.find({ status: { $ne: "inactive" } }).select("name address");
+    res.json({ schools });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // -------------------- SIGNUP --------------------
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, role, school, className, class: classValue, section } = req.body;
+    const { name, email, password, role, schoolId, className, class: classValue, section } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -24,7 +35,7 @@ exports.signup = async (req, res) => {
       email,
       password,
       role: role || "student",
-      school,
+      schoolId: schoolId || undefined,
       className: className || "",
       class: classValue || "",
       section: section || "",
@@ -97,7 +108,7 @@ exports.login = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select(
-      "name role email school className class section points level experiencePoints streakCurrent streakLastActiveAt lastActivityAt badges equippedAvatar equippedSkins"
+      "name role email schoolId className class section points level experiencePoints streakCurrent streakLastActiveAt lastActivityAt badges equippedAvatar equippedSkins"
     );
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({ user });

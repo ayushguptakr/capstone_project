@@ -11,13 +11,25 @@ function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("student");
-  const [school, setSchool] = useState("");
+  const [schoolId, setSchoolId] = useState("");
+  const [schools, setSchools] = useState([]);
   const [classValue, setClassValue] = useState("");
   const [section, setSection] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    // Fetch available schools on mount
+    axios.get(`${API_BASE_URL}/api/auth/schools`)
+      .then(res => {
+        setSchools(res.data.schools || []);
+      })
+      .catch(err => {
+        console.error("Failed to fetch schools:", err);
+      });
+  }, []);
 
   const validate = () => {
     const next = {};
@@ -40,7 +52,7 @@ function Signup() {
         email,
         password,
         role,
-        school,
+        schoolId: schoolId || undefined,
         class: classValue,
         section,
         className: classValue && section ? `${classValue}${section}` : classValue,
@@ -144,15 +156,19 @@ function Signup() {
             <option value="teacher">Teacher</option>
           </AuthSelect>
 
-          <AuthInput
+          <AuthSelect
             id="signup-school"
-            label="School name"
-            type="text"
-            placeholder="e.g. Green Valley High"
-            value={school}
-            onChange={(e) => setSchool(e.target.value)}
-            autoComplete="organization"
-          />
+            label="School"
+            value={schoolId}
+            onChange={(e) => setSchoolId(e.target.value)}
+          >
+            <option value="">— Select your school —</option>
+            {schools.map((s) => (
+              <option key={s._id} value={s._id}>
+                {s.name} {s.address ? `(${s.address})` : ""}
+              </option>
+            ))}
+          </AuthSelect>
 
           {role === "student" && (
             <div className="grid sm:grid-cols-2 gap-4">
