@@ -63,6 +63,16 @@ const greenCreditsRoutes = require("./routes/greenCredits");
 app.use("/api/green-credits", greenCreditsRoutes);
 const gamificationRoutes = require("./routes/gamification");
 app.use("/api/gamification", gamificationRoutes);
+const missionRoutes = require("./routes/missions");
+app.use("/api/missions", missionRoutes);
+const leagueRoutes = require("./routes/leagues");
+app.use("/api/leagues", leagueRoutes);
+const streakRoutes = require("./routes/streaks");
+app.use("/api/streaks", streakRoutes);
+
+// AI / Sprouty Routes
+const aiRoutes = require("./routes/ai");
+app.use("/api/ai", aiRoutes);
 
 // Admin / Developer
 const adminRoutes = require("./routes/adminRoutes");
@@ -75,6 +85,10 @@ app.use("/api/principal", principalRoutes);
 // Events (Public/Shared for authenticated users)
 const eventRoutes = require("./routes/eventRoutes");
 app.use("/api/events", eventRoutes);
+
+// Announcements (Student-facing)
+const announcementRoutes = require("./routes/announcements");
+app.use("/api/announcements", announcementRoutes);
 
 // Health check
 app.get("/", (req, res) => {

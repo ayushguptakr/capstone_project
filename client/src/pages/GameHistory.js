@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./GameHistory.css";
+import { BarChart3 } from "lucide-react";
 import { fetchGamificationMe } from "../api/gamificationApi";
 import { apiRequest } from "../api/httpClient";
 
@@ -29,7 +30,7 @@ function GameHistory() {
   return (
     <div className="game-history-page">
       <div className="game-history-header">
-        <h1>📊 Game History</h1>
+        <h1 className="flex items-center gap-2"><BarChart3 size={28} className="text-emerald-600" strokeWidth={2.5} /> Game History</h1>
         <button className="eco-back-btn" onClick={() => navigate("/mini-games")}>
           ← Back to Games
         </button>

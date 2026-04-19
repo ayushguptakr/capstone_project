@@ -31,6 +31,15 @@ router.post(
   submitTask
 );
 
+// Student resubmits task submission
+router.post(
+  "/:id/resubmit",
+  protect,
+  authorizeRoles("student"),
+  handleSingleUpload,
+  require("../controllers/submissionController").resubmitTask
+);
+
 // Student: view their submissions
 router.get("/my", protect, authorizeRoles("student"), getMySubmissions);
 

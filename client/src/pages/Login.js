@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { AuthShell, AuthFloatingLeaf, AuthInput } from "../components/auth";
+import { Globe } from "lucide-react";
 import { EcoLoader } from "../components";
 import { API_BASE_URL } from "../api/httpClient";
 
@@ -73,7 +74,7 @@ function Login() {
         </h1>
         <p className="mt-2 text-center text-gray-600 font-body text-sm sm:text-base leading-relaxed">
           Student, Teacher, and Principal access{" "}
-          <span aria-hidden>🌍</span>
+          <span aria-hidden className="inline-flex items-center justify-center align-text-bottom"><Globe className="w-5 h-5 text-purple-600" /></span>
         </p>
 
         <form onSubmit={handleLogin} className="mt-8 space-y-5">

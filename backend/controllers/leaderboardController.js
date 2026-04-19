@@ -19,7 +19,7 @@ const getLeaderboard = async (req, res) => {
     }
 
     const leaderboard = await User.find(filter)
-      .select("name school className class section points level badges")
+      .select("name school className class section points level badges league weeklyXP streakCurrent")
       .sort({ points: -1 })
       .limit(parseInt(limit));
 

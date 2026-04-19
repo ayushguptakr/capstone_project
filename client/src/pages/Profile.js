@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   LogOut,
   Leaf,
+  Flame,
 } from "lucide-react";
 import * as AllIcons from "lucide-react";
 import { EcoLoader } from "../components";
@@ -246,7 +247,7 @@ export default function Profile() {
                   </div>
                   <div className="p-4 rounded-2xl bg-orange-50/90 border border-orange-100 col-span-2">
                     <div className="flex items-center gap-2 text-orange-800 font-semibold text-sm mb-1">
-                      🔥 Streak
+                      <Flame className="w-4 h-4 text-orange-500" strokeWidth={2.5} /> Streak
                     </div>
                     <p className="font-display font-bold text-2xl text-orange-900 tabular-nums">
                       {loading ? "…" : `${user.streakCurrent || 0} days`}

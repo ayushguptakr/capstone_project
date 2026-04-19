@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { PenSquare } from "lucide-react";
 import "./CreateQuiz.css";
 import { apiRequest } from "../api/httpClient";
+import { useAlert } from "../components/ui/AlertProvider";
 
 function CreateQuiz() {
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
   const [quiz, setQuiz] = useState({
     title: "",
     description: "",
@@ -64,18 +67,18 @@ function CreateQuiz() {
     
     // Validation
     if (!quiz.title.trim() || !quiz.description.trim()) {
-      alert("Please fill in title and description");
+      showAlert({ type: "warning", message: "Please fill in title and description" });
       return;
     }
 
     for (let i = 0; i < quiz.questions.length; i++) {
       const q = quiz.questions[i];
       if (!q.question.trim()) {
-        alert(`Please fill in question ${i + 1}`);
+        showAlert({ type: "warning", message: `Please fill in question ${i + 1}` });
         return;
       }
       if (q.options.some(opt => !opt.trim())) {
-        alert(`Please fill in all options for question ${i + 1}`);
+        showAlert({ type: "warning", message: `Please fill in all options for question ${i + 1}` });
         return;
       }
     }
@@ -87,11 +90,11 @@ function CreateQuiz() {
         body: quiz,
         retries: 0,
       });
-      alert("Quiz created successfully!");
-      navigate("/dashboard");
+      showAlert({ type: "success", message: "Quiz created successfully!" });
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (error) {
       console.error("Error creating quiz:", error);
-      alert(error.message || "Failed to create quiz");
+      showAlert({ type: "error", message: error.message || "Failed to create quiz" });
     } finally {
       setLoading(false);
     }
@@ -100,7 +103,7 @@ function CreateQuiz() {
   return (
     <div className="create-quiz-container">
       <div className="create-quiz-header">
-        <h1>📝 Create Eco-Quiz</h1>
+        <h1 className="flex items-center gap-2"><PenSquare size={24} /> Create Eco-Quiz</h1>
         <button className="back-btn" onClick={() => navigate("/dashboard")}>
           ← Back to Dashboard
         </button>
@@ -137,11 +140,11 @@ function CreateQuiz() {
                 value={quiz.category}
                 onChange={(e) => handleQuizChange("category", e.target.value)}
               >
-                <option value="waste-management">♻️ Waste Management</option>
-                <option value="energy">⚡ Energy</option>
-                <option value="water">💧 Water Conservation</option>
-                <option value="biodiversity">🌿 Biodiversity</option>
-                <option value="climate">🌍 Climate Change</option>
+                <option value="waste-management">Waste Management</option>
+                <option value="energy">Energy</option>
+                <option value="water">Water Conservation</option>
+                <option value="biodiversity">Biodiversity</option>
+                <option value="climate">Climate Change</option>
               </select>
             </div>
 

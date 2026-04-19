@@ -6,10 +6,12 @@ import { IconBox } from "../components";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import { apiRequest } from "../api/httpClient";
+import { useAlert } from "../components/ui/AlertProvider";
 
 function SubmitTask() {
   const { taskId } = useParams();
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [geo, setGeo] = useState(null);
@@ -46,13 +48,18 @@ function SubmitTask() {
     }
   };
 
+  const searchParams = new URLSearchParams(window.location.search);
+  const resubmitId = searchParams.get("resubmit");
+  const isResubmit = !!resubmitId;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     playClick();
-    if (!text && !file) {
-      alert("Add a description or upload proof!");
+    if (!text && !file && !isResubmit) {
+      showAlert({ type: "warning", message: "Add a description or upload proof!" });
       return;
     }
+    
     try {
       setLoading(true);
       const formData = new FormData();
@@ -65,18 +72,25 @@ function SubmitTask() {
       }
       if (file) formData.append("file", file);
 
-      await apiRequest("/api/submissions/submit", {
+      const endpoint = isResubmit 
+        ? `/api/submissions/${resubmitId}/resubmit` 
+        : `/api/submissions/submit`;
+
+      await apiRequest(endpoint, {
         method: "POST",
         body: formData,
         isMultipart: true,
         retries: 0,
       });
-      alert("Submission uploaded! 🌱");
+      
+      showAlert({ type: "success", message: isResubmit ? "Mission resubmitted!" : "Submission uploaded!" });
       triggerSuccess();
-      triggerXPFromEvent(10, e);
-      navigate("/missions");
+      
+      // Bigger celebration on resubmit success handling handled on approval
+      triggerXPFromEvent(10, e); 
+      setTimeout(() => navigate("/missions"), 1500);
     } catch (err) {
-      alert(err.response?.data?.message || "Submission failed!");
+      showAlert({ type: "error", message: err.response?.data?.message || "Submission failed!" });
     } finally {
       setLoading(false);
     }
@@ -96,7 +110,7 @@ function SubmitTask() {
             </IconBox>
           </div>
           <h1 className="font-display font-bold text-xl text-eco-primary text-center mb-6">
-            Submit Mission Proof
+            {isResubmit ? "Fix & Resubmit Proof" : "Submit Mission Proof"}
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-5">

@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 
 export default function XPFloat({ amount, x, y }) {
   return (
@@ -21,7 +22,7 @@ export default function XPFloat({ amount, x, y }) {
         transition={{ duration: 0.9, ease: "easeOut" }}
         className="ml-1 inline-block text-emerald-400"
       >
-        ✨
+        <Sparkles className="w-4 h-4" />
       </motion.span>
     </motion.div>
   );

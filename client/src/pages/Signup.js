@@ -10,7 +10,6 @@ function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
   const [schoolId, setSchoolId] = useState("");
   const [schools, setSchools] = useState([]);
   const [classValue, setClassValue] = useState("");
@@ -51,7 +50,7 @@ function Signup() {
         name,
         email,
         password,
-        role,
+        // No role field — backend enforces student-only for public signup
         schoolId: schoolId || undefined,
         class: classValue,
         section,
@@ -59,8 +58,7 @@ function Signup() {
       });
       localStorage.setItem("user", JSON.stringify(res.data.user));
       localStorage.setItem("token", res.data.token);
-      const r = res.data.user?.role;
-      navigate(r === "teacher" ? "/teacher-dashboard" : "/dashboard");
+      navigate("/dashboard");
     } catch (err) {
       setIsLoading(false);
       setSubmitError(err.response?.data?.message || "Could not create account. Try again or use a different email.");
@@ -85,7 +83,7 @@ function Signup() {
           Join EcoQuest
         </h1>
         <p className="mt-2 text-center text-gray-600 font-body text-sm sm:text-base leading-relaxed">
-        Start your journey as an eco hero
+        Create your student account and start your eco journey
         </p>
 
         <form onSubmit={handleSignup} className="mt-8 space-y-4">
@@ -147,16 +145,6 @@ function Signup() {
           />
 
           <AuthSelect
-            id="signup-role"
-            label="Role"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-          >
-            <option value="student">Student</option>
-            <option value="teacher">Teacher</option>
-          </AuthSelect>
-
-          <AuthSelect
             id="signup-school"
             label="School"
             value={schoolId}
@@ -170,26 +158,24 @@ function Signup() {
             ))}
           </AuthSelect>
 
-          {role === "student" && (
-            <div className="grid sm:grid-cols-2 gap-4">
-              <AuthInput
-                id="signup-class"
-                label="Class"
-                type="text"
-                placeholder="e.g. 10"
-                value={classValue}
-                onChange={(e) => setClassValue(e.target.value)}
-              />
-              <AuthInput
-                id="signup-section"
-                label="Section"
-                type="text"
-                placeholder="e.g. A"
-                value={section}
-                onChange={(e) => setSection(e.target.value.toUpperCase())}
-              />
-            </div>
-          )}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <AuthInput
+              id="signup-class"
+              label="Class"
+              type="text"
+              placeholder="e.g. 10"
+              value={classValue}
+              onChange={(e) => setClassValue(e.target.value)}
+            />
+            <AuthInput
+              id="signup-section"
+              label="Section"
+              type="text"
+              placeholder="e.g. A"
+              value={section}
+              onChange={(e) => setSection(e.target.value.toUpperCase())}
+            />
+          </div>
 
           <div className="pt-2">
             <motion.button

@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, School as SchoolIcon, Users, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
 import { clearAuth } from "../utils/authStorage";
+import { useAlert } from "../components/ui/AlertProvider";
 
 export default function DeveloperDashboard() {
   const [schools, setSchools] = useState([]);
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState("schools"); // schools, users
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
 
   // New School Form
   const [schoolName, setSchoolName] = useState("");
@@ -53,8 +55,9 @@ export default function DeveloperDashboard() {
       setSchoolName("");
       setSchoolAddress("");
       fetchSchools();
+      showAlert({ type: "success", message: "School created successfully!" });
     } catch (err) {
-      alert("Failed to create school");
+      showAlert({ type: "error", message: "Failed to create school" });
     }
   };
 
@@ -63,8 +66,9 @@ export default function DeveloperDashboard() {
     try {
       await apiRequest(`/api/admin/users/${id}`, "DELETE");
       fetchUsers();
+      showAlert({ type: "success", message: "User deleted" });
     } catch (err) {
-      alert("Failed to delete user");
+      showAlert({ type: "error", message: "Failed to delete user" });
     }
   };
 

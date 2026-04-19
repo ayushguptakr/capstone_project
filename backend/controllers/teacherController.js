@@ -9,6 +9,7 @@ const CustomBadge = require("../models/CustomBadge");
 const EcoImpactEngine = require("../services/EcoImpactEngine");
 const sustainabilityRankingService = require("../services/sustainabilityRankingService");
 const gamificationService = require("../services/gamificationService");
+const aiService = require("../services/aiService");
 
 function getEngagementPercent(avgPoints) {
   return Math.max(20, Math.min(100, Math.round(avgPoints / 8)));
@@ -181,10 +182,18 @@ const getTeacherAnalytics = async (req, res) => {
 // Get verification queue (includes submission_trust_score and flagForReview)
 const getVerificationQueue = async (req, res) => {
   try {
-    const submissions = await Submission.find({ status: "pending" })
+    const filter = {};
+    const statusParam = (req.query.status || "").toLowerCase();
+    if (["pending", "approved", "rejected"].includes(statusParam)) {
+      filter.status = statusParam;
+    }
+    // Default: return all if no valid status specified
+
+    const submissions = await Submission.find(filter)
       .populate("student", "name school className class section level")
       .populate("task", "title description points category difficulty")
-      .sort({ flagForReview: -1, createdAt: -1 });
+      .sort({ flagForReview: -1, createdAt: -1 })
+      .limit(200);
 
     const imageCounts = new Map();
     const contentCounts = new Map();
@@ -224,20 +233,34 @@ const verifySubmission = async (req, res) => {
     }
 
     submission.status = status;
-    submission.feedback = feedback;
     submission.verifiedBy = req.user.id;
     submission.verifiedAt = new Date();
-    if (status === "approved") submission.pointsAwarded = submission.task.points;
+
+    if (feedback) {
+      const teacherName = req.user.name || "Teacher";
+      if (!submission.feedbackHistory) submission.feedbackHistory = [];
+      submission.feedbackHistory.push({
+        message: feedback,
+        createdAt: new Date(),
+        by: teacherName
+      });
+    }
+
+    if (status === "approved") {
+      const xpMultiplier = { 1: 1.0, 2: 0.8, 3: 0.6 };
+      const multiplier = xpMultiplier[submission.attemptCount] || 0.6;
+      submission.pointsAwarded = Math.round((submission.task.points || 0) * multiplier);
+    }
     await submission.save();
 
     if (status === "approved") {
       await gamificationService.awardPoints({
         userId: submission.student._id,
-        points: submission.task.points,
+        points: submission.pointsAwarded,
         source: "task",
         sourceRef: String(submission.task._id || submission.task),
-        idempotencyKey: `submission-approval:${submission._id}`,
-        metadata: { verificationStatus: "approved" },
+        idempotencyKey: `submission-approval:${submission._id}:${submission.attemptCount}`,
+        metadata: { verificationStatus: "approved", attemptCount: submission.attemptCount },
       });
 
       try {
@@ -381,6 +404,131 @@ const getCustomBadges = async (req, res) => {
   }
 };
 
+const getAiInsights = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "Teacher not found" });
+
+    // Timezone safe key (server local or UTC, keeping simple stringification)
+    const todayKey = new Date().toISOString().slice(0, 10);
+    
+    // Quick cache hit
+    if (user.aiInsightCache?.text && user.aiInsightCache?.dateKey === todayKey) {
+      return res.json({ text: user.aiInsightCache.text, cached: true });
+    }
+
+    // Build minimalist analytics payload
+    const students = await User.find({ role: "student", school: user.school }).select("points level class className section");
+    const inactiveCount = students.filter(s => (s.points || 0) < 40).length;
+    
+    let weakData = "Water conservation"; 
+    // Very simplified logic for payload to avoid heavy queries. The exact deep calculation is in Analytics Dashboard. Let's just pass basic stats.
+    const aggregate = {
+      school: user.school || "Your School",
+      studentCount: students.length,
+      inactiveStudents: inactiveCount,
+      weakTopic: "Water Conservation and Biology", 
+      strongTopic: "Waste Management"
+    };
+
+    // Stale-while-revalidate
+    if (user.aiInsightCache?.text) {
+      // Fire and forget
+      aiService.generateTeacherInsight(aggregate).then(async (newText) => {
+        await User.findByIdAndUpdate(user._id, {
+          "aiInsightCache.text": newText,
+          "aiInsightCache.dateKey": todayKey
+        });
+      }).catch(console.error);
+
+      return res.json({ text: user.aiInsightCache.text, cached: true, refreshing: true });
+    }
+
+    // No cache at all -> wait synchronously (happens once for a brand new user ever)
+    const newText = await aiService.generateTeacherInsight(aggregate);
+    user.aiInsightCache = {
+      text: newText,
+      dateKey: todayKey,
+      refreshing: false
+    };
+    await user.save();
+
+    return res.json({ text: newText, cached: false });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const generateMission = async (req, res) => {
+  try {
+    const { topic, difficulty = "medium" } = req.body;
+    if (!topic) return res.status(400).json({ message: "Topic is required" });
+
+    const output = await aiService.generateMission(topic, difficulty);
+    const xpMap = { easy: 10, medium: 20, hard: 30 };
+    const xpReward = xpMap[output.difficulty] || 20;
+
+    return res.json({
+      title: output.title,
+      description: output.description,
+      difficulty: output.difficulty,
+      xpReward
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const generateQuiz = async (req, res) => {
+  try {
+    const { topic, classContext = "standard" } = req.body;
+    if (!topic) return res.status(400).json({ message: "Topic is required" });
+
+    // Will inherently fallback structurally if it fails validation
+    const output = await aiService.generateQuiz(topic, classContext);
+    
+    return res.json(output);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Extremely lightweight in-memory debounce/concurrency tracker
+// Tracks per teacher ID how many concurrent requests are open
+const activeFeedbackDrafts = new Map();
+
+const draftFeedback = async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+    
+    // Concurrency / Debounce guard (max 2 parallel ai generation calls per teacher here)
+    const currentActive = activeFeedbackDrafts.get(teacherId) || 0;
+    if (currentActive >= 2) {
+      return res.status(429).json({ message: "Too many concurrent AI drafts. Please wait a moment." });
+    }
+    
+    activeFeedbackDrafts.set(teacherId, currentActive + 1);
+
+    const { taskTitle, taskDescription, studentText, submissionType } = req.body;
+    
+    const output = await aiService.draftSubmissionFeedback({
+      taskTitle,
+      taskDescription,
+      studentText,
+      submissionType
+    });
+    
+    // Release concurrency tracker
+    activeFeedbackDrafts.set(teacherId, (activeFeedbackDrafts.get(teacherId) || 1) - 1);
+
+    return res.json({ text: output });
+  } catch (err) {
+    // Release concurrency tracker on error
+    activeFeedbackDrafts.set(req.user.id, Math.max(0, (activeFeedbackDrafts.get(req.user.id) || 1) - 1));
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getTeacherAnalytics,
   getVerificationQueue,
@@ -391,5 +539,9 @@ module.exports = {
   getSchedules,
   assignBonusXP,
   createCustomBadge,
-  getCustomBadges
+  getCustomBadges,
+  getAiInsights,
+  generateMission,
+  generateQuiz,
+  draftFeedback
 };

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PlantGrowthGame.css";
 import useFeedback from "../hooks/useFeedback";
-import useSound from "../hooks/useSound";
 import { apiRequest } from "../api/httpClient";
+import GameRewardModal from "../components/GameRewardModal";
+import gamesConfig from "../data/gamesConfig";
+import useSound from "../hooks/useSound";
 
 function PlantGrowthGame() {
   const [plantStage, setPlantStage] = useState(0);
@@ -13,16 +15,23 @@ function PlantGrowthGame() {
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState("Take care of your plant!");
   const [timeLeft, setTimeLeft] = useState(60);
+  
+  const searchParams = new URLSearchParams(window.location.search);
+  const level = parseInt(searchParams.get("level")) || 1;
+  const decayRate = level === 1 ? 1 : level === 2 ? 2 : 4;
+  
+  const [masteryData, setMasteryData] = useState(null);
   const navigate = useNavigate();
   const { triggerXPFromEvent, triggerSuccess } = useFeedback();
   const { playClick } = useSound();
+  const gameConfig = gamesConfig.find(g => g.id === "plant-growth");
 
   const plantStages = ["🌱", "🌿", "🪴", "🌳", "🌲"];
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setWater(prev => Math.max(0, prev - 2));
-      setSunlight(prev => Math.max(0, prev - 1));
+      setWater(prev => Math.max(0, prev - decayRate));
+      setSunlight(prev => Math.max(0, prev - decayRate));
       
       if (water < 20 || sunlight < 20) {
         setMessage("⚠️ Plant needs care!");
@@ -39,7 +48,7 @@ function PlantGrowthGame() {
 
       setTimeLeft(prev => {
         if (prev <= 1) {
-          endGame();
+          endGame(score + (plantStage * 100));
           return 0;
         }
         return prev - 1;
@@ -48,7 +57,7 @@ function PlantGrowthGame() {
 
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [water, sunlight, plantStage]);
+  }, [water, sunlight, plantStage, score, timeLeft]);
 
   const addWater = () => {
     if (water < 100) {
@@ -64,36 +73,35 @@ function PlantGrowthGame() {
     }
   };
 
-  const endGame = async () => {
+  const endGame = async (finalScore) => {
     setGameOver(true);
-    const finalScore = score + (plantStage * 100);
     triggerSuccess();
     try {
-      await apiRequest("/api/mini-games/submit-score", {
+      const resp = await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
-        body: { gameId: "plant-growth", score: finalScore, timeSpent: 60 - timeLeft },
+        body: { gameId: "plant-growth", level, score: finalScore },
         retries: 0,
       });
+      if (resp.mastery) {
+        setMasteryData(resp.mastery);
+      }
     } catch (error) {}
   };
 
   if (gameOver) {
     const finalScore = score + (plantStage * 100);
     return (
-      <div className="game-over-container">
-        <div className="game-over-card">
-          <h1>🌳 Garden Complete!</h1>
-          <div className="plant-display">{plantStages[plantStage]}</div>
-          <div className="final-score">
-            <span className="score-value">{finalScore}</span>
-            <span className="score-label">points</span>
-          </div>
-          <p>Plant Stage: {plantStage + 1}/{plantStages.length}</p>
-          <div className="game-actions">
-            <button onClick={() => { playClick(); window.location.reload(); }} className="play-again-btn">🔄 Play Again</button>
-            <button onClick={() => { playClick(); navigate("/mini-games"); }} className="back-btn">← Back</button>
-          </div>
-        </div>
+      <div className="plant-game-container">
+        <GameRewardModal
+          show={true}
+          xpEarned={finalScore}
+          streakBonus={Math.floor(finalScore * 0.1)}
+          ecoImpact={gameConfig.ecoImpact}
+          gameName={gameConfig.name}
+          masteryData={masteryData}
+          onPlayAgain={() => { playClick(); window.location.reload(); }}
+          onClose={() => { playClick(); navigate("/mini-games"); }}
+        />
       </div>
     );
   }

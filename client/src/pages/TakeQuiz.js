@@ -3,9 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
 import { ProgressBar, Confetti, EcoLoader, SproutyQuizBuddy } from "../components";
+import QuizRewardModal from "../components/quiz/QuizRewardModal";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import { apiRequest } from "../api/httpClient";
+import { useAlert } from "../components/ui/AlertProvider";
 
 function TakeQuiz() {
   const { id } = useParams();
@@ -21,7 +23,9 @@ function TakeQuiz() {
   const [sproutyMood, setSproutyMood] = useState("idle");
   const [sproutyCaption, setSproutyCaption] = useState("");
   const { triggerXPFromEvent, triggerSuccess } = useFeedback();
+  const [attemptId] = useState(() => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const { playClick } = useSound();
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     apiRequest(`/api/quizzes/${id}`, { retries: 1 })
@@ -81,14 +85,14 @@ function TakeQuiz() {
   const handleSubmit = async (e) => {
     playClick();
     if (answers.some((a) => a === null)) {
-      alert("Please answer all questions before submitting.");
+      showAlert({ type: "warning", message: "Please answer all questions before submitting." });
       return;
     }
     setSubmitting(true);
     try {
       const data = await apiRequest("/api/quizzes/submit", {
         method: "POST",
-        body: { quizId: id, answers },
+        body: { quizId: id, attemptId, answers },
         retries: 0,
       });
       setResult(data);
@@ -107,61 +111,19 @@ function TakeQuiz() {
 
   if (result) {
     return (
-      <>
-        <Confetti show={showConfetti} onComplete={() => setShowConfetti(false)} />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="min-h-screen flex items-center justify-center p-4"
-        >
-          <div className="bg-white rounded-3xl shadow-soft-lg p-8 max-w-md w-full text-center border-2 border-eco-pale">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200 }}
-              className="w-20 h-20 rounded-2xl bg-eco-accent/40 flex items-center justify-center mx-auto mb-4"
-            >
-              <Trophy className="w-12 h-12 text-amber-700" strokeWidth={2} />
-            </motion.div>
-            <h1 className="font-display font-bold text-2xl text-eco-primary mb-2">Quiz Completed!</h1>
-            <div className="w-32 h-32 mx-auto rounded-full bg-eco-accent/30 flex items-center justify-center mb-4">
-              <span className="font-display font-bold text-3xl text-amber-800">{result.percentage?.toFixed(0)}%</span>
-            </div>
-            <p className="text-gray-600 mb-6">
-              {result.score} / {result.totalPossible} XP earned
-            </p>
-            <div className="flex gap-3">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  playClick();
-                  navigate("/quizzes");
-                }}
-                className="flex-1 py-3 rounded-2xl border-2 border-eco-primary text-eco-primary font-semibold"
-              >
-                More Quizzes
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  playClick();
-                  navigate("/dashboard");
-                }}
-                className="flex-1 py-3 rounded-2xl bg-eco-primary text-white font-semibold"
-              >
-                Dashboard
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-      </>
+      <QuizRewardModal
+        show={true}
+        score={result.score}
+        totalPossible={result.totalPossible}
+        percentage={result.percentage}
+        masteryData={result.mastery}
+        onPlayAgain={() => window.location.reload()}
+        onClose={() => navigate("/quizzes")}
+      />
     );
   }
 
   const question = quiz.questions[currentQuestion];
-
 
   return (
     <div className="min-h-screen pb-20">

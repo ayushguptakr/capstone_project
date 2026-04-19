@@ -18,10 +18,26 @@ exports.getPublicSchools = async (req, res) => {
   }
 };
 
-// -------------------- SIGNUP --------------------
+// -------------------- SIGNUP (STUDENT ONLY) --------------------
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, role, schoolId, className, class: classValue, section } = req.body;
+    const { name, email, password, schoolId, className, class: classValue, section } = req.body;
+
+    // SECURITY: Reject any attempt to pass a role via the public signup endpoint.
+    // Teachers are created by principals, principals by admins.
+    if (req.body.role) {
+      return res.status(403).json({
+        message: "Role cannot be set during public signup. Only student accounts can be created here.",
+      });
+    }
+
+    // Basic input validation
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required." });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters." });
+    }
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -29,12 +45,12 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Create user
+    // Create user — role is ALWAYS "student" from public signup
     const user = await User.create({
       name,
       email,
       password,
-      role: role || "student",
+      role: "student",
       schoolId: schoolId || undefined,
       className: className || "",
       class: classValue || "",
@@ -104,14 +120,42 @@ exports.login = async (req, res) => {
   }
 };
 
+const { applyPlantDecay } = require("../services/gamificationService");
+
 // -------------------- CURRENT USER PROFILE --------------------
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select(
-      "name role email schoolId className class section points level experiencePoints streakCurrent streakLastActiveAt lastActivityAt badges equippedAvatar equippedSkins"
-    );
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ user });
+
+    applyPlantDecay(user);
+    if (user.isModified("plantHealth") || user.isModified("plantLastDecayedAt")) {
+      await user.save();
+    }
+
+    // Need to return exactly the fields expected, or toObject() for everything.
+    const userObj = {
+      _id: user._id,
+      name: user.name,
+      role: user.role,
+      email: user.email,
+      schoolId: user.schoolId,
+      className: user.className,
+      class: user.class,
+      section: user.section,
+      points: user.points,
+      level: user.level,
+      experiencePoints: user.experiencePoints,
+      streakCurrent: user.streakCurrent,
+      streakLastActiveAt: user.streakLastActiveAt,
+      lastActivityAt: user.lastActivityAt,
+      badges: user.badges,
+      equippedAvatar: user.equippedAvatar,
+      equippedSkins: user.equippedSkins,
+      plantHealth: user.plantHealth ?? 100
+    };
+
+    res.json({ user: userObj });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

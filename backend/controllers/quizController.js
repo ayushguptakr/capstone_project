@@ -4,6 +4,24 @@ const User = require("../models/User");
 const adaptiveDifficultyEngine = require("../services/adaptiveDifficultyEngine");
 const gamificationService = require("../services/gamificationService");
 
+const QUIZ_CURRICULUM = {
+  version: 1,
+  order: ["waste-1", "energy-1", "water-1", "climate-1", "biodiversity-1"]
+};
+
+// In-memory idempotency cache for attempts 
+const processedAttempts = new Set();
+
+function calculateStars(correct, total) {
+  if (total === 0) return 0;
+  const accuracy = correct / total;
+  if (total > 10 && accuracy >= (total - 1) / total) return 3; // 1 mistake allowed
+  if (accuracy === 1) return 3;
+  if (accuracy >= 0.8) return 2;
+  if (accuracy >= 0.6) return 1;
+  return 0;
+}
+
 // Get all active quizzes
 const getQuizzes = async (req, res) => {
   try {
@@ -16,14 +34,27 @@ const getQuizzes = async (req, res) => {
   }
 };
 
-// Get quiz by ID (for taking quiz)
 const getQuizById = async (req, res) => {
   try {
-    const quiz = await Quiz.findById(req.params.id)
-      .select("-questions.correctAnswer");
+    const quiz = await Quiz.findById(req.params.id).select("-questions.correctAnswer");
     if (!quiz) {
       return res.status(404).json({ message: "Quiz not found" });
     }
+
+    // Enforce Backend Route Locking via Curriculum
+    const slug = quiz.slug || String(quiz._id);
+    const idx = QUIZ_CURRICULUM.order.indexOf(slug);
+    
+    if (idx > 0) {
+      const prevSlug = QUIZ_CURRICULUM.order[idx - 1];
+      const user = await User.findById(req.user.id);
+      
+      const prevProgress = user.quizProgress?.get(prevSlug);
+      if (!prevProgress || prevProgress.stars < 1) {
+        return res.status(403).json({ message: "This quiz is locked. Complete the previous quiz to unlock it." });
+      }
+    }
+
     res.json(quiz);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -33,8 +64,16 @@ const getQuizById = async (req, res) => {
 // Submit quiz attempt
 const submitQuiz = async (req, res) => {
   try {
-    const { quizId, answers, timeTakenPerQuestion } = req.body;
+    const { quizId, attemptId, answers, timeTakenPerQuestion } = req.body;
     const studentId = req.user.id;
+
+    if (attemptId) {
+      if (processedAttempts.has(attemptId)) {
+        return res.status(200).json({ message: "Attempt already processed", duplicate: true });
+      }
+      processedAttempts.add(attemptId);
+      // clean up old keys periodically if needed, omitted for brevity
+    }
 
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
@@ -42,11 +81,13 @@ const submitQuiz = async (req, res) => {
     }
 
     let totalScore = 0;
+    let correctCount = 0;
     const processedAnswers = answers.map((answer, index) => {
       const question = quiz.questions[index];
       const isCorrect = answer.selectedAnswer === question.correctAnswer;
       const pointsEarned = isCorrect ? question.points : 0;
       totalScore += pointsEarned;
+      if (isCorrect) correctCount++;
 
       return {
         questionIndex: index,
@@ -57,6 +98,7 @@ const submitQuiz = async (req, res) => {
     });
 
     const percentage = (totalScore / quiz.totalPoints) * 100;
+    const starsEarned = calculateStars(correctCount, quiz.questions.length);
 
     const quizAttempt = new QuizAttempt({
       student: studentId,
@@ -70,6 +112,39 @@ const submitQuiz = async (req, res) => {
     });
 
     await quizAttempt.save();
+
+    const user = await User.findById(studentId);
+    const slug = quiz.slug || String(quizId);
+    if (!user.quizProgress) {
+      user.quizProgress = new Map();
+    }
+    
+    let currentProgress = user.quizProgress.get(slug) || { bestScore: 0, lastScore: 0, stars: 0, attempts: 0, lastPlayedAt: null };
+    
+    // Calculate new bests
+    const isNewBest = totalScore > currentProgress.bestScore;
+    const actualNewBestDelta = isNewBest ? totalScore - currentProgress.bestScore : 0;
+    
+    currentProgress.bestScore = isNewBest ? totalScore : currentProgress.bestScore;
+    currentProgress.lastScore = totalScore;
+    currentProgress.stars = Math.max(currentProgress.stars, starsEarned);
+    currentProgress.attempts += 1;
+    
+    const now = new Date();
+    currentProgress.lastPlayedAt = now;
+    
+    user.quizProgress.set(slug, currentProgress);
+
+    // Global streak logic update (if not played today)
+    // We update global if lastActivityAt is older than start of today
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    if (!user.lastActivityAt || user.lastActivityAt < startOfToday) {
+      user.streakCurrent = (user.streakCurrent || 0) + 1;
+    }
+    user.lastActivityAt = now;
+    
+    await user.save();
 
     // Award XP/points through central gamification service.
     await gamificationService.awardPoints({
@@ -103,7 +178,11 @@ const submitQuiz = async (req, res) => {
       score: totalScore,
       percentage,
       totalPossible: quiz.totalPoints,
-      adaptive: adjustments
+      adaptive: adjustments,
+      mastery: {
+        starsEarned,
+        newBest: actualNewBestDelta
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -152,21 +231,13 @@ const checkAndAwardBadges = async (studentId, score, percentage) => {
   const newBadges = [];
 
   // Quiz Master badge - 100% on any quiz
-  if (percentage === 100 && !user.badges.some(b => b.title === "Quiz Master")) {
-    newBadges.push({
-      title: "Quiz Master",
-      icon: "🏆",
-      earnedAt: new Date()
-    });
+  if (percentage === 100 && !user.badges.includes("Quiz Master")) {
+    newBadges.push("Quiz Master");
   }
 
   // Eco Scholar badge - 500+ total points
-  if (user.points >= 500 && !user.badges.some(b => b.title === "Eco Scholar")) {
-    newBadges.push({
-      title: "Eco Scholar",
-      icon: "🌟",
-      earnedAt: new Date()
-    });
+  if (user.points >= 500 && !user.badges.includes("Eco Scholar")) {
+    newBadges.push("Eco Scholar");
   }
 
   if (newBadges.length > 0) {

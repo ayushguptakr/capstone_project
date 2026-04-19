@@ -15,10 +15,11 @@ const {
   getFeatureToggles,
   updateFeatureToggles,
 } = require("../controllers/adminController");
-const { protect, authorizeRoles } = require("../middleware/authMiddleware");
+const { protect, authorizeRoles, requirePasswordSet } = require("../middleware/authMiddleware");
 
 // All admin routes are protected for 'admin' role
 router.use(protect);
+router.use(requirePasswordSet);
 router.use(authorizeRoles("admin"));
 
 // School management

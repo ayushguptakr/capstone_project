@@ -26,7 +26,22 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-
+// -------------------- FIRST-LOGIN ENFORCEMENT --------------------
+// Blocks access to any protected route except /api/auth/set-password
+// when the user hasn't changed their temporary password yet.
+exports.requirePasswordSet = (req, res, next) => {
+  if (req.user && req.user.isFirstLogin === true) {
+    // Allow the set-password endpoint through
+    if (req.originalUrl.includes("/api/auth/set-password")) {
+      return next();
+    }
+    return res.status(403).json({
+      message: "You must set a new password before accessing the platform.",
+      requirePasswordChange: true,
+    });
+  }
+  next();
+};
 
 // Role-based authorization
 exports.authorizeRoles = (...roles) => {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Globe, Wind, Droplet, Recycle, Zap, Building2, BarChart3 } from "lucide-react";
 import "./SustainabilityDashboard.css";
 import { apiRequest } from "../api/httpClient";
 
@@ -33,7 +34,10 @@ function SustainabilityDashboard() {
   return (
     <div className="sustainability-dashboard-page">
       <div className="sustainability-header">
-        <h1>🌍 Sustainability Analytics</h1>
+        <h1 className="flex items-center gap-2">
+          <Globe size={24} className="text-blue-500" strokeWidth={2} />
+          Sustainability Analytics
+        </h1>
         <button className="eco-back-btn" onClick={() => navigate("/dashboard")}>
           ← Back to Dashboard
         </button>
@@ -43,22 +47,22 @@ function SustainabilityDashboard() {
         <h2>Impact Totals</h2>
         <div className="totals-grid">
           <div className="total-card co2">
-            <span className="total-icon">🌫️</span>
+            <span className="total-icon"><Wind size={20} className="text-gray-500" strokeWidth={2} /></span>
             <span className="total-value">{totals.co2Reduced?.toFixed(1) || 0} kg</span>
             <span className="total-label">CO₂ Reduced</span>
           </div>
           <div className="total-card water">
-            <span className="total-icon">💧</span>
+            <span className="total-icon"><Droplet size={20} className="text-blue-500" strokeWidth={2} /></span>
             <span className="total-value">{totals.waterSaved?.toFixed(1) || 0} L</span>
             <span className="total-label">Water Saved</span>
           </div>
           <div className="total-card waste">
-            <span className="total-icon">♻️</span>
+            <span className="total-icon"><Recycle size={20} className="text-green-500" strokeWidth={2} /></span>
             <span className="total-value">{totals.wasteDiverted?.toFixed(1) || 0} kg</span>
             <span className="total-label">Waste Diverted</span>
           </div>
           <div className="total-card energy">
-            <span className="total-icon">⚡</span>
+            <span className="total-icon"><Zap size={20} className="text-yellow-500" strokeWidth={2} /></span>
             <span className="total-value">{totals.energySaved?.toFixed(1) || 0} kWh</span>
             <span className="total-label">Energy Saved</span>
           </div>
@@ -67,7 +71,10 @@ function SustainabilityDashboard() {
 
       {greenRatings.length > 0 && (
         <div className="green-ratings-section">
-          <h2>🏫 School Green Ratings</h2>
+          <h2 className="flex items-center gap-2">
+            <Building2 size={20} className="text-gray-500" strokeWidth={2} />
+            School Green Ratings
+          </h2>
           <div className="ratings-list">
             {greenRatings.map((r, i) => (
               <div key={i} className={`rating-card rating-${(r.rating || "C").toLowerCase()}`}>
@@ -81,7 +88,10 @@ function SustainabilityDashboard() {
 
       {categoryImpact.length > 0 && (
         <div className="category-impact-section">
-          <h2>📊 Impact by Category</h2>
+          <h2 className="flex items-center gap-2">
+            <BarChart3 size={20} className="text-blue-500" strokeWidth={2} />
+            Impact by Category
+          </h2>
           <div className="category-list">
             {categoryImpact.map((c, i) => (
               <div key={i} className="category-row">

@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   TrendingUp,
   Recycle,
+  CheckCircle,
   TreePine,
   Crown,
   Sparkles,
@@ -29,13 +30,32 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  Hand,
+  Sprout,
+  Star,
+  PartyPopper,
 } from "lucide-react";
 import { EcoLoader } from "../components";
+import SproutyCard from "../components/SproutyCard";
+import EcoPlant from "../components/EcoPlant";
+import DailyEcoPlan from "../components/DailyEcoPlan";
+import StreakCalendar from "../components/StreakCalendar";
+import LeagueCard from "../components/LeagueCard";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import { getStoredUser } from "../utils/authStorage";
 import { fetchGamificationMe } from "../api/gamificationApi";
 import { apiRequest } from "../api/httpClient";
+import useProgressionEngine from "../hooks/useProgressionEngine";
+import confetti from "canvas-confetti";
+
+export const fireConfetti = () => {
+  confetti({
+    particleCount: 80,
+    spread: 70,
+    origin: { y: 0.6 }
+  });
+};
 
 function getLevel(points) {
   if (points < 100) return { name: "Beginner", next: 100 };
@@ -117,6 +137,8 @@ function Dashboard() {
   const [typedGreeting, setTypedGreeting] = useState("");
   const [levelFlash, setLevelFlash] = useState(false);
   const prevLevelRef = useRef(null);
+  const missionsRef = useRef(null);
+  const [prevBadges, setPrevBadges] = useState([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -136,6 +158,20 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
+    if (user?.badges) {
+      const newBadge = user.badges.find(
+        (b) => !prevBadges.includes(b)
+      );
+
+      if (newBadge && prevBadges.length !== 0) {
+        fireConfetti();
+      }
+
+      setPrevBadges(user.badges);
+    }
+  }, [user?.badges]);
+
+  useEffect(() => {
     const onStreakUpdate = (event) => {
       const next = Number(event?.detail?.streak || 0);
       setStreak(next);
@@ -143,6 +179,15 @@ function Dashboard() {
     window.addEventListener("ecoquest:streak-updated", onStreakUpdate);
     return () => window.removeEventListener("ecoquest:streak-updated", onStreakUpdate);
   }, []);
+
+  const [nudge, setNudge] = useState(null);
+  
+  useEffect(() => {
+    if (user?.role !== "student") return;
+    apiRequest("/api/gamification/nudge")
+      .then(data => setNudge(data.nudge))
+      .catch(() => {});
+  }, [user?.role]);
 
   useEffect(() => {
     if (!user) return;
@@ -208,27 +253,42 @@ function Dashboard() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const points =
-    progress?.student?.points ??
-    gamificationSummary?.points ??
-    meProfile?.points ??
-    user?.points ??
-    0;
-  const level = getLevel(points);
-  const impact = ecoReport?.impactSummary || {};
-  const rank = progress?.student?.rank ?? "—";
   const missionsDone = progress?.taskStats?.approvedSubmissions ?? 0;
   const quizzesAced = useMemo(
     () => attempts.filter((a) => a.percentage === 100).length,
     [attempts]
   );
-  const levelNum =
-    progress?.student?.level != null && progress.student.level > 0
-      ? progress.student.level
-      : meProfile?.level != null && meProfile.level > 0
-        ? meProfile.level
-        : Math.max(1, Math.floor(points / 100) + 1);
-  const { xpToNext, pct } = nextLevelMeta(points);
+
+  // ── Unified Progression Engine ──
+  const engine = useProgressionEngine({
+    user,
+    progress,
+    meProfile,
+    gamificationSummary,
+    streak,
+    recommendations,
+    missionsDone,
+  });
+
+  const { points, levelNum, xpToNext, pct, ecoScore, rank, league, weeklyXP,
+          lastActiveIso, missionsPending, streakAtRisk, plantStage, sproutyContext,
+          diffs, commitState, hydrated } = engine;
+
+  const level = getLevel(points);
+  const impact = ecoReport?.impactSummary || {};
+
+  // Commit previous state snapshot after each data cycle
+  useEffect(() => {
+    if (points > 0 || rank) commitState();
+  }, [points, rank, streak, levelNum, league, commitState]);
+
+  // System sync — trigger animations from diffs
+  useEffect(() => {
+    if (!hydrated) return;
+    if (diffs.rankJumped) {
+      fireConfetti();
+    }
+  }, [diffs, hydrated]);
 
   useEffect(() => {
     if (prevLevelRef.current == null) {
@@ -285,68 +345,77 @@ function Dashboard() {
   }, [attempts, mySubs, gamificationEvents]);
 
   const badgeDefs = useMemo(() => {
-    const titles = (progress?.student?.badges || user?.badges || []).map((b) => b.title);
-    const has = (t) => titles.some((x) => x === t || x?.includes?.(t));
-    return [
+    const unlockedBadges = user?.badges || [];
+    const has = (id) => unlockedBadges.includes(id);
+
+    const ALL_BADGES = [
       {
+        id: "QUIZ_CHAMP",
         title: "Quiz Champ",
-        sub: "Quiz Master",
-        earned: has("Quiz Master"),
-        bg: "bg-sky-100",
-        iconBg: "bg-sky-200/80",
-        text: "text-sky-900",
+        description: "Quiz Master",
+        earned: has("QUIZ_CHAMP"),
         Icon: BookOpen,
+        iconBg: "bg-sky-100",
+        iconColor: "text-sky-600",
+        textColor: "text-sky-900",
       },
       {
+        id: "ECO_SCHOLAR",
         title: "Eco Scholar",
-        sub: "500+ XP",
-        earned: has("Eco Scholar"),
-        bg: "bg-violet-100",
-        iconBg: "bg-violet-200/80",
-        text: "text-violet-900",
+        description: "500+ XP",
+        earned: has("ECO_SCHOLAR"),
         Icon: Award,
+        iconBg: "bg-violet-100",
+        iconColor: "text-violet-600",
+        textColor: "text-violet-900",
       },
       {
-        title: "On Fire!",
-        sub: "7-day streak",
-        earned: streak >= 7,
-        bg: "bg-orange-100",
-        iconBg: "bg-orange-200/80",
-        text: "text-orange-900",
+        id: "ON_FIRE",
+        title: "On Fire",
+        description: "7-day streak",
+        earned: has("ON_FIRE"),
         Icon: Flame,
+        iconBg: "bg-orange-100",
+        iconColor: "text-orange-600",
+        textColor: "text-orange-900",
       },
       {
+        id: "TREE_HUGGER",
         title: "Tree Hugger",
-        sub: "5+ missions",
-        earned: missionsDone >= 5,
-        bg: "bg-emerald-100",
-        iconBg: "bg-emerald-200/80",
-        text: "text-emerald-900",
+        description: "5+ missions",
+        earned: has("TREE_HUGGER"),
         Icon: TreePine,
-        locked: true,
+        iconBg: "bg-emerald-100",
+        iconColor: "text-emerald-600",
+        textColor: "text-emerald-900",
       },
       {
+        id: "WATER_HERO",
         title: "Water Hero",
-        sub: "Save 100L",
-        earned: (impact.waterSaved || 0) >= 100,
-        bg: "bg-sky-100",
-        iconBg: "bg-sky-200/80",
-        text: "text-sky-900",
+        description: "Save 100L",
+        earned: has("WATER_HERO"),
         Icon: Droplet,
-        locked: true,
+        iconBg: "bg-sky-100",
+        iconColor: "text-sky-600",
+        textColor: "text-sky-900",
       },
       {
+        id: "TOP_STAR",
         title: "Top Star",
-        sub: "Top 3 rank",
-        earned: typeof rank === "number" && rank <= 3,
-        bg: "bg-amber-100",
-        iconBg: "bg-amber-200/80",
-        text: "text-amber-900",
+        description: "Top 3 rank",
+        earned: has("TOP_STAR"),
         Icon: Crown,
-        locked: true,
+        iconBg: "bg-amber-100",
+        iconColor: "text-amber-600",
+        textColor: "text-amber-900",
       },
     ];
-  }, [progress, user, streak, missionsDone, impact.waterSaved, rank]);
+
+    return ALL_BADGES.map(badge => ({
+      ...badge,
+      unlocked: unlockedBadges.includes(badge.id)
+    }));
+  }, [user?.badges]);
 
   const gameCarouselRef = useRef(null);
   const scrollGameCarousel = (dir) => {
@@ -475,37 +544,66 @@ function Dashboard() {
 
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-10"
-        >
-          <h1 className="font-display font-bold text-3xl sm:text-4xl text-[#2D332F] flex flex-wrap items-center gap-2">
-            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
-              {typedGreeting}
-            </motion.span>
-            <span className="bg-gradient-to-r from-eco-primary to-[#A3E635] bg-clip-text text-transparent">
-              {firstName}
-            </span>
-            <motion.span
-              aria-hidden
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              👋
-            </motion.span>
-          </h1>
-          <p className="text-gray-600 mt-2 text-lg font-body">
-            You&apos;re making a real impact today <span aria-hidden>🌱</span>
-          </p>
-          <p className="mt-1 text-eco-primary font-bold font-body">
-            {xpToNext.toLocaleString()} XP to reach Level {levelNum + 1}
-          </p>
-        </motion.div>
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-8 mb-8 w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1"
+          >
+            <h1 className="font-display font-bold text-3xl sm:text-4xl text-[#2D332F] flex flex-wrap items-center gap-2">
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
+                {typedGreeting}
+              </motion.span>
+              <span className="bg-gradient-to-r from-eco-primary to-[#A3E635] bg-clip-text text-transparent">
+                {firstName}
+              </span>
+              <motion.span
+                aria-hidden
+                animate={{ y: [0, -4, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                className="inline-flex"
+              >
+                <Hand className="w-8 h-8 text-amber-500 transition-transform hover:scale-110" strokeWidth={2} />
+              </motion.span>
+            </h1>
+            <p className="text-gray-600 mt-2 text-lg font-body transition-opacity duration-300 flex items-center gap-2">
+              <Sprout className="w-4 h-4 text-green-500 shrink-0" strokeWidth={2} />
+              {nudge ? nudge : "You're making a real impact today"}
+            </p>
+            <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-4">
+              <button 
+                onClick={() => missionsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="px-6 py-3 rounded-full bg-eco-primary text-white font-bold shadow-lg shadow-eco-primary/30 hover:shadow-xl hover:-translate-y-0.5 transition-all w-fit"
+              >
+                Continue Today&apos;s Mission
+              </button>
+            </div>
+          </motion.div>
+          
+          <div className="flex flex-col sm:flex-row lg:justify-end gap-6 items-center w-full lg:w-auto shrink-0">
+             <SproutyCard 
+               ecoScore={ecoScore} 
+               streak={streak}
+               missionsPending={missionsPending}
+               level={levelNum}
+               xp={points}
+               contextMessage={sproutyContext}
+             />
+             <EcoPlant plantStage={plantStage} streakAtRisk={streakAtRisk} streak={streak} xp={points} />
+          </div>
+        </div>
 
         {user.role === "student" && (
           <>
+            <div className="mb-8 w-full">
+              <DailyEcoPlan streak={streak} missionsCompleted={missionsDone} level={levelNum} />
+            </div>
+
+            <div className="mb-8 w-full">
+              <LeagueCard league={league} weeklyXP={weeklyXP} />
+            </div>
+
             <motion.section
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -527,13 +625,19 @@ function Dashboard() {
                     <p className="font-display font-bold text-xl text-[#2D332F]">Level {levelNum}</p>
                     <p className="text-[#5E9F57] font-semibold flex items-center gap-1">
                       {level.name}
-                      <span className="text-amber-500 inline-flex" aria-hidden>
-                        ★
-                      </span>
+                      <Star className="w-4 h-4 text-amber-500 transition-transform hover:scale-110" strokeWidth={2} fill="currentColor" />
                     </p>
                   </div>
                 </div>
-                <div className="text-right sm:text-right">
+                <div className="text-right sm:text-right flex flex-col items-end gap-1">
+                  <motion.div
+                    animate={streak > 0 ? { scale: [1, 1.05, 1] } : {}}
+                    transition={streak > 0 ? { repeat: Infinity, duration: 1.5 } : {}}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 border border-orange-200 rounded-full text-orange-700 text-sm font-bold shadow-sm mb-1"
+                  >
+                    <Flame className="w-4 h-4 text-orange-500" strokeWidth={2.5} />
+                    {streak} Day Streak
+                  </motion.div>
                   <p className="font-display font-bold text-lg text-[#2D332F]">{points.toLocaleString()} XP</p>
                   <p className="text-sm text-gray-500">{xpToNext.toLocaleString()} XP to next level</p>
                 </div>
@@ -551,6 +655,122 @@ function Dashboard() {
               </p>
             </motion.section>
 
+            <div className="mb-8 w-full">
+              <StreakCalendar streak={streak} />
+            </div>
+
+            {(recommendations.length > 0 || weakCategory) && (
+              <motion.section
+                ref={missionsRef}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="mb-10 rounded-3xl bg-white/60 backdrop-blur-3xl border-2 border-eco-primary/30 shadow-[0_0_30px_rgba(16,185,129,0.15)] p-6 sm:p-8 relative overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 p-4">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-[11px] font-bold shadow-sm">
+                    <Flame className="w-3.5 h-3.5 text-orange-600" strokeWidth={2} />
+                    Recommended
+                  </span>
+                </div>
+                <h2 className="font-display font-bold text-2xl text-gray-800 mb-2 flex items-center gap-2 relative z-10">
+                  <MapPin className="w-6 h-6 text-eco-primary" />
+                  Today&apos;s Missions
+                </h2>
+                {weakCategory && (
+                  <p className="text-sm text-green-800 font-medium mb-4">
+                    Focus area: <strong>{weakCategory}</strong>
+                  </p>
+                )}
+                {!weakCategory && (
+                  <p className="text-sm text-gray-600 mb-4 font-medium">
+                    Complete these to make the highest impact today!
+                  </p>
+                )}
+                <div className="space-y-3 relative z-10">
+                  {recommendations.slice(0, 3).map((t, index) => {
+                    const { Icon: MI, difficulty } = getMissionMeta(t.title, index);
+                    return (
+                      <motion.button
+                        key={t._id}
+                        type="button"
+                        onClick={(e) => {
+                          triggerXPFromEvent(t.points ?? 10, e);
+                          navigate(`/submit/${t._id}`);
+                        }}
+                        whileHover={{ scale: 1.01, y: -4 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="w-full text-left rounded-2xl bg-white border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 hover:border-eco-primary/50 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <span className="shrink-0 w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                            <MI className="w-6 h-6 text-eco-primary" strokeWidth={2} />
+                          </span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-display font-bold text-lg text-gray-800 truncate">{t.title}</span>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                                  difficulty === "Easy"
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : difficulty === "Medium"
+                                      ? "bg-amber-50 text-amber-700"
+                                      : "bg-red-50 text-red-700"
+                                }`}
+                              >
+                                {difficulty}
+                              </span>
+                              <span className="text-eco-primary font-bold text-sm">
+                                +{t.points} XP
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-eco-primary font-bold text-sm hover:bg-eco-primary hover:text-white transition-colors border border-emerald-100">
+                          Start Mission
+                          <ArrowRight className="w-4 h-4" />
+                        </span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.section>
+            )}
+
+            {recommendations.length === 0 && !weakCategory && (
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-10 rounded-3xl bg-white/60 backdrop-blur-3xl border-2 border-emerald-200/50 shadow-[0_0_30px_rgba(16,185,129,0.15)] p-8 text-center"
+              >
+                <div className="flex justify-center mb-4">
+                  <motion.div
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+                    className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center shadow-inner"
+                  >
+                    <Leaf className="w-8 h-8 text-eco-primary" />
+                  </motion.div>
+                </div>
+                <h2 className="font-display font-bold text-2xl text-gray-800 mb-2">
+                  Ready to make an impact?
+                </h2>
+                <p className="text-gray-500 font-medium max-w-md mx-auto mb-6">
+                  Start your first mission to grow your eco-impact and level up your rank.
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  onClick={() => navigate("/tasks")}
+                  className="px-6 py-3 rounded-full bg-eco-primary text-white font-bold shadow-lg shadow-eco-primary/30 hover:shadow-xl transition-all"
+                >
+                  Explore Missions
+                </motion.button>
+              </motion.section>
+            )}
+
             <motion.section
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
@@ -565,11 +785,12 @@ function Dashboard() {
 
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
-                  <h2 className="font-display font-bold text-2xl sm:text-3xl text-[#2D332F] tracking-tight">
-                    Play & Learn <span aria-hidden>🌍</span>
+              <h2 className="font-display font-bold text-xl sm:text-2xl text-[#2D332F] opacity-90 tracking-tight flex items-center gap-2">
+                    <Gamepad2 className="w-5 h-5 text-gray-500" strokeWidth={2} />
+                    Quick Practice
                   </h2>
-                  <p className="mt-2 text-gray-600 font-body text-sm sm:text-base">
-                    Earn XP while playing eco mini-games
+                  <p className="mt-1 text-gray-500 font-body text-sm">
+                    Earn bonus XP (optional)
                   </p>
                 </div>
 
@@ -641,7 +862,8 @@ function Dashboard() {
                           {isDaily && (
                             <div className="flex items-center gap-2 mb-3">
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-eco-primary to-[#5E9F57] text-white text-[11px] font-bold shadow-md">
-                                🔥 Daily Challenge
+                                <Flame className="w-3 h-3" strokeWidth={2} />
+                                Daily Challenge
                               </span>
                               <span className="inline-flex items-center px-2 py-1 rounded-full bg-white/60 border border-emerald-200/60 text-emerald-900 text-[11px] font-bold">
                               Ends in {formatCountdown(dailySecondsLeft)}
@@ -714,6 +936,7 @@ function Dashboard() {
                   format: (n) => n.toLocaleString(),
                   glow: "group-hover:shadow-[0_16px_36px_-20px_rgba(245,158,11,0.75)]",
                   iconColor: "text-amber-500",
+                  helperText: "Lifetime XP earned",
                 },
                 {
                   Icon: Flame,
@@ -723,6 +946,8 @@ function Dashboard() {
                   format: (n) => `${n} days`,
                   glow: "group-hover:shadow-[0_16px_36px_-20px_rgba(244,63,94,0.75)]",
                   iconColor: "text-rose-500",
+                  pulseIcon: streak > 0,
+                  helperText: streak > 0 ? "Keep it going!" : "Start a daily habit",
                 },
                 {
                   Icon: Medal,
@@ -732,6 +957,7 @@ function Dashboard() {
                   format: (n) => `#${n}`,
                   glow: "group-hover:shadow-[0_16px_36px_-20px_rgba(14,165,233,0.75)]",
                   iconColor: "text-sky-600",
+                  helperText: typeof rank === "number" && rank <= 10 ? "Top in your class" : "Keep climbing",
                 },
                 {
                   Icon: CheckCircle2,
@@ -741,6 +967,7 @@ function Dashboard() {
                   format: (n) => n.toLocaleString(),
                   glow: "group-hover:shadow-[0_16px_36px_-20px_rgba(16,185,129,0.75)]",
                   iconColor: "text-emerald-600",
+                  helperText: "Impact tasks finished",
                 },
               ].map((c) => (
                 <motion.div
@@ -751,10 +978,10 @@ function Dashboard() {
                 >
                   <motion.span
                     initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                    animate={c.pulseIcon ? { scale: [1, 1.15, 1], boxShadow: ["0 0 0 rgba(244,63,94,0)", "0 0 20px rgba(244,63,94,0.6)", "0 0 0 rgba(244,63,94,0)"] } : { scale: 1, opacity: 1 }}
                     whileHover={{ scale: 1.12 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="w-12 h-12 rounded-2xl bg-white/65 border border-white/70 shadow-sm flex items-center justify-center mb-3"
+                    transition={c.pulseIcon ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2, ease: "easeOut" }}
+                    className={`w-12 h-12 rounded-2xl bg-white/65 border border-white/70 shadow-sm flex items-center justify-center mb-3 ${c.pulseIcon ? 'ring-1 ring-rose-200' : ''}`}
                   >
                     <c.Icon className={`w-6 h-6 ${c.iconColor}`} strokeWidth={2.2} />
                   </motion.span>
@@ -763,9 +990,14 @@ function Dashboard() {
                       {typeof c.to === "number" ? <CountUpNumber to={c.to} format={c.format} /> : c.value}
                     </span>
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-600 font-semibold uppercase tracking-wide mt-1">
+                  <p className="text-sm text-gray-800 font-bold uppercase tracking-wide mt-1">
                     {c.label}
                   </p>
+                  {c.helperText && (
+                    <p className="text-xs text-gray-500 font-medium mt-1 group-hover:text-gray-700 transition-colors">
+                      {c.helperText}
+                    </p>
+                  )}
                 </motion.div>
               ))}
             </motion.div>
@@ -781,67 +1013,83 @@ function Dashboard() {
                 Your Eco-Impact
               </h2>
               <div className="divide-y divide-white/35 rounded-2xl border border-white/60 overflow-hidden bg-white/20">
-                <div className="px-4 py-4 bg-emerald-50/25 hover:bg-emerald-50/35 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-3 text-gray-700 font-medium">
-                      <span className="w-10 h-10 rounded-xl bg-emerald-100/70 flex items-center justify-center">
-                        <TreePine className="w-5 h-5 text-emerald-700" />
-                      </span>
-                      CO₂ Saved
-                    </span>
-                    <span className="font-display font-bold text-gray-800">
-                      {(impact.co2Reduced || 0).toFixed(1)} kg
-                    </span>
+                {(!impact.co2Reduced && !impact.waterSaved && !quizzesAced) ? (
+                  <div className="px-4 py-8 text-center bg-white/30">
+                    <p className="text-gray-700 font-medium font-body mb-6 flex items-center justify-center gap-2">
+                      <Sprout className="w-4 h-4 text-green-500" strokeWidth={2} />
+                      Start your first mission to make an impact
+                    </p>
+                    <div className="flex flex-col gap-4 max-w-sm mx-auto opacity-40 grayscale pointer-events-none">
+                      <div className="h-2 rounded-full bg-emerald-200/50 w-full" />
+                      <div className="h-2 rounded-full bg-sky-200/50 w-4/5 mx-auto" />
+                      <div className="h-2 rounded-full bg-lime-200/50 w-3/4 mx-auto" />
+                    </div>
                   </div>
-                  <div className="mt-3 h-1.5 rounded-full bg-emerald-100/60 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, Math.round(((impact.co2Reduced || 0) / 20) * 100))}%` }}
-                      transition={{ duration: 0.9, ease: "easeOut" }}
-                      className="h-full rounded-full bg-emerald-500/70"
-                    />
-                  </div>
-                </div>
-                <div className="px-4 py-4 bg-sky-50/25 hover:bg-sky-50/35 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-3 text-gray-700 font-medium">
-                      <span className="w-10 h-10 rounded-xl bg-sky-100/70 flex items-center justify-center">
-                        <Droplet className="w-5 h-5 text-sky-600" />
-                      </span>
-                      Water Saved
-                    </span>
-                    <span className="font-display font-bold text-sky-600">
-                      {Math.round(impact.waterSaved || 0)} L
-                    </span>
-                  </div>
-                  <div className="mt-3 h-1.5 rounded-full bg-sky-100/60 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, Math.round(((impact.waterSaved || 0) / 400) * 100))}%` }}
-                      transition={{ duration: 0.9, ease: "easeOut" }}
-                      className="h-full rounded-full bg-sky-500/70"
-                    />
-                  </div>
-                </div>
-                <div className="px-4 py-4 bg-lime-50/25 hover:bg-lime-50/35 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-3 text-gray-700 font-medium">
-                      <span className="w-10 h-10 rounded-xl bg-emerald-100/70 flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-emerald-700" />
-                      </span>
-                      Quizzes Aced
-                    </span>
-                    <span className="font-display font-bold text-[#5E9F57]">{quizzesAced}</span>
-                  </div>
-                  <div className="mt-3 h-1.5 rounded-full bg-lime-100/60 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, Math.round((quizzesAced / 20) * 100))}%` }}
-                      transition={{ duration: 0.9, ease: "easeOut" }}
-                      className="h-full rounded-full bg-lime-500/70"
-                    />
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="px-4 py-4 bg-emerald-50/25 hover:bg-emerald-50/35 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-3 text-gray-700 font-medium">
+                          <span className="w-10 h-10 rounded-xl bg-emerald-100/70 flex items-center justify-center">
+                            <TreePine className="w-5 h-5 text-emerald-700" />
+                          </span>
+                          CO₂ Saved
+                        </span>
+                        <span className="font-display font-bold text-gray-800">
+                          {(impact.co2Reduced || 0).toFixed(1)} kg
+                        </span>
+                      </div>
+                      <div className="mt-3 h-1.5 rounded-full bg-emerald-100/60 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(100, Math.round(((impact.co2Reduced || 0) / 20) * 100))}%` }}
+                          transition={{ duration: 0.9, ease: "easeOut" }}
+                          className="h-full rounded-full bg-emerald-500/70"
+                        />
+                      </div>
+                    </div>
+                    <div className="px-4 py-4 bg-sky-50/25 hover:bg-sky-50/35 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-3 text-gray-700 font-medium">
+                          <span className="w-10 h-10 rounded-xl bg-sky-100/70 flex items-center justify-center">
+                            <Droplet className="w-5 h-5 text-sky-600" />
+                          </span>
+                          Water Saved
+                        </span>
+                        <span className="font-display font-bold text-sky-600">
+                          {Math.round(impact.waterSaved || 0)} L
+                        </span>
+                      </div>
+                      <div className="mt-3 h-1.5 rounded-full bg-sky-100/60 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(100, Math.round(((impact.waterSaved || 0) / 400) * 100))}%` }}
+                          transition={{ duration: 0.9, ease: "easeOut" }}
+                          className="h-full rounded-full bg-sky-500/70"
+                        />
+                      </div>
+                    </div>
+                    <div className="px-4 py-4 bg-lime-50/25 hover:bg-lime-50/35 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-3 text-gray-700 font-medium">
+                          <span className="w-10 h-10 rounded-xl bg-emerald-100/70 flex items-center justify-center">
+                            <BookOpen className="w-5 h-5 text-emerald-700" />
+                          </span>
+                          Quizzes Aced
+                        </span>
+                        <span className="font-display font-bold text-[#5E9F57]">{quizzesAced}</span>
+                      </div>
+                      <div className="mt-3 h-1.5 rounded-full bg-lime-100/60 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(100, Math.round((quizzesAced / 20) * 100))}%` }}
+                          transition={{ duration: 0.9, ease: "easeOut" }}
+                          className="h-full rounded-full bg-lime-500/70"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </motion.section>
 
@@ -857,14 +1105,19 @@ function Dashboard() {
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 {activeSchoolEvents.map((ev) => (
-                  <div key={ev._id} className="rounded-2xl bg-gradient-to-br from-purple-50/70 to-fuchsia-50/70 border border-purple-200/60 p-5 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="font-display font-bold text-lg text-purple-900 leading-tight pr-2">{ev.title}</p>
-                      <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-purple-200/80 text-purple-800 shrink-0">{ev.type}</span>
+                  <div key={ev._id} className="rounded-2xl bg-gradient-to-br from-purple-50/70 to-fuchsia-50/70 border border-purple-200/60 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="font-display font-bold text-lg text-purple-900 leading-tight pr-2">{ev.title}</p>
+                        <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-purple-200/80 text-purple-800 shrink-0">{ev.type}</span>
+                      </div>
+                      <p className="text-purple-700/80 text-xs font-semibold uppercase tracking-wide mb-4">
+                        Scope: {ev.scope || "school-wide"} • Starts Soon
+                      </p>
                     </div>
-                    <p className="text-purple-700/80 text-xs font-semibold uppercase tracking-wide">
-                      Scope: {ev.scope || "school-wide"}
-                    </p>
+                    <button className="w-full mt-auto py-2.5 rounded-xl bg-white/60 text-purple-800 font-bold text-sm hover:bg-purple-600 hover:text-white transition-colors border border-purple-200/60">
+                      View Details
+                    </button>
                   </div>
                 ))}
                 {activeSchoolEvents.length === 0 && (
@@ -886,69 +1139,58 @@ function Dashboard() {
                 My Badges
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {badgeDefs.map((b, i) => {
-                  const earned = b.earned;
-                  const muted = b.locked && !earned;
-                  const rarity =
-                    i % 3 === 0
-                      ? "ring-amber-200/70"
-                      : i % 3 === 1
-                        ? "ring-slate-200/80"
-                        : "ring-emerald-200/70";
+                {badgeDefs.map((badge) => {
+                  const Icon = badge.Icon;
                   return (
                     <motion.div
-                      key={b.title}
-                      whileHover={earned && !muted ? { scale: 1.08, y: -4 } : { scale: 1.02, y: -1 }}
+                      key={badge.id}
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{
+                        scale: badge.unlocked ? [1, 1.08, 1] : 1,
+                        opacity: 1
+                      }}
+                      transition={{ duration: 0.4 }}
                       role="button"
                       tabIndex={0}
-                      onClick={() =>
-                        {
-                          playClick();
-                          if (earned && !muted) triggerBadgeUnlock(b);
-                          setActiveBadge({
-                            title: b.title,
-                            sub: b.sub,
-                            earned,
-                            locked: muted,
-                            Icon: b.Icon,
-                          });
-                        }
-                      }
+                      onClick={() => {
+                        playClick();
+                        setActiveBadge(badge);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
-                          setActiveBadge({
-                            title: b.title,
-                            sub: b.sub,
-                            earned,
-                            locked: muted,
-                            Icon: b.Icon,
-                          });
+                          setActiveBadge(badge);
                         }
                       }}
-                      className={`cursor-pointer rounded-3xl p-5 text-center border backdrop-blur-2xl transition-all duration-300 ${
-                        earned && !muted
-                          ? `bg-white/60 border-white/70 shadow-[0_20px_50px_-22px_rgba(16,185,129,0.62)] ring-1 ${rarity}`
-                          : "bg-white/20 border-white/50 opacity-65 grayscale blur-[0.4px]"
-                      } ${earned && !muted ? "hover:shadow-[0_24px_56px_-24px_rgba(16,185,129,0.75)]" : ""}`}
+                      className={`relative rounded-2xl p-5 border transition-all duration-300 ease-in-out cursor-pointer hover:scale-[1.02] ${
+                        badge.unlocked
+                          ? "bg-white border-green-200 shadow-md hover:shadow-lg ring-2 ring-green-300 shadow-[0_0_20px_rgba(34,197,94,0.4)]"
+                          : "bg-gray-50 border-gray-200 opacity-40 grayscale"
+                      }`}
+                      title={badge.unlocked ? "Unlocked Badge" : "Locked Badge"}
                     >
-                      <div
-                        className={`w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center ${
-                          earned && !muted ? b.iconBg : "bg-white/15 border border-white/40"
+                      <Icon
+                        size={28}
+                        strokeWidth={2}
+                        className={badge.unlocked ? "text-green-600 mb-3" : "text-gray-400 mb-3"}
+                      />
+                      <h3
+                        className={`font-semibold ${
+                          badge.unlocked ? "text-gray-900" : "text-gray-400"
                         }`}
                       >
-                        <b.Icon
-                          className={`w-6 h-6 ${earned && !muted ? b.text : "text-gray-400"}`}
-                          strokeWidth={2}
-                        />
-                      </div>
-                      <p
-                        className={`font-display font-bold text-sm ${
-                          earned && !muted ? b.text : "text-gray-400"
-                        }`}
-                      >
-                        {b.title}
+                        {badge.title}
+                      </h3>
+                      <p className={`text-sm mt-1 ${
+                        badge.unlocked ? "text-gray-600" : "text-gray-400"
+                      }`}>
+                        {badge.description}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">{b.sub}</p>
+                      {badge.unlocked && (
+                        <CheckCircle
+                          size={18}
+                          className="absolute top-3 right-3 text-green-500"
+                        />
+                      )}
                     </motion.div>
                   );
                 })}
@@ -981,7 +1223,7 @@ function Dashboard() {
                         </span>
                         <div>
                           <h3 className="font-display font-bold text-lg text-[#2D332F]">{activeBadge.title}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{activeBadge.sub}</p>
+                          <p className="text-sm text-gray-600 mt-1">{activeBadge.description}</p>
                         </div>
                       </div>
 
@@ -1000,31 +1242,23 @@ function Dashboard() {
                     </div>
 
                     <div className="mt-5">
-                      {activeBadge.locked ? (
+                      {activeBadge.unlocked ? (
                         <>
-                          <p className="text-sm font-semibold text-red-600">Locked</p>
-                          <p className="text-sm text-gray-700 mt-1">
-                            Unlock at <span className="font-bold text-eco-primary">500 XP</span>
-                          </p>
-
-                          <div className="mt-4 h-2 rounded-full bg-gray-200/60 overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${Math.min(100, Math.round((points / 500) * 100))}%` }}
-                              transition={{ duration: 0.8, ease: "easeOut" }}
-                              className="h-full rounded-full bg-gradient-to-r from-eco-primary to-[#5E9F57]"
-                            />
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-200 w-fit mb-2">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <span className="text-sm font-bold text-green-700">Unlocked</span>
                           </div>
-
-                          <p className="mt-2 text-xs text-gray-600">
-                            {points.toLocaleString()} / 500 XP
+                          <p className="text-sm text-gray-700 mt-1">
+                            You&apos;ve earned this badge. Keep playing to collect more.
                           </p>
                         </>
                       ) : (
                         <>
-                          <p className="text-sm font-semibold text-eco-primary">Unlocked!</p>
-                          <p className="text-sm text-gray-700 mt-1">
-                            You&apos;ve earned this badge. Keep playing to collect more.
+                           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 w-fit mb-2">
+                            <span className="text-sm font-bold text-slate-500">Locked</span>
+                          </div>
+                          <p className="text-sm text-gray-700">
+                            Complete challenges and earn XP to unlock this badge.
                           </p>
                         </>
                       )}
@@ -1057,8 +1291,9 @@ function Dashboard() {
                   >
                     <Leaf className="w-7 h-7 text-eco-primary" strokeWidth={2.2} />
                   </motion.div>
-                  <p className="text-gray-600 text-center mt-4 font-medium">
-                    Start completing missions to see your journey here <span aria-hidden>🌱</span>
+                  <p className="text-gray-600 text-center mt-4 font-medium flex items-center justify-center gap-2">
+                    <Sprout className="w-4 h-4 text-green-500" strokeWidth={2} />
+                    Start completing missions to see your journey here
                   </p>
                 </motion.div>
               ) : (
@@ -1072,88 +1307,19 @@ function Dashboard() {
                         <row.Icon className="w-5 h-5 text-gray-600" strokeWidth={2} />
                       </span>
                       <div className="flex-1 min-w-0 text-left">
-                        <p className="font-semibold text-gray-800 truncate">{row.title}</p>
-                        <p className="text-sm text-gray-500">{row.sub}</p>
+                        <p className="font-semibold text-gray-800 text-sm sm:text-base leading-tight flex items-center gap-1.5 flex-wrap">
+                          <Sprout className="w-4 h-4 text-green-500 shrink-0 transition-transform hover:scale-110" strokeWidth={2} />
+                          You earned <span className="text-eco-primary font-bold">+{row.pts} XP</span> from <span className="text-gray-900">{row.title}</span>
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5 font-medium">{row.sub}</p>
                       </div>
-                      <span
-                        className={`font-display font-bold shrink-0 ${
-                          row.pts >= 0 ? "text-eco-primary" : "text-red-500"
-                        }`}
-                      >
-                        +{row.pts}
-                      </span>
                     </li>
                   ))}
                 </ul>
               )}
             </motion.section>
 
-            {(recommendations.length > 0 || weakCategory) && (
-              <motion.section
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mb-8 rounded-3xl bg-white/35 backdrop-blur-2xl border border-white/70 shadow-[0_20px_60px_-20px_rgba(16,185,129,0.14)] p-6"
-              >
-                <h2 className="font-display font-bold text-lg text-gray-800 mb-2 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-eco-primary" />
-                  Today&apos;s Missions
-                </h2>
-                {weakCategory && (
-                  <p className="text-sm text-amber-800 mb-3">
-                    Level up in: <strong>{weakCategory}</strong>
-                  </p>
-                )}
-                <div className="space-y-2">
-                  {recommendations.slice(0, 3).map((t, index) => {
-                    const { Icon: MI, difficulty } = getMissionMeta(t.title, index);
-                    return (
-                      <motion.button
-                        key={t._id}
-                        type="button"
-                        onClick={(e) => {
-                          triggerXPFromEvent(t.points ?? 10, e);
-                          navigate(`/submit/${t._id}`);
-                        }}
-                        whileHover={{ scale: 1.03, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        className="group w-full text-left rounded-2xl bg-white/40 backdrop-blur-2xl border border-white/70 px-4 py-3 flex flex-col gap-2 transition-all duration-300 hover:border-emerald-200/85 hover:shadow-[0_20px_45px_-26px_rgba(16,185,129,0.55)]"
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="inline-flex items-center gap-3 min-w-0">
-                            <span className="w-10 h-10 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center justify-center">
-                              <MI className="w-5 h-5 text-eco-primary" strokeWidth={2.2} />
-                            </span>
-                            <span className="font-semibold text-[#2D332F] truncate">{t.title}</span>
-                          </span>
-                          <span className="text-eco-primary font-bold shrink-0">
-                            +{t.points} XP
-                          </span>
-                        </div>
 
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border ${
-                              difficulty === "Easy"
-                                ? "bg-emerald-50/60 border-emerald-200/70 text-emerald-800"
-                                : difficulty === "Medium"
-                                  ? "bg-amber-50/70 border-amber-200/80 text-amber-900"
-                                  : "bg-red-50/70 border-red-200/80 text-red-800"
-                            }`}
-                          >
-                            {difficulty}
-                          </span>
-
-                          <span className="text-sm text-gray-600 inline-flex items-center gap-2 font-semibold group-hover:text-eco-primary">
-                            Open quest
-                            <ArrowRight className="w-4 h-4 text-eco-primary transition-transform duration-300 group-hover:translate-x-1" strokeWidth={2.2} />
-                          </span>
-                        </div>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </motion.section>
-            )}
           </>
         )}
 

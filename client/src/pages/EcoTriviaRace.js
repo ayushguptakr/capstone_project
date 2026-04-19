@@ -4,6 +4,8 @@ import "./EcoTriviaRace.css";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import { apiRequest } from "../api/httpClient";
+import GameRewardModal from "../components/GameRewardModal";
+import gamesConfig from "../data/gamesConfig";
 
 const questions = [
   { q: "Which gas do trees absorb?", a: ["CO2", "O2", "N2", "H2"], c: 0 },
@@ -21,12 +23,19 @@ const questions = [
 function EcoTriviaRace() {
   const [currentQ, setCurrentQ] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(10);
+  
+  const searchParams = new URLSearchParams(window.location.search);
+  const level = parseInt(searchParams.get("level")) || 1;
+  const initialTime = level === 1 ? 10 : level === 2 ? 7 : 4;
+
+  const [timeLeft, setTimeLeft] = useState(initialTime);
   const [gameOver, setGameOver] = useState(false);
+  const [masteryData, setMasteryData] = useState(null);
   const [streak, setStreak] = useState(0);
   const navigate = useNavigate();
   const { triggerXPFromEvent, triggerSuccess } = useFeedback();
   const { playClick } = useSound();
+  const gameConfig = gamesConfig.find(g => g.id === "trivia-race");
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -56,7 +65,7 @@ function EcoTriviaRace() {
       endGame();
     } else {
       setCurrentQ(currentQ + 1);
-      setTimeLeft(10);
+      setTimeLeft(initialTime);
     }
   };
 
@@ -64,29 +73,30 @@ function EcoTriviaRace() {
     setGameOver(true);
     triggerSuccess();
     try {
-      await apiRequest("/api/mini-games/submit-score", {
+      const resp = await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
-        body: { gameId: "eco-trivia-race", score, timeSpent: (questions.length * 10) - timeLeft },
+        body: { gameId: "eco-trivia-race", level, score, timeSpent: (questions.length * initialTime) - timeLeft },
         retries: 0,
       });
+      if (resp.mastery) {
+        setMasteryData(resp.mastery);
+      }
     } catch (error) {}
   };
 
   if (gameOver) {
     return (
-      <div className="game-over-container">
-        <div className="game-over-card">
-          <h1>🏁 Race Complete!</h1>
-          <div className="final-score">
-            <span className="score-value">{score}</span>
-            <span className="score-label">points</span>
-          </div>
-          <p>Questions: {currentQ + 1}/{questions.length}</p>
-          <div className="game-actions">
-            <button onClick={() => { playClick(); window.location.reload(); }} className="play-again-btn">🔄 Play Again</button>
-            <button onClick={() => { playClick(); navigate("/mini-games"); }} className="back-btn">← Back</button>
-          </div>
-        </div>
+      <div className="trivia-race-container">
+        <GameRewardModal
+          show={true}
+          xpEarned={score}
+          streakBonus={Math.floor(score * 0.1)}
+          ecoImpact={gameConfig.ecoImpact}
+          gameName={gameConfig.name}
+          masteryData={masteryData}
+          onPlayAgain={() => { playClick(); window.location.reload(); }}
+          onClose={() => { playClick(); navigate("/mini-games"); }}
+        />
       </div>
     );
   }
@@ -103,7 +113,7 @@ function EcoTriviaRace() {
       </div>
 
       <div className="timer-bar">
-        <div className="timer-fill" style={{ width: `${(timeLeft / 10) * 100}%` }}></div>
+        <div className="timer-fill" style={{ width: `${(timeLeft / initialTime) * 100}%` }}></div>
         <span className="timer-text">{timeLeft}s</span>
       </div>
 

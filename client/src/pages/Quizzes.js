@@ -4,6 +4,12 @@ import { motion } from "framer-motion";
 import { Brain, Recycle, Zap, Droplet, Sprout, Globe, BookOpen, ListChecks, ArrowLeft } from "lucide-react";
 import { Badge, IconBox } from "../components";
 import { apiRequest } from "../api/httpClient";
+import QuizHeroCard from "../components/quiz/QuizHeroCard";
+import QuizPath from "../components/quiz/QuizPath";
+import QuizCardEnhanced from "../components/quiz/QuizCardEnhanced";
+
+// Mirroring Backend's Curriculum for Path Map
+const QUIZ_CURRICULUM = ["waste-1", "energy-1", "water-1", "climate-1", "biodiversity-1"];
 
 const categoryIcons = {
   "waste-management": Recycle,
@@ -15,15 +21,67 @@ const categoryIcons = {
 
 function Quizzes() {
   const [quizzes, setQuizzes] = useState([]);
+  const [userProgress, setUserProgress] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    apiRequest("/api/quizzes")
-      .then(setQuizzes)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    Promise.all([
+      apiRequest("/api/quizzes"),
+      apiRequest("/api/gamification/me")
+    ])
+    .then(([quizzesData, gamificationData]) => {
+      // Sort quizzes matching internal curriculum map, unmapped quizzes go to the end
+      const sortedQuizzes = [...quizzesData].sort((a, b) => {
+        const idxA = QUIZ_CURRICULUM.indexOf(a.slug || a._id);
+        const idxB = QUIZ_CURRICULUM.indexOf(b.slug || b._id);
+        if (idxA === -1 && idxB === -1) return 0;
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      });
+      setQuizzes(sortedQuizzes);
+      
+      if (gamificationData?.summary?.quizProgress) {
+        setUserProgress(gamificationData.summary.quizProgress);
+      }
+    })
+    .catch(console.error)
+    .finally(() => setLoading(false));
   }, []);
+
+  const handlePlayQuiz = (id) => navigate(`/quiz/${id}`);
+
+  // ── Hero Priority Engine ────────────────────────
+  let priorityQuiz = null;
+  if (quizzes.length > 0) {
+    const todayStr = new Date().toDateString();
+    
+    // 1. Same-day memory retention (Dampens oscillation)
+    const activeToday = quizzes.find(q => {
+      const prog = userProgress[q.slug || q._id];
+      return prog?.lastPlayedAt && new Date(prog.lastPlayedAt).toDateString() === todayStr;
+    });
+
+    // 2. In-Progress
+    const inProgress = quizzes.find(q => {
+      const prog = userProgress[q.slug || q._id];
+      return prog && prog.stars < 3 && prog.attempts > 0;
+    });
+
+    // 3. Lowest Unlocked (using curriculum array if it aligns, simple fallback otherwise)
+    const lowestUnlocked = quizzes.find((q, idx) => {
+      const slug = q.slug || q._id;
+      const prevSlug = idx > 0 ? (quizzes[idx - 1].slug || quizzes[idx - 1]._id) : null;
+      const prog = userProgress[slug];
+      const prevProg = prevSlug ? userProgress[prevSlug] : null;
+
+      const isLocked = idx > 0 && (!prevProg || prevProg.stars < 1);
+      return !isLocked && (!prog || prog.stars < 3);
+    });
+
+    priorityQuiz = activeToday || inProgress || lowestUnlocked || quizzes[0];
+  }
 
   if (loading) {
     return (
@@ -55,48 +113,52 @@ function Quizzes() {
           </motion.button>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          {quizzes.length === 0 ? (
-            <div className="col-span-2 text-center py-12 text-gray-500 bg-white rounded-3xl shadow-card">
-              No quizzes yet. Check back soon!
-            </div>
-          ) : (
-            quizzes.map((quiz, i) => {
-              const CatIcon = categoryIcons[quiz.category] || BookOpen;
-              return (
-                <motion.div
-                  key={quiz._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  whileHover={{ scale: 1.02, y: -4 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate(`/quiz/${quiz._id}`)}
-                  className="bg-white rounded-3xl p-6 shadow-card border-2 border-eco-pale/50 cursor-pointer hover:shadow-card-hover"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <IconBox color="blue" size="lg" className="rounded-2xl">
-                      <CatIcon className="w-10 h-10" strokeWidth={2} />
-                    </IconBox>
-                    <Badge variant={(quiz.difficulty || "easy").toLowerCase()}>{quiz.difficulty || "Easy"}</Badge>
-                  </div>
-                  <h3 className="font-display font-bold text-lg text-gray-800 mb-2">{quiz.title}</h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{quiz.description}</p>
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                    <span className="flex items-center gap-1"><ListChecks className="w-4 h-4" /> {quiz.questions?.length || 0} questions</span>
-                    <span className="font-semibold text-eco-primary">+{quiz.totalPoints || 0} XP</span>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="w-full py-3 rounded-2xl bg-eco-secondary text-white font-bold"
-                  >
-                    Start Quiz
-                  </motion.button>
-                </motion.div>
-              );
-            })
-          )}
+        {/* Hero Section */}
+        {priorityQuiz && !loading && (
+          <div className="mb-10">
+            <h2 className="font-display font-bold text-lg text-slate-800 mb-4 px-2">Continue Learning</h2>
+            <QuizHeroCard 
+              quiz={priorityQuiz} 
+              progress={userProgress[priorityQuiz.slug || priorityQuiz._id]} 
+              onPlay={handlePlayQuiz} 
+            />
+          </div>
+        )}
+
+        {/* Path Section */}
+        {quizzes.length > 0 && (
+          <div className="mb-12 bg-white/50 rounded-3xl p-6 shadow-sm border border-slate-100">
+            <h2 className="font-display font-bold text-lg text-slate-800 mb-2 text-center">Core Curriculum</h2>
+            <p className="text-center text-sm text-slate-500 mb-8 max-w-sm mx-auto">
+              Follow the guided track to master environmental concepts and unlock higher difficulties.
+            </p>
+            <QuizPath quizzes={quizzes} userProgress={userProgress} onPlay={handlePlayQuiz} />
+          </div>
+        )}
+
+        {/* Explore Section */}
+        <div className="mb-6">
+          <h2 className="font-display font-bold text-lg text-slate-800 mb-4 px-2">Explore All Quizzes</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {quizzes.length === 0 ? (
+              <div className="col-span-2 text-center py-12 text-slate-400 bg-white border border-slate-100 rounded-3xl">
+                No active quizzes found. The path is being constructed!
+              </div>
+            ) : (
+              quizzes.map((quiz, i) => {
+                const isLocked = i > 0 && (!userProgress[quizzes[i - 1].slug || quizzes[i - 1]._id] || userProgress[quizzes[i - 1].slug || quizzes[i - 1]._id].stars < 1);
+                return (
+                  <QuizCardEnhanced 
+                    key={quiz._id} 
+                    quiz={quiz} 
+                    progress={userProgress[quiz.slug || quiz._id]} 
+                    isLocked={isLocked}
+                    onPlay={handlePlayQuiz} 
+                  />
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
     </div>

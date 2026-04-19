@@ -14,10 +14,13 @@ import {
   Globe2,
   Sparkles,
   Map,
-  ShoppingBag
+  ShoppingBag,
+  Zap
 } from "lucide-react";
 import * as AllIcons from "lucide-react";
 import { EcoLogo } from "./EcoLogo";
+import NotificationBell from "./NotificationBell";
+import MobileBottomNav from "./MobileBottomNav";
 
 /** Logged-in: center nav (Quiz, Games, Leaderboard). */
 const appNavItems = (dashPath, showGames, activeMissionsCount = 0) => [
@@ -132,12 +135,13 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
 
   if (showAppBar) {
     return (
-      <motion.header
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm"
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <>
+        <motion.header
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm"
+        >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between w-full">
           <motion.button 
             onClick={handleLogoClick} 
             whileHover={{ scale: 1.05 }}
@@ -146,8 +150,8 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
             <EcoLogo className="w-10 h-10" withText={true} animated={true} currentXp={xp} equippedSkins={userSkins} />
           </motion.button>
 
-          <nav className="flex flex-1 justify-center min-w-0 order-3 sm:order-none w-full sm:w-auto">
-            <ul className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar max-w-full">
+          <nav className="hidden md:flex flex-1 justify-center min-w-0 order-3 md:order-none w-full md:w-auto">
+            <ul className="flex items-center gap-1 md:gap-2 overflow-x-auto pb-1 md:pb-0 no-scrollbar max-w-full">
               {appLinks.map(({ to, label, icon: Icon, match, badge }) => {
                 const active = match(pathname);
                 return (
@@ -178,12 +182,19 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-amber-50 border border-amber-100/90 text-amber-900 text-sm font-bold shadow-sm">
+            {showGames && <NotificationBell />}
+            <motion.div 
+              key={xpDisplay}
+              initial={{ scale: 1.2, backgroundColor: "#dcfce7" }}
+              animate={{ scale: 1, backgroundColor: "#fffbeb" }}
+              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+              className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-amber-100/90 text-amber-900 text-sm font-bold shadow-sm"
+            >
               <span aria-hidden className="text-base leading-none">
-                ⚡
+                <Zap className="w-2 h-2 text-amber-500" strokeWidth={3} />
               </span>
               <span>{xpDisplay} XP</span>
-            </div>
+            </motion.div>
 
             <div className="relative">
               <button
@@ -246,7 +257,11 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
             </div>
           </div>
         </div>
-      </motion.header>
+        </motion.header>
+
+        {/* Mobile App Navigation */}
+        <MobileBottomNav links={appLinks} playClick={playClick} />
+      </>
     );
   }
 

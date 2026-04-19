@@ -49,7 +49,7 @@ function TeacherTasks() {
               <h3>{task.title}</h3>
               <p>{task.description}</p>
               <div className="teacher-task-footer">
-                <span className="eco-points">⭐ {task.points} pts</span>
+                <span className="eco-points flex items-center gap-1"><Star size={16} className="text-yellow-500" /> {task.points} pts</span>
                 {task.deadline && (
                   <span className="eco-deadline">📅 {new Date(task.deadline).toLocaleDateString()}</span>
                 )}

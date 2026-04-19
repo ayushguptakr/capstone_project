@@ -7,6 +7,25 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: #374151 #111827; /* Premium Dark Theme Scrollbar for Firefox */
+  }
+
+  /* Custom Webkit Scrollbar (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #111827; /* dark slate background */
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #374151; /* lighter gray thumb */
+    border-radius: 6px;
+    border: 2px solid #111827; /* adds padding effect */
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4B5563; /* hover state */
   }
   body {
     @apply font-body text-gray-800 antialiased min-h-screen;

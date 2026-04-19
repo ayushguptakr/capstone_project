@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Sprout, Trophy, Ticket, Package, ShoppingBag, ArrowLeft, ClipboardList } from "lucide-react";
 import { IconBox } from "../components";
 import { apiRequest } from "../api/httpClient";
+import { useAlert } from "../components/ui/AlertProvider";
 
 const categoryIcons = {
   "eco-products": Sprout,
@@ -18,6 +19,7 @@ function Marketplace() {
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(null);
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     Promise.all([
@@ -44,11 +46,11 @@ function Marketplace() {
         body: { rewardId: reward._id, deliveryAddress: address },
         retries: 0,
       });
-      alert("Redeemed!");
+      showAlert({ type: "success", message: "Redeemed!" });
       setUserPoints((p) => p - reward.pointsCost);
       setRewards((r) => r.map((x) => (x._id === reward._id ? { ...x, stock: x.stock - 1 } : x)));
     } catch (e) {
-      alert(e.message || "Failed to redeem");
+      showAlert({ type: "error", message: e.message || "Failed to redeem" });
     } finally {
       setRedeeming(null);
     }

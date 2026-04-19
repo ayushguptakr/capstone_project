@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Map, Users, Star } from "lucide-react";
+import { Plus, X, Map, Users, Star, Sprout } from "lucide-react";
 import TeacherShell from "../components/TeacherShell";
 import { apiRequest } from "../api/httpClient";
 
@@ -51,7 +51,7 @@ export default function TeacherMissions() {
         body: formData,
         retries: 0,
       });
-      setMessage("Mission successfully created! 🌱");
+      setMessage(<div className="flex items-center gap-2"><Sprout className="w-4 h-4 text-green-600" /> Mission successfully created!</div>);
       setFormData({
         title: "",
         description: "",

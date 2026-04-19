@@ -5,6 +5,8 @@ import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import { getXPPositionFromEvent } from "../utils/xpPosition";
 import { apiRequest } from "../api/httpClient";
+import GameRewardModal from "../components/GameRewardModal";
+import gamesConfig from "../data/gamesConfig";
 
 function ClimateHeroGame() {
   const [score, setScore] = useState(0);
@@ -13,16 +15,23 @@ function ClimateHeroGame() {
   const [items, setItems] = useState([]);
   const [heroPosition, setHeroPosition] = useState(50);
   const [timeLeft, setTimeLeft] = useState(45);
+  
+  const searchParams = new URLSearchParams(window.location.search);
+  const level = parseInt(searchParams.get("level")) || 1;
+  const goodRatio = level === 1 ? 0.3 : level === 2 ? 0.5 : 0.7; // > threshold is good.
+  
+  const [masteryData, setMasteryData] = useState(null);
   const navigate = useNavigate();
   const { triggerXP, triggerSuccess } = useFeedback();
   const { playClick } = useSound();
+  const gameConfig = gamesConfig.find(g => g.id === "climate-hero");
 
   useEffect(() => {
     const gameLoop = setInterval(() => {
       setItems(prev => {
         const newItems = prev.map(item => ({ ...item, y: item.y + 2 })).filter(item => item.y < 100);
         if (Math.random() < 0.05) {
-          const isGood = Math.random() > 0.4;
+          const isGood = Math.random() > goodRatio;
           const goodItems = ["♻️", "🌱", "💧", "🌞", "🚲"];
           const badItems = ["🏭", "🛢️", "🔥", "💨"];
           newItems.push({
@@ -74,28 +83,30 @@ function ClimateHeroGame() {
     setGameOver(true);
     triggerSuccess();
     try {
-      await apiRequest("/api/mini-games/submit-score", {
+      const resp = await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
-        body: { gameId: "climate-hero", score, timeSpent: 45 - timeLeft },
+        body: { gameId: "climate-hero", level, score, timeSpent: 45 - timeLeft },
         retries: 0,
       });
+      if (resp.mastery) {
+        setMasteryData(resp.mastery);
+      }
     } catch (error) {}
   };
 
   if (gameOver) {
     return (
-      <div className="game-over-container">
-        <div className="game-over-card">
-          <h1>🌍 Climate Hero!</h1>
-          <div className="final-score">
-            <span className="score-value">{score}</span>
-            <span className="score-label">points</span>
-          </div>
-          <div className="game-actions">
-            <button onClick={() => { playClick(); window.location.reload(); }} className="play-again-btn">🔄 Play Again</button>
-            <button onClick={() => { playClick(); navigate("/mini-games"); }} className="back-btn">← Back</button>
-          </div>
-        </div>
+      <div className="climate-hero-container">
+        <GameRewardModal
+          show={true}
+          xpEarned={score}
+          streakBonus={Math.floor(score * 0.1)}
+          ecoImpact={gameConfig.ecoImpact}
+          gameName={gameConfig.name}
+          masteryData={masteryData}
+          onPlayAgain={() => { playClick(); window.location.reload(); }}
+          onClose={() => { playClick(); navigate("/mini-games"); }}
+        />
       </div>
     );
   }

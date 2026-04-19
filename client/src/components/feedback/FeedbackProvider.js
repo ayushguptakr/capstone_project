@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { PartyPopper } from "lucide-react";
 import confetti from "canvas-confetti";
 import useSound from "../../hooks/useSound";
 import useXPAnimation from "../../hooks/useXPAnimation";
@@ -24,6 +25,7 @@ function burstConfetti(strong = false) {
 export default function FeedbackProvider({ children }) {
   const { playXP, playSuccess, playBadge, playLevelUp } = useSound();
   const [levelOverlay, setLevelOverlay] = useState(false);
+  const [badgeOverlay, setBadgeOverlay] = useState(null);
   const { xpItems, showXP } = useXPAnimation();
   const lastStreakSyncRef = useRef(0);
 
@@ -64,6 +66,8 @@ export default function FeedbackProvider({ children }) {
     (badge) => {
       playBadge();
       burstConfetti(false);
+      setBadgeOverlay({ title: badge.title || "Badge", Icon: badge.Icon });
+      window.setTimeout(() => setBadgeOverlay(null), 3500);
       return badge;
     },
     [playBadge]
@@ -111,7 +115,35 @@ export default function FeedbackProvider({ children }) {
                 transition={{ type: "spring", stiffness: 280, damping: 22 }}
                 className="rounded-3xl bg-white/85 border border-white/80 px-8 py-5 shadow-[0_24px_72px_-24px_rgba(16,185,129,0.45)]"
               >
-                <p className="text-2xl font-display font-bold text-emerald-700">Level Up! 🎉</p>
+                <p className="text-2xl font-display font-bold text-emerald-700 flex items-center justify-center gap-2">Level Up! <PartyPopper className="w-6 h-6 text-yellow-500" /></p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {badgeOverlay && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center bg-white/10 backdrop-blur-[2px]"
+            >
+              <motion.div
+                initial={{ y: 20, scale: 0.9, opacity: 0 }}
+                animate={{ y: 0, scale: 1, opacity: 1 }}
+                exit={{ y: -10, scale: 0.95, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                className="rounded-3xl bg-white/90 border border-white/80 px-8 py-6 shadow-[0_24px_72px_-24px_rgba(16,185,129,0.55)]"
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center border border-emerald-200">
+                    {badgeOverlay.Icon ? <badgeOverlay.Icon className="w-7 h-7 text-emerald-600" /> : <PartyPopper className="w-7 h-7 text-emerald-600" />}
+                  </div>
+                  <p className="text-xl font-display font-bold text-gray-800 text-center">
+                    You unlocked {badgeOverlay.title}
+                  </p>
+                </div>
               </motion.div>
             </motion.div>
           )}

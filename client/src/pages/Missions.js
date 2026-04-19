@@ -170,7 +170,7 @@ export default function Missions() {
                 Ready for your next eco mission,{" "}
                 <span className="bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">
                   {firstName}?
-                </span> 🌱
+                </span> <Leaf className="inline-block mb-1 w-8 h-8 text-emerald-500" strokeWidth={2.5}/>
               </h1>
               <p className="font-medium text-slate-500 mt-1">
                 Mission Control Center - Track, play, and make an impact!
@@ -297,7 +297,7 @@ export default function Missions() {
                 {activeTab === "active" && (
                   <>
                     <SproutyQuizBuddy mood="idle" caption="" />
-                    <h3 className="font-display font-bold text-2xl text-slate-800 mt-6 mb-2">No missions right now 🌟</h3>
+                    <h3 className="font-display font-bold text-2xl text-slate-800 mt-6 mb-2 flex items-center justify-center gap-2">No missions right now <Sparkles className="w-6 h-6 text-yellow-500" /></h3>
                     <p className="text-slate-500 font-medium max-w-sm mb-8">You're all caught up! Try a quiz or game to earn extra XP while you wait.</p>
                     <div className="flex flex-wrap justify-center gap-3">
                       <button onClick={() => navigate('/mini-games')} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-colors flex items-center gap-2">
@@ -314,7 +314,7 @@ export default function Missions() {
                     <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-6">
                       <Hourglass className="w-10 h-10 text-amber-500 animate-pulse" />
                     </div>
-                    <h3 className="font-display font-bold text-2xl text-slate-800 mb-2">In Review ⏳</h3>
+                    <h3 className="font-display font-bold text-2xl text-slate-800 mb-2 flex items-center justify-center gap-2">In Review <Hourglass className="w-6 h-6 text-amber-500" /></h3>
                     <p className="text-slate-500 font-medium max-w-sm">Your submissions are currently being reviewed by your teachers. Sit tight!</p>
                   </motion.div>
                 )}
@@ -323,7 +323,7 @@ export default function Missions() {
                     <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
                       <Leaf className="w-10 h-10 text-emerald-500" />
                     </div>
-                    <h3 className="font-display font-bold text-2xl text-slate-800 mb-2">Awaiting Progress 🌱</h3>
+                    <h3 className="font-display font-bold text-2xl text-slate-800 mb-2 flex items-center justify-center gap-2">Awaiting Progress <Leaf className="w-6 h-6 text-emerald-500" /></h3>
                     <p className="text-slate-500 font-medium max-w-sm">You haven't completed any missions yet. Time to start making an impact!</p>
                   </motion.div>
                 )}

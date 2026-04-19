@@ -45,10 +45,14 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminSchools from "./pages/AdminSchools";
 import AdminUsers from "./pages/AdminUsers";
 import SetPassword from "./pages/SetPassword";
+import AlertProvider from "./components/ui/AlertProvider";
+import GamePlayer from "./pages/GamePlayer";
+import EcoHabitGame from "./pages/EcoHabitGame";
 
 function App() {
   return (
-    <BrowserRouter>
+    <AlertProvider>
+      <BrowserRouter>
       <Routes>
         {/* Public / Guest routes — no navbar */}
         <Route path="/" element={<Landing />} />
@@ -93,6 +97,8 @@ function App() {
         <Route path="/mini-game/climate-hero" element={<RequireStudent><ClimateHeroGame /></RequireStudent>} />
         <Route path="/mini-game/trivia-race" element={<RequireStudent><EcoTriviaRace /></RequireStudent>} />
         <Route path="/mini-game/plant-growth" element={<RequireStudent><PlantGrowthGame /></RequireStudent>} />
+        <Route path="/mini-game/eco-habit" element={<RequireStudent><EcoHabitGame /></RequireStudent>} />
+        <Route path="/play/:id" element={<RequireStudent><GamePlayer /></RequireStudent>} />
 
         {/* ============================================================
             TEACHER ROUTES — Teacher uses its own TeacherShell layout
@@ -136,6 +142,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
+    </AlertProvider>
   );
 }
 

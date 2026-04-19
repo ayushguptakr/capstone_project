@@ -1,6 +1,8 @@
 const { MiniGame, GameScore } = require("../models/MiniGame");
 const adaptiveDifficultyEngine = require("../services/adaptiveDifficultyEngine");
 const gamificationService = require("../services/gamificationService");
+const User = require("../models/User");
+const { GAME_THRESHOLDS, calculateStars, updatePlayStreak } = require("../config/gameThresholds");
 
 const GAME_ALIAS = {
   "waste-sorting": "waste sorting",
@@ -73,6 +75,85 @@ const submitGameScore = async (req, res) => {
       // ignore
     }
 
+    const levelPlayed = parseInt(req.body.level) || 1;
+    let thresholdId = gameId.toLowerCase();
+    if (!GAME_THRESHOLDS[thresholdId]) {
+      // Try to find the correct key if alias was used
+      const reverseAlias = Object.keys(GAME_ALIAS).find(k => GAME_ALIAS[k] === game.name.toLowerCase());
+      if (reverseAlias && GAME_THRESHOLDS[reverseAlias]) thresholdId = reverseAlias;
+    }
+
+    const config = GAME_THRESHOLDS[thresholdId]?.[levelPlayed];
+    let starsEarned = 0;
+    let nextStarDelta = 0;
+    let newBest = 0;
+    
+    // Default response fields
+    const masteryData = {
+      starsEarned: 0,
+      nextStarDelta: 0,
+      newBest: 0,
+      newUnlockedLevel: null
+    };
+
+    if (config) {
+      if (score > config.maxScore) {
+        return res.status(400).json({ message: "Invalid score - exceeds maximum possible for this level" });
+      }
+      
+      starsEarned = calculateStars(score, config.thresholds);
+      
+      // Calculate delta for near miss
+      if (starsEarned < 3) {
+        masteryData.nextStarDelta = config.thresholds[starsEarned] - score;
+      }
+      masteryData.starsEarned = starsEarned;
+
+      // Update User progress deeply
+      const user = await User.findById(studentId);
+      const progressMap = user.miniGameProgress || new Map();
+      let gameProgress = progressMap.get(thresholdId) || {
+        unlockedLevel: 1,
+        scores: [0, 0, 0],
+        stars: [0, 0, 0],
+        attempts: 0,
+        lastPlayedAt: null,
+        playStreak: 0
+      };
+
+      // Security check: Don't allow playing beyond unlocked
+      if (levelPlayed > gameProgress.unlockedLevel) {
+        return res.status(403).json({ message: "Level locked" });
+      }
+
+      gameProgress.attempts += 1;
+      gameProgress.playStreak = updatePlayStreak(gameProgress.lastPlayedAt, new Date(), gameProgress.playStreak);
+      gameProgress.lastPlayedAt = new Date();
+
+      // Check for new best
+      const oldScore = gameProgress.scores[levelPlayed - 1] || 0;
+      if (score > oldScore) {
+        newBest = score - oldScore;
+        masteryData.newBest = newBest;
+        gameProgress.scores[levelPlayed - 1] = score;
+      }
+      
+      const oldStars = gameProgress.stars[levelPlayed - 1] || 0;
+      if (starsEarned > oldStars) {
+        gameProgress.stars[levelPlayed - 1] = starsEarned;
+      }
+
+      // Check level unlock condition (1 star is required to unlock the next level)
+      if (starsEarned >= 1 && levelPlayed === gameProgress.unlockedLevel && levelPlayed < 3) {
+        gameProgress.unlockedLevel += 1;
+        masteryData.newUnlockedLevel = gameProgress.unlockedLevel;
+      }
+
+      progressMap.set(thresholdId, gameProgress);
+      user.miniGameProgress = progressMap;
+      await user.save();
+    }
+
     // Award XP through central service for level/streak consistency.
     await gamificationService.awardPoints({
       userId: studentId,
@@ -80,14 +161,15 @@ const submitGameScore = async (req, res) => {
       source: "game",
       sourceRef: String(game._id),
       idempotencyKey: `game-score:${gameScore._id}`,
-      metadata: { rawScore: score },
+      metadata: { rawScore: score, levelPlayed },
     });
 
     res.json({
       message: "Score submitted successfully",
       pointsEarned,
       totalScore: score,
-      adaptive: adjustments
+      adaptive: adjustments,
+      mastery: masteryData
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

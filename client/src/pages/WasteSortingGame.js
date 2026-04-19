@@ -4,6 +4,8 @@ import "./WasteSortingGame.css";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import { apiRequest } from "../api/httpClient";
+import GameRewardModal from "../components/GameRewardModal";
+import gamesConfig from "../data/gamesConfig";
 
 const wasteItems = [
   { id: 1, name: "Plastic Bottle", type: "recyclable", emoji: "🍼" },
@@ -21,10 +23,18 @@ function WasteSortingGame() {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [masteryData, setMasteryData] = useState(null);
+  
+  const searchParams = new URLSearchParams(window.location.search);
+  const level = parseInt(searchParams.get("level")) || 1;
+  const initialTime = level === 1 ? 60 : level === 2 ? 45 : 30;
+  const itemConfig = level === 1 ? 6 : level === 2 ? 8 : 10;
+  
+  const [timeLeft, setTimeLeft] = useState(initialTime);
   const navigate = useNavigate();
   const { triggerXP, triggerSuccess } = useFeedback();
   const { playClick } = useSound();
+  const gameConfig = gamesConfig.find(g => g.id === "waste-sorting");
 
   useEffect(() => {
     shuffleItems();
@@ -44,7 +54,7 @@ function WasteSortingGame() {
 
   const shuffleItems = () => {
     const shuffled = [...wasteItems].sort(() => Math.random() - 0.5);
-    setCurrentItems(shuffled.slice(0, 6));
+    setCurrentItems(shuffled.slice(0, itemConfig));
   };
 
   const handleDrop = (itemId, binType, position) => {
@@ -70,15 +80,19 @@ function WasteSortingGame() {
     setGameOver(true);
     triggerSuccess();
     try {
-      await apiRequest("/api/mini-games/submit-score", {
+      const resp = await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
         body: {
           gameId: "waste-sorting",
+          level,
           score,
-          timeSpent: 60 - timeLeft
+          timeSpent: initialTime - timeLeft
         },
         retries: 0,
       });
+      if (resp.mastery) {
+        setMasteryData(resp.mastery);
+      }
     } catch (error) {
       console.error("Error submitting score:", error);
     }
@@ -94,23 +108,17 @@ function WasteSortingGame() {
 
   if (gameOver) {
     return (
-      <div className="game-over-container">
-        <div className="game-over-card">
-          <h1>🎉 Game Complete!</h1>
-          <div className="final-score">
-            <span className="score-value">{score}</span>
-            <span className="score-label">points</span>
-          </div>
-          <p>Great job learning about waste sorting!</p>
-          <div className="game-actions">
-            <button onClick={() => { playClick(); window.location.reload(); }} className="play-again-btn">
-              🔄 Play Again
-            </button>
-            <button onClick={() => { playClick(); navigate("/mini-games"); }} className="back-btn">
-              ← Back to Games
-            </button>
-          </div>
-        </div>
+      <div className="waste-sorting-container">
+        <GameRewardModal
+          show={true}
+          xpEarned={score}
+          streakBonus={Math.floor(score * 0.1)}
+          ecoImpact={gameConfig.ecoImpact}
+          gameName={gameConfig.name}
+          masteryData={masteryData}
+          onPlayAgain={() => { playClick(); window.location.reload(); }}
+          onClose={() => { playClick(); navigate("/mini-games"); }}
+        />
       </div>
     );
   }

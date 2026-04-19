@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldAlert, Trophy, Users, ClipboardCheck, Award } from "lucide-react";
+import { ShieldAlert, Trophy, Users, ClipboardCheck, Award, Sparkles } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -19,17 +19,24 @@ function TeacherDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [verificationQueue, setVerificationQueue] = useState([]);
   const [events, setEvents] = useState([]);
+  const [aiInsight, setAiInsight] = useState("");
+  const [aiRefreshing, setAiRefreshing] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const [data, eventsData] = await Promise.all([
+        const [data, eventsData, aiData] = await Promise.all([
           fetchTeacherBootstrap(),
-          apiRequest("/api/events").catch(() => ({ events: [] }))
+          apiRequest("/api/events").catch(() => ({ events: [] })),
+          apiRequest("/api/teacher/ai-insights").catch(() => null)
         ]);
         setAnalytics(data.analytics);
         setVerificationQueue(data.verificationQueue);
         setEvents(eventsData.events || []);
+        if (aiData) {
+          setAiInsight(aiData.text);
+          setAiRefreshing(aiData.refreshing || false);
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -172,6 +179,40 @@ function TeacherDashboard() {
       </section>
 
       <section className="grid xl:grid-cols-3 gap-4">
+        {/* NEW AI INSIGHT BOX */}
+        <article className="xl:col-span-3 rounded-2xl bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border border-purple-100 p-5 shadow-sm relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-purple-200 blur-3xl opacity-40 rounded-full" />
+          <h2 className="font-display font-bold text-xl mb-2 flex items-center gap-2 text-indigo-900">
+            <Sparkles className="w-6 h-6 text-indigo-500" strokeWidth={2} /> AI Copilot
+            {aiRefreshing && <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-100 text-indigo-600 animate-pulse">Refreshing...</span>}
+          </h2>
+          {aiInsight ? (
+            <div>
+              <p className="text-indigo-800 font-medium leading-relaxed max-w-4xl relative z-10">
+                {aiInsight}
+              </p>
+              <div className="mt-4 flex gap-3 relative z-10">
+                <button 
+                  onClick={() => window.location.href = '/teacher/tasks'}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold shadow hover:bg-indigo-700 transition text-sm"
+                >
+                  Create Mission
+                </button>
+                <button 
+                  onClick={() => window.location.href = '/teacher/quizzes'}
+                  className="px-4 py-2 rounded-xl bg-white text-indigo-700 font-bold shadow hover:bg-indigo-50 border border-indigo-100 transition text-sm"
+                >
+                  Assign Quiz
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2 items-center text-indigo-400 font-medium">
+              <span className="animate-pulse">Generating insights...</span>
+            </div>
+          )}
+        </article>
+
         <article className="xl:col-span-2 rounded-2xl bg-white border border-slate-200 p-5">
           <h2 className="font-display font-bold text-xl mb-3">Insights</h2>
           <div className="h-64">

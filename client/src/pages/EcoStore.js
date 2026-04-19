@@ -458,7 +458,7 @@ export default function EcoStore() {
         setShowConfetti(true);
         setToast({
           show: true,
-          message: `You unlocked ${targetReward.name} 🎉`,
+          message: `You unlocked ${targetReward.name}`,
           iconName: targetReward.icon || "Gift",
         });
       }
@@ -673,7 +673,7 @@ export default function EcoStore() {
                    />
                 </div>
                 {collectionProgress.owned === collectionProgress.total && (
-                   <p className="collection-complete">🎉 Collection Complete!</p>
+                   <p className="collection-complete flex items-center justify-center gap-1"><Sparkles className="w-5 h-5 text-yellow-400" /> Collection Complete!</p>
                 )}
              </div>
           )}

@@ -36,7 +36,14 @@ const submissionSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-    feedback: { type: String },
+    attemptCount: { type: Number, default: 1 },
+    feedbackHistory: [
+      {
+        message: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+        by: { type: String } // optional name payload
+      }
+    ],
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     verifiedAt: { type: Date },
     pointsAwarded: { type: Number, default: 0 },
