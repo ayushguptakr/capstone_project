@@ -35,8 +35,9 @@ function Login() {
       const user = res.data.user;
       setAuthData(user, res.data.token, rememberMe);
 
-      // First-login intercept
-      if (user.isFirstLogin) {
+      // First-login intercept — only for admin-provisioned accounts (teacher/principal)
+      // Students set their password at signup, so they never hit this.
+      if (user.isFirstLogin && user.role !== "student") {
         navigate("/set-password");
         return;
       }

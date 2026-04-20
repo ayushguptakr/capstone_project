@@ -48,11 +48,14 @@ exports.signup = async (req, res) => {
     }
 
     // Create user — role is ALWAYS "student" from public signup
+    // Students choose their own password, so isFirstLogin = false.
+    // Only admin-provisioned accounts (teacher/principal) keep isFirstLogin = true.
     const user = await User.create({
       name,
       email,
       password,
       role: "student",
+      isFirstLogin: false,
       schoolId: schoolId || undefined,
       className: className || "",
       class: classValue || "",
