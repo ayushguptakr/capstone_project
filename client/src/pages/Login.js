@@ -3,9 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { AuthShell, AuthFloatingLeaf, AuthInput } from "../components/auth";
-import { Globe } from "lucide-react";
-import { EcoLoader } from "../components";
+import { Loader2 } from "lucide-react";
 import { API_BASE_URL } from "../api/httpClient";
+import { setAuthData } from "../utils/authStorage";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -13,6 +13,7 @@ function Login() {
   const [submitError, setSubmitError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
   const validate = () => {
@@ -30,10 +31,9 @@ function Login() {
     setIsLoading(true);
     try {
       const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      localStorage.setItem("token", res.data.token);
-
+      
       const user = res.data.user;
+      setAuthData(user, res.data.token, rememberMe);
 
       // First-login intercept
       if (user.isFirstLogin) {
@@ -55,9 +55,7 @@ function Login() {
     }
   };
 
-  if (isLoading) {
-    return <EcoLoader text="Authenticating..." />;
-  }
+
 
   return (
     <AuthShell>
@@ -73,11 +71,15 @@ function Login() {
           Welcome back
         </h1>
         <p className="mt-2 text-center text-gray-600 font-body text-sm sm:text-base leading-relaxed">
-          Student, Teacher, and Principal access{" "}
-          <span aria-hidden className="inline-flex items-center justify-center align-text-bottom"><Globe className="w-5 h-5 text-purple-600" /></span>
+          Access your EcoQuest journey
         </p>
 
-        <form onSubmit={handleLogin} className="mt-8 space-y-5">
+        <motion.form 
+          onSubmit={handleLogin} 
+          className="mt-8 space-y-5"
+          animate={submitError ? { x: [-8, 8, -8, 8, 0] } : {}}
+          transition={{ duration: 0.4 }}
+        >
           {submitError && (
             <div
               role="alert"
@@ -119,15 +121,45 @@ function Login() {
             required
           />
 
+          <div className="flex items-center justify-between mt-2 px-1">
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 bg-white border-gray-300 rounded text-[#5E9F57] focus:ring-[#5E9F57]"
+              />
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                Remember me
+              </label>
+            </div>
+            <Link
+              to="/forgot-password"
+              className="text-sm font-semibold text-[#5E9F57] hover:text-eco-primaryDark transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
           <motion.button
             type="submit"
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97 }}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#5E9F57] to-eco-primary text-white font-display font-bold text-lg shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-400/35 transition-shadow duration-300"
+            disabled={isLoading}
+            className="w-full py-4 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#5E9F57] to-eco-primary text-white font-display font-bold text-lg shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-400/35 transition-shadow duration-300 disabled:opacity-75 disabled:cursor-not-allowed"
           >
-            Log in
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Logging in...
+              </>
+            ) : (
+              "Log in"
+            )}
           </motion.button>
-        </form>
+        </motion.form>
 
         <p className="text-center mt-8 text-gray-600 font-body text-sm sm:text-base">
           New to EcoQuest?{" "}

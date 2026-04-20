@@ -1,9 +1,29 @@
+const getStorage = () => {
+  if (localStorage.getItem("eco_auth")) return localStorage;
+  if (sessionStorage.getItem("eco_auth")) return sessionStorage;
+  return null;
+};
+
 /** Read user from localStorage (set at login/signup). */
 export function getStoredUser() {
   try {
-    const raw = localStorage.getItem("user");
-    if (!raw) return null;
-    const u = JSON.parse(raw);
+    const storage = getStorage();
+    if (storage) {
+      const raw = storage.getItem("eco_auth");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.expiresAt < Date.now()) {
+          clearAuth();
+          return null;
+        }
+        return parsed.user && typeof parsed.user === "object" ? parsed.user : null;
+      }
+    }
+
+    // Fallback for old legacy sessions
+    const rawLegacy = localStorage.getItem("user");
+    if (!rawLegacy) return null;
+    const u = JSON.parse(rawLegacy);
     return u && typeof u === "object" ? u : null;
   } catch {
     return null;
@@ -11,7 +31,44 @@ export function getStoredUser() {
 }
 
 export function getToken() {
-  return localStorage.getItem("token");
+  try {
+    const storage = getStorage();
+    if (storage) {
+      const raw = storage.getItem("eco_auth");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.expiresAt < Date.now()) {
+          clearAuth();
+          return null;
+        }
+        return parsed.token;
+      }
+    }
+
+    // Fallback for old legacy sessions
+    return localStorage.getItem("token");
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthData(user, token, rememberMe) {
+  const payload = {
+    user,
+    token,
+    expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
+  };
+  
+  clearAuth(); // wipe old first
+  if (rememberMe) {
+    localStorage.setItem("eco_auth", JSON.stringify(payload));
+  } else {
+    sessionStorage.setItem("eco_auth", JSON.stringify(payload));
+  }
+
+  // Fallback for legacy code
+  localStorage.setItem("user", JSON.stringify(user));
+  localStorage.setItem("token", token);
 }
 
 export function isAuthenticated() {
@@ -19,6 +76,8 @@ export function isAuthenticated() {
 }
 
 export function clearAuth() {
+  localStorage.removeItem("eco_auth");
+  sessionStorage.removeItem("eco_auth");
   localStorage.removeItem("token");
   localStorage.removeItem("user");
 }

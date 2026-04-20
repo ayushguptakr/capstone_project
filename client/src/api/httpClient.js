@@ -1,3 +1,5 @@
+import { getToken } from "../utils/authStorage";
+
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -25,7 +27,7 @@ export async function apiRequest(path, options = {}) {
     isMultipart = false,
   } = options;
 
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const requestHeaders = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...headers,

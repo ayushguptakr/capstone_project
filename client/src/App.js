@@ -45,6 +45,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminSchools from "./pages/AdminSchools";
 import AdminUsers from "./pages/AdminUsers";
 import SetPassword from "./pages/SetPassword";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import AlertProvider from "./components/ui/AlertProvider";
 import GamePlayer from "./pages/GamePlayer";
 import EcoHabitGame from "./pages/EcoHabitGame";
@@ -58,6 +60,8 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
         <Route path="/signup" element={<GuestOnly><Signup /></GuestOnly>} />
+        <Route path="/forgot-password" element={<GuestOnly><ForgotPassword /></GuestOnly>} />
+        <Route path="/reset-password/:token" element={<GuestOnly><ResetPassword /></GuestOnly>} />
 
         {/* First-login password reset (any authenticated role) */}
         <Route path="/set-password" element={<RequireAuth><SetPassword /></RequireAuth>} />
