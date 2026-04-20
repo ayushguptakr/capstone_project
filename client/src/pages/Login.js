@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { AuthShell, AuthFloatingLeaf, AuthInput } from "../components/auth";
 import { Loader2 } from "lucide-react";
 import { API_BASE_URL } from "../api/httpClient";
-import { setAuthData } from "../utils/authStorage";
+import { useAuth } from "../context/AuthContext";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -15,6 +15,7 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const validate = () => {
     const next = {};
@@ -33,23 +34,13 @@ function Login() {
       const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
       
       const user = res.data.user;
-      setAuthData(user, res.data.token, rememberMe);
 
-      // First-login intercept — only for admin-provisioned accounts (teacher/principal)
-      // Students set their password at signup, so they never hit this.
-      if (user.isFirstLogin && user.role !== "student") {
-        navigate("/set-password");
-        return;
-      }
-
-      // Role-based redirection
-      const roleHome = {
-        student: "/dashboard",
-        teacher: "/teacher-dashboard",
-        principal: "/principal/dashboard",
-        admin: "/admin/dashboard",
-      };
-      navigate(roleHome[user.role] || "/dashboard");
+      // Set auth state + storage via context (single source of truth).
+      // We do NOT call navigate() here because Login.js is wrapped in <GuestOnly />.
+      // Calling login() updates the Context, triggering GuestOnly to re-render 
+      // and perform the correct <Navigate /> based on the user's role.
+      login(user, res.data.token, rememberMe);
+      
     } catch (err) {
       setIsLoading(false);
       setSubmitError(err.response?.data?.message || "Login failed. Check your details and try again.");

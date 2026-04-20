@@ -134,12 +134,9 @@ function Dashboard() {
   const missionsRef = useRef(null);
   const [prevBadges, setPrevBadges] = useState([]);
 
-  // Redirect if not authenticated (belt-and-suspenders with RequireAuth)
-  useEffect(() => {
-    if (!user) {
-      navigate("/login", { replace: true });
-    }
-  }, [user, navigate]);
+  // If user is null (logged out), render nothing — RequireAuth handles the redirect.
+  // Do NOT use useEffect + navigate here — it causes infinite loops with GuestOnly.
+  if (!user) return null;
 
   useEffect(() => {
     setStreak(parseInt(localStorage.getItem("ecoStreak") || "0", 10));

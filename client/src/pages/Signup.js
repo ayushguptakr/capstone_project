@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { AuthShell, AuthFloatingLeaf, AuthInput, AuthSelect } from "../components/auth";
 import { EcoLoader } from "../components";
 import { API_BASE_URL } from "../api/httpClient";
+import { useAuth } from "../context/AuthContext";
 
 function Signup() {
   const [name, setName] = useState("");
@@ -17,8 +18,8 @@ function Signup() {
   const [submitError, setSubmitError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-
+  const { login } = useAuth();
+  
   React.useEffect(() => {
     // Fetch available schools on mount
     axios.get(`${API_BASE_URL}/api/auth/schools`)
@@ -56,9 +57,9 @@ function Signup() {
         section,
         className: classValue && section ? `${classValue}${section}` : classValue,
       });
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      localStorage.setItem("token", res.data.token);
-      navigate("/dashboard");
+      // Use AuthContext so state updates reactively and GuestOnly handles the redirect
+      login(res.data.user, res.data.token, true); // true for rememberMe to persist session
+
     } catch (err) {
       setIsLoading(false);
       setSubmitError(err.response?.data?.message || "Could not create account. Try again or use a different email.");
