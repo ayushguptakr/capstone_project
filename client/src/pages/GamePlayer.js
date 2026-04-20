@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Maximize2, Minimize2, ArrowLeft, Volume2, VolumeX, Loader2 } from "lucide-react";
 import gamesConfig from "../data/gamesConfig";
 import GameRewardModal from "../components/GameRewardModal";

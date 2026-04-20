@@ -15,7 +15,7 @@ function Leaderboard() {
 
   const [timeRange, setTimeRange] = useState("all");
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
+
 
   const currentUser = getStoredUser();
 
@@ -50,7 +50,7 @@ function Leaderboard() {
 
         setSchoolLeaderboard(schData || []);
         setClassLeaderboard(clsData || []);
-        setLastUpdated(new Date());
+
       } catch (err) {
         console.error(err);
       } finally {

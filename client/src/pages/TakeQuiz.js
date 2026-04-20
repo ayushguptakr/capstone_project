@@ -19,7 +19,7 @@ function TakeQuiz() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
-  const [showsetShowConfetti] = useState(false);
+
   const [sproutyMood, setSproutyMood] = useState("idle");
   const [sproutyCaption, setSproutyCaption] = useState("");
   const { triggerXPFromEvent, triggerSuccess } = useFeedback();

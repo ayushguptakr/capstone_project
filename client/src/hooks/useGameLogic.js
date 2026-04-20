@@ -227,7 +227,8 @@ export default function useGameLogic(level = 1) {
     setIsCorrect(null);
     setTimeLeft(TIME_PER_QUESTION);
     setPhase("playing");
-  }, []);// eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Timer ──────────────────────────────────
   useEffect(() => {
@@ -293,6 +294,7 @@ export default function useGameLogic(level = 1) {
     setIsCorrect(null);
     setTimeLeft(TIME_PER_QUESTION);
     setPhase("playing");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex]);
 
   // ── Computed Stats ─────────────────────────

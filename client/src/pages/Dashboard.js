@@ -73,12 +73,7 @@ function timeAgo(iso) {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-function nextLevelMeta(points) {
-  const nextLevelXp = Math.max(1000, (Math.floor(points / 1000) + 1) * 1000);
-  const xpToNext = Math.max(0, nextLevelXp - points);
-  const pct = nextLevelXp > 0 ? Math.min(100, (points / nextLevelXp) * 100) : 0;
-  return { nextLevelXp, xpToNext, pct };
-}
+
 
 function CountUpNumber({ to, duration = 900, format }) {
   const [display, setDisplay] = useState(0);
@@ -116,7 +111,7 @@ function formatCountdown(totalSeconds) {
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { triggerXPFromEvent, _triggerBadgeUnlock, triggerLevelUp, triggerSuccess } =
+  const { triggerXPFromEvent, triggerLevelUp, triggerSuccess } =
     useFeedback();
   const { playClick } = useSound();
   const [user, setUser] = useState(() => getStoredUser());
@@ -168,7 +163,7 @@ function Dashboard() {
 
       setPrevBadges(user.badges);
     }
-  }, [user?.badges]);
+  }, [user?.badges, prevBadges]);
 
   useEffect(() => {
     const onStreakUpdate = (event) => {
@@ -270,7 +265,7 @@ function Dashboard() {
   });
 
   const { points, levelNum, xpToNext, pct, ecoScore, rank, league, weeklyXP,
-          lastActiveIso, missionsPending, streakAtRisk, plantStage, sproutyContext,
+          missionsPending, streakAtRisk, plantStage, sproutyContext,
           diffs, commitState, hydrated } = engine;
 
   const level = getLevel(points);
