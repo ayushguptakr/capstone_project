@@ -96,7 +96,6 @@ function TakeQuiz() {
         retries: 0,
       });
       setResult(data);
-      setShowConfetti(true);
       triggerSuccess();
       triggerXPFromEvent(data.score ?? 0, e, { y: window.innerHeight * 0.48 });
     } catch (e) {
