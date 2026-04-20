@@ -175,12 +175,30 @@ function Dashboard() {
   }, []);
 
   const [nudge, setNudge] = useState(null);
+  const hasFetchedNudge = useRef(false);
   
   useEffect(() => {
-    if (user?.role !== "student") return;
-    apiRequest("/api/gamification/nudge")
-      .then(data => setNudge(data.nudge))
-      .catch(() => {});
+    if (user?.role !== "student" || hasFetchedNudge.current) return;
+    hasFetchedNudge.current = true;
+
+    let isFetching = false;
+    const fetchNudge = async () => {
+      if (isFetching) return;
+      isFetching = true;
+      try {
+        console.log("Nudge API called");
+        const data = await apiRequest("/api/gamification/nudge");
+        if (data?.nudge) {
+          setNudge(data.nudge);
+        }
+      } catch (error) {
+        // Safe catch
+      } finally {
+        isFetching = false;
+      }
+    };
+
+    fetchNudge();
   }, [user?.role]);
 
   useEffect(() => {

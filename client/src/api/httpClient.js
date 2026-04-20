@@ -66,6 +66,10 @@ export async function apiRequest(path, options = {}) {
       }
       return data;
     } catch (error) {
+      if (error.status === 429) {
+        console.warn("Rate limited - stopping repeated calls");
+        return null;
+      }
       lastError = error;
       if (attempt === retries) break;
       await delay(250 * (attempt + 1));
