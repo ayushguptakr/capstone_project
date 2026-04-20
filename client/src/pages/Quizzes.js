@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Brain } from "lucide-react";
+import { Brain, ArrowLeft } from "lucide-react";
 import { IconBox } from "../components";
 import { apiRequest } from "../api/httpClient";
 import QuizHeroCard from "../components/quiz/QuizHeroCard";
