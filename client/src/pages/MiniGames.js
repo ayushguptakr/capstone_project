@@ -1,15 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Gamepad2, Recycle, Brain, Globe, Zap, Sprout, BarChart3, Clock3,
-  Play, Lock, Flame, Trophy, Star, ChevronLeft, ChevronRight,
-  Target, X
-} from "lucide-react";
-import useFeedback from "../hooks/useFeedback";
-import useSound from "../hooks/useSound";
-import { useAlert } from "../components/ui/AlertProvider";
 import { apiRequest } from "../api/httpClient";
+import {
+  Gamepad2, Recycle, Brain, Globe, Zap, Sprout, Clock3,
+  Play, Lock, Flame, Star, ChevronLeft, ChevronRight
+} from "lucide-react";
 
 import gamesConfigRaw from "../data/gamesConfig";
 
