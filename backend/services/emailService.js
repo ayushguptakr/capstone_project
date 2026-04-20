@@ -1,10 +1,16 @@
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 /**
- * Send a password-reset email.
- * In development mode, also logs the URL to the console for easy testing.
+ * Send a password-reset email via Gmail.
+ * In development mode, also logs the URL to console for easy testing.
  *
  * @param {{ to: string, resetUrl: string, userName?: string }} opts
  */
@@ -38,7 +44,7 @@ async function sendPasswordResetEmail({ to, resetUrl, userName }) {
       </p>
 
       <p style="margin:0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
-        If you didn't request this, you can safely ignore this email — your password will remain unchanged.
+        If you didn't request this, you can safely ignore this email &mdash; your password will remain unchanged.
       </p>
 
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0 16px;" />
@@ -51,33 +57,26 @@ async function sendPasswordResetEmail({ to, resetUrl, userName }) {
 
   // Always log in development for easy testing
   if (process.env.NODE_ENV !== "production") {
-    console.log(`\n\n[DEV] 🔐 Password Reset Link for ${to}:`);
+    console.log(`\n[DEV] 🔐 Password Reset Link for ${to}:`);
     console.log(resetUrl);
     console.log(`(Expires in 15 minutes)\n`);
   }
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: "EcoQuest <onboarding@resend.dev>",
+    await transporter.sendMail({
+      from: `"EcoQuest 🌿" <${process.env.EMAIL_USER}>`,
       to,
       subject: "Reset your EcoQuest password",
       html,
     });
-
-    if (error) {
-      console.error("[emailService] Resend error:", error);
-      throw new Error(error.message || "Email delivery failed");
-    }
-
-    return data;
   } catch (err) {
-    // In development, don't blow up the whole request if email fails —
-    // the console.log above already gives the link.
+    console.error("[emailService] Gmail error:", err.message);
+    // In dev, don't crash — the link is already logged above
     if (process.env.NODE_ENV !== "production") {
-      console.warn("[emailService] Email send failed (dev mode, link logged above):", err.message);
-      return null;
+      console.warn("[emailService] Email failed in dev mode, reset link logged above.");
+      return;
     }
-    throw err;
+    throw new Error("Email could not be sent");
   }
 }
 
