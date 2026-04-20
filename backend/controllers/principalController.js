@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Event = require("../models/Event");
 const Task = require("../models/Task");
 const Submission = require("../models/Submission");
+const Class = require("../models/Class");
 const crypto = require("crypto");
 
 // -------------------- CREATE TEACHER (PRINCIPAL ONLY) --------------------
@@ -263,5 +264,148 @@ exports.getPrincipalAiInsights = async (req, res) => {
     res.json({ text: newText });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// -------------------- CLASS MANAGEMENT --------------------
+
+exports.createClass = async (req, res) => {
+  try {
+    const schoolId = req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ message: "No school assigned." });
+
+    const { name, section } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Class name is required (e.g. '10')." });
+    }
+
+    const newClass = await Class.create({
+      name: name.trim(),
+      section: (section || "").trim().toUpperCase(),
+      schoolId,
+    });
+
+    res.status(201).json({
+      message: "Class created successfully",
+      class: newClass,
+    });
+  } catch (err) {
+    // Handle duplicate key (same class+section in school)
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "This class already exists in your school." });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getSchoolClasses = async (req, res) => {
+  try {
+    const schoolId = req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ message: "No school assigned." });
+
+    const classes = await Class.find({ schoolId }).sort({ name: 1, section: 1 });
+
+    // Enrich with student/teacher counts
+    const enriched = await Promise.all(
+      classes.map(async (cls) => {
+        const studentCount = await User.countDocuments({
+          role: "student",
+          schoolId,
+          $or: [
+            { class: cls.label },
+            { className: cls.label },
+            { class: cls.name, section: cls.section },
+          ],
+        });
+        const teacherCount = await User.countDocuments({
+          role: "teacher",
+          schoolId,
+          assignedClasses: cls._id,
+        });
+        return {
+          ...cls.toObject(),
+          studentCount,
+          teacherCount,
+        };
+      })
+    );
+
+    res.json({ classes: enriched });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// -------------------- TEACHER-CLASS ASSIGNMENT --------------------
+
+exports.assignTeacherToClasses = async (req, res) => {
+  try {
+    const schoolId = req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ message: "No school assigned." });
+
+    const { teacherId, classIds } = req.body;
+    if (!teacherId) return res.status(400).json({ message: "teacherId is required." });
+    if (!Array.isArray(classIds) || classIds.length === 0) {
+      return res.status(400).json({ message: "classIds array is required." });
+    }
+
+    // Validate teacher belongs to same school
+    const teacher = await User.findOne({ _id: teacherId, role: "teacher", schoolId });
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found in your school." });
+    }
+
+    // Validate all classes belong to same school
+    const validClasses = await Class.find({ _id: { $in: classIds }, schoolId });
+    if (validClasses.length !== classIds.length) {
+      return res.status(400).json({ message: "One or more classes do not belong to your school." });
+    }
+
+    // Update teacher
+    teacher.assignedClasses = classIds;
+    // Also set legacy classAssigned from first class for backward compat
+    if (validClasses.length > 0) {
+      teacher.classAssigned = validClasses[0].label || validClasses[0].name;
+    }
+    await teacher.save();
+
+    res.json({
+      message: "Teacher assigned to classes successfully",
+      teacher: {
+        _id: teacher._id,
+        name: teacher.name,
+        assignedClasses: teacher.assignedClasses,
+        classAssigned: teacher.classAssigned,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// -------------------- SCHOOL-WIDE ANNOUNCEMENT (PRINCIPAL) --------------------
+
+exports.createSchoolAnnouncement = async (req, res) => {
+  try {
+    const schoolId = req.user.schoolId;
+    if (!schoolId) return res.status(400).json({ message: "No school assigned." });
+
+    const { message, target } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({ message: "Message is required." });
+    }
+
+    const Announcement = require("../models/Announcement");
+    const announcement = await Announcement.create({
+      teacher: req.user._id,
+      schoolId,
+      school: "",
+      target: target || "All Classes",
+      message: message.trim(),
+    });
+
+    res.status(201).json(announcement);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

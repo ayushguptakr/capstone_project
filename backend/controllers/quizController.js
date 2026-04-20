@@ -3,6 +3,7 @@ const QuizAttempt = require("../models/QuizAttempt");
 const User = require("../models/User");
 const adaptiveDifficultyEngine = require("../services/adaptiveDifficultyEngine");
 const gamificationService = require("../services/gamificationService");
+const { buildContentScope } = require("../middleware/scopeFilter");
 
 const QUIZ_CURRICULUM = {
   version: 1,
@@ -22,10 +23,11 @@ function calculateStars(correct, total) {
   return 0;
 }
 
-// Get all active quizzes
+// Get all active quizzes (scoped to school + global)
 const getQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ isActive: true })
+    const scope = buildContentScope(req.user, { skipClassFilter: true });
+    const quizzes = await Quiz.find({ ...scope, isActive: true })
       .select("-questions.correctAnswer")
       .populate("createdBy", "name");
     res.json(quizzes);
@@ -189,10 +191,10 @@ const submitQuiz = async (req, res) => {
   }
 };
 
-// Create quiz (teacher/admin only)
+// Create quiz (teacher/admin only) — stamps schoolId from creator
 const createQuiz = async (req, res) => {
   try {
-    const { title, description, questions, difficulty, category } = req.body;
+    const { title, description, questions, difficulty, category, targetClass } = req.body;
     
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 5), 0);
 
@@ -203,6 +205,9 @@ const createQuiz = async (req, res) => {
       totalPoints,
       difficulty,
       category,
+      targetClass: targetClass || null,
+      schoolId: req.user.schoolId || null,
+      isGlobal: !req.user.schoolId, // admin-created quizzes without school are global
       createdBy: req.user.id
     });
 

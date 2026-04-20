@@ -58,15 +58,15 @@ const getTeacherAnalytics = async (req, res) => {
     const teacherId = req.user.id;
     const teacher = await User.findById(teacherId);
 
-    // Get students from same school
+    // Get students from same school (using schoolId, not string)
     const students = await User.find({ 
       role: "student", 
-      school: teacher.school 
-    }).select("name points level badges lastActivityAt className class section school");
+      schoolId: teacher.schoolId 
+    }).select("name points level badges lastActivityAt className class section schoolId");
 
-    // Get pending submissions for verification
-    const pendingSubmissions = await Submission.find({ status: "pending" })
-      .populate("student", "name school className class section level")
+    // Get pending submissions for verification (scoped to teacher's school)
+    const pendingSubmissions = await Submission.find({ status: "pending", schoolId: teacher.schoolId })
+      .populate("student", "name schoolId className class section level")
       .populate("task", "title points")
       .sort({ createdAt: -1 })
       .limit(10);
@@ -77,7 +77,7 @@ const getTeacherAnalytics = async (req, res) => {
 
     // School performance metrics
     const schoolStats = await User.aggregate([
-      { $match: { role: "student", school: teacher.school } },
+      { $match: { role: "student", schoolId: teacher.schoolId } },
       {
         $group: {
           _id: null,
@@ -93,7 +93,7 @@ const getTeacherAnalytics = async (req, res) => {
     const recentQuizAttempts = await QuizAttempt.find()
       .populate({
         path: "student",
-        match: { school: teacher.school },
+        match: { schoolId: teacher.schoolId },
         select: "name"
       })
       .populate("quiz", "title")
@@ -132,7 +132,7 @@ const getTeacherAnalytics = async (req, res) => {
       }))
       .sort((a, b) => b.score - a.score);
 
-    const schoolTeachers = await User.find({ role: "teacher", school: teacher.school }).select("name");
+    const schoolTeachers = await User.find({ role: "teacher", schoolId: teacher.schoolId }).select("name");
     const contentByTeacher = await Task.aggregate([
       { $match: { createdBy: { $in: schoolTeachers.map((t) => t._id) } } },
       { $group: { _id: "$createdBy", tasks: { $sum: 1 } } },
@@ -187,7 +187,12 @@ const getVerificationQueue = async (req, res) => {
     if (["pending", "approved", "rejected"].includes(statusParam)) {
       filter.status = statusParam;
     }
-    // Default: return all if no valid status specified
+
+    // Scope to teacher's school
+    const teacher = await User.findById(req.user.id).select("schoolId");
+    if (teacher?.schoolId) {
+      filter.schoolId = teacher.schoolId;
+    }
 
     const submissions = await Submission.find(filter)
       .populate("student", "name school className class section level")
@@ -296,10 +301,11 @@ const createAnnouncement = async (req, res) => {
       return res.status(400).json({ message: "Message is required" });
     }
 
-    const teacher = await User.findById(req.user.id).select("school");
+    const teacher = await User.findById(req.user.id).select("schoolId");
     const announcement = await Announcement.create({
       teacher: req.user.id,
-      school: teacher?.school || "",
+      schoolId: teacher?.schoolId || null,
+      school: "", // legacy field, kept for back-compat
       target: target || "All Classes",
       message: message.trim(),
     });
@@ -324,10 +330,11 @@ const createSchedule = async (req, res) => {
     if (!type || !title || !startDate) {
       return res.status(400).json({ message: "type, title and startDate are required" });
     }
-    const teacher = await User.findById(req.user.id).select("school");
+    const teacher = await User.findById(req.user.id).select("schoolId");
     const created = await ScheduledContent.create({
       teacher: req.user.id,
-      school: teacher?.school || "",
+      school: "", // legacy
+      schoolId: teacher?.schoolId || null,
       type,
       title,
       visibility: visibility || "students",
@@ -357,8 +364,8 @@ const assignBonusXP = async (req, res) => {
       return res.status(400).json({ message: "studentId and positive points are required" });
     }
 
-    const teacher = await User.findById(req.user.id).select("school");
-    const student = await User.findOne({ _id: studentId, role: "student", school: teacher?.school });
+    const teacher = await User.findById(req.user.id).select("schoolId");
+    const student = await User.findOne({ _id: studentId, role: "student", schoolId: teacher?.schoolId });
     if (!student) return res.status(404).json({ message: "Student not found in your school" });
 
     await gamificationService.awardPoints({
@@ -381,10 +388,11 @@ const createCustomBadge = async (req, res) => {
     if (!title || !title.trim()) {
       return res.status(400).json({ message: "title is required" });
     }
-    const teacher = await User.findById(req.user.id).select("school");
+    const teacher = await User.findById(req.user.id).select("schoolId");
     const badge = await CustomBadge.create({
       teacher: req.user.id,
-      school: teacher?.school || "",
+      school: "", // legacy
+      schoolId: teacher?.schoolId || null,
       title: title.trim(),
       icon: icon || "🌟",
       criteria: criteria || "",
@@ -418,7 +426,7 @@ const getAiInsights = async (req, res) => {
     }
 
     // Build minimalist analytics payload
-    const students = await User.find({ role: "student", school: user.school }).select("points level class className section");
+    const students = await User.find({ role: "student", schoolId: user.schoolId }).select("points level class className section");
     const inactiveCount = students.filter(s => (s.points || 0) < 40).length;
     
     let weakData = "Water conservation"; 

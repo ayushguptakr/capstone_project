@@ -12,6 +12,7 @@ const submissionSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "School", default: null },
     content: { type: String },
     imageUrl: { type: String },
     fileMime: { type: String },

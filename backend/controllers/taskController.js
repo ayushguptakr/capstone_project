@@ -1,9 +1,20 @@
 const Task = require("../models/Task");
+const User = require("../models/User");
+const { buildContentScope } = require("../middleware/scopeFilter");
 
-// Create task (teacher/admin); optional impact_model, category, difficulty
+// Create task (teacher/admin); validates targetClass against teacher's assignment
 exports.createTask = async (req, res) => {
   try {
     const { title, description, points, deadline, impact_model, category, difficulty, whyItMatters, proofType, targetClass } = req.body;
+
+    // Write-time validation: teacher can only create for their assigned class
+    if (req.user.role === "teacher" && targetClass) {
+      const teacherClass = req.user.classAssigned || "";
+      // Normalize: "10" matches "10", "10-A" matches "10-A"
+      if (teacherClass && targetClass !== teacherClass) {
+        return res.status(403).json({ message: "You can only create tasks for your assigned class." });
+      }
+    }
 
     const task = await Task.create({
       title,
@@ -11,6 +22,8 @@ exports.createTask = async (req, res) => {
       points,
       deadline,
       createdBy: req.user.id,
+      schoolId: req.user.schoolId || null,
+      isGlobal: !req.user.schoolId,
       ...(impact_model && {
         impact_model: {
           co2_per_unit: impact_model.co2_per_unit,
@@ -34,18 +47,11 @@ exports.createTask = async (req, res) => {
   }
 };
 
-// Get all tasks (students)
+// Get all tasks (scoped to school + class, includes global)
 exports.getTasks = async (req, res) => {
   try {
-    const { targetClass } = req.query;
-    const filter = {};
-    if (targetClass) {
-      filter.$or = [{ targetClass: targetClass }, { targetClass: null }, { targetClass: "" }];
-    } else {
-      filter.$or = [{ targetClass: null }, { targetClass: "" }];
-    }
-
-    const tasks = await Task.find(filter).sort({ createdAt: -1 });
+    const scope = buildContentScope(req.user);
+    const tasks = await Task.find(scope).sort({ createdAt: -1 });
     res.json(tasks);
   } catch (err) {
     res.status(500).json({ error: err.message });

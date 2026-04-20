@@ -5,8 +5,8 @@ const { protect, requirePasswordSet } = require("../middleware/authMiddleware");
 
 /**
  * GET /api/announcements/student
- * Returns announcements targeted at the student's class or "All Classes".
- * Sorted by latest first, limited to 20.
+ * Returns announcements targeted at the student's class or "All Classes",
+ * scoped to their school via schoolId (ObjectId).
  */
 router.get("/student", protect, requirePasswordSet, async (req, res) => {
   try {
@@ -21,9 +21,9 @@ router.get("/student", protect, requirePasswordSet, async (req, res) => {
 
     const filter = { $or: targetFilter };
 
-    // Scope to same school if available (use the String field, not ObjectId)
-    if (user.school) {
-      filter.school = { $in: [user.school, "", null, undefined] };
+    // Scope to same school using ObjectId
+    if (user.schoolId) {
+      filter.schoolId = user.schoolId;
     }
 
     const announcements = await Announcement.find(filter)
@@ -40,3 +40,4 @@ router.get("/student", protect, requirePasswordSet, async (req, res) => {
 });
 
 module.exports = router;
+

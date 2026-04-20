@@ -37,6 +37,7 @@ exports.submitTask = async (req, res) => {
       imageHash,
       submittedAt: submittedAtDate,
       geoTag,
+      schoolId: req.user.schoolId || null,
     });
 
     const trustResult = await trustScoreService.computeTrustScore(
@@ -140,10 +141,14 @@ exports.getMySubmissions = async (req, res) => {
   }
 };
 
-// Teacher: See submissions for a task
+// Teacher: See submissions for a task (scoped to teacher's school)
 exports.getTaskSubmissions = async (req, res) => {
   try {
-    const submissions = await Submission.find({ task: req.params.taskId }).populate("student", "name email school");
+    const filter = { task: req.params.taskId };
+    if (req.user.schoolId) {
+      filter.schoolId = req.user.schoolId;
+    }
+    const submissions = await Submission.find(filter).populate("student", "name email school className class section");
     res.json(submissions);
   } catch (err) {
     res.status(500).json({ message: err.message });

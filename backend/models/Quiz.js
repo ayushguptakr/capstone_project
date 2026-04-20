@@ -24,6 +24,9 @@ const quizSchema = new mongoose.Schema(
       enum: ["waste-management", "energy", "water", "biodiversity", "climate"], 
       default: "waste-management" 
     },
+    schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "School", default: null },
+    targetClass: { type: String, default: null },
+    isGlobal: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },

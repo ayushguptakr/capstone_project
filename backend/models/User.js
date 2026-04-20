@@ -30,8 +30,10 @@ const userSchema = new mongoose.Schema(
       dateKey: { type: String },
       refreshing: { type: Boolean, default: false }
     },
-    /** For teachers: which class they are assigned to (e.g. "10"). */
+    /** For teachers: which class they are assigned to (e.g. "10"). Legacy string field. */
     classAssigned: { type: String },
+    /** For teachers: ObjectId refs to assigned Class documents. */
+    assignedClasses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Class" }],
     /** Who provisioned this account (principalId or adminId). */
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     /** Optional: for class-level aggregation (e.g. "Class 10-A"). */

@@ -2,15 +2,23 @@ const User = require("../models/User");
 const QuizAttempt = require("../models/QuizAttempt");
 const Submission = require("../models/Submission");
 
-// Get global leaderboard
+// Get leaderboard (school-scoped by default, global opt-in)
 const getLeaderboard = async (req, res) => {
   try {
-    const { limit = 50, school, class: classValue, section } = req.query;
+    const { limit = 50, type = "school", class: classValue, section } = req.query;
     
     let filter = { role: "student" };
-    if (school) {
-      filter.school = school;
+
+    // School scoping: enforced from token, NEVER from query params
+    if (type === "global") {
+      // Global leaderboard — read-only, no school filter
+    } else {
+      // Default: school-scoped
+      if (req.user.schoolId) {
+        filter.schoolId = req.user.schoolId;
+      }
     }
+
     if (classValue) {
       filter.$or = [{ class: classValue }, { className: new RegExp(String(classValue), "i") }];
     }
@@ -19,7 +27,7 @@ const getLeaderboard = async (req, res) => {
     }
 
     const leaderboard = await User.find(filter)
-      .select("name school className class section points level badges league weeklyXP streakCurrent")
+      .select("name className class section points level badges league weeklyXP streakCurrent")
       .sort({ points: -1 })
       .limit(parseInt(limit));
 
@@ -43,11 +51,15 @@ const getStudentProgress = async (req, res) => {
       "name points badges school className class section level experiencePoints streakCurrent streakLastActiveAt lastActivityAt"
     );
     
-    // Get student's rank
-    const higherRankedCount = await User.countDocuments({
+    // Get student's rank (scoped to same school)
+    const rankFilter = {
       role: "student",
       points: { $gt: student.points }
-    });
+    };
+    if (req.user.schoolId) {
+      rankFilter.schoolId = req.user.schoolId;
+    }
+    const higherRankedCount = await User.countDocuments(rankFilter);
     const rank = higherRankedCount + 1;
 
     // Get quiz stats

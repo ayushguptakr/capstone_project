@@ -23,6 +23,8 @@ const taskSchema = new mongoose.Schema(
     points: { type: Number, default: 10 },
     deadline: { type: Date },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "School", default: null },
+    isGlobal: { type: Boolean, default: false },
     /** Context for students on why the mission helps the planet. */
     whyItMatters: { type: String, default: "This mission helps protect our local ecosystem!" },
     /** Determines if the student must upload an image, video, text, or any variation. */
