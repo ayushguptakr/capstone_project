@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Star, Lock, BookOpen, Clock, Zap } from "lucide-react";
+import { Star, Lock, BookOpen } from "lucide-react";
 import { Badge, IconBox } from "../../components";
 
 export default function QuizCardEnhanced({ quiz, progress, isLocked, onPlay }) {

@@ -22,7 +22,7 @@ export default function QuestionCard({
 }) {
   if (!question) return null;
 
-  const correctIdx = question.choices.findIndex(c => c.correct);
+  
   const timerPct = (timeLeft / maxTime) * 100;
   const timerColor = timeLeft <= 2 ? "bg-red-500" : timeLeft <= 4 ? "bg-amber-500" : "bg-emerald-500";
   const timerTextColor = timeLeft <= 2 ? "text-red-500" : timeLeft <= 4 ? "text-amber-500" : "text-emerald-500";

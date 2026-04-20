@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
-import { ProgressBar, Confetti, EcoLoader, SproutyQuizBuddy } from "../components";
+import { ProgressBar, EcoLoader, SproutyQuizBuddy } from "../components";
 import QuizRewardModal from "../components/quiz/QuizRewardModal";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
@@ -19,7 +19,7 @@ function TakeQuiz() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [showsetShowConfetti] = useState(false);
   const [sproutyMood, setSproutyMood] = useState("idle");
   const [sproutyCaption, setSproutyCaption] = useState("");
   const { triggerXPFromEvent, triggerSuccess } = useFeedback();

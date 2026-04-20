@@ -190,7 +190,7 @@ export default function useGameLogic(level = 1) {
   const TIME_PER_QUESTION = level === 1 ? 10 : level === 2 ? 7 : 5;
   
   const [phase, setPhase] = useState("ready"); // ready | playing | feedback | ended
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState([]);// eslint-disable-next-line react-hooks/exhaustive-deps
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
@@ -199,7 +199,7 @@ export default function useGameLogic(level = 1) {
   const [streakCount, setStreakCount] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState([]);// eslint-disable-next-line react-hooks/exhaustive-deps
   const timerRef = useRef(null);
 
   // Multiplier: 1x base, +0.5x per streak hit (max 3x)
@@ -222,12 +222,12 @@ export default function useGameLogic(level = 1) {
     setStreakCount(0);
     setMaxStreak(0);
     setCorrectCount(0);
-    setResults([]);
+    setResults([]);// eslint-disable-next-line react-hooks/exhaustive-deps
     setSelectedIdx(null);
     setIsCorrect(null);
     setTimeLeft(TIME_PER_QUESTION);
     setPhase("playing");
-  }, []);
+  }, []);// eslint-disable-next-line react-hooks/exhaustive-deps
 
   // ── Timer ──────────────────────────────────
   useEffect(() => {

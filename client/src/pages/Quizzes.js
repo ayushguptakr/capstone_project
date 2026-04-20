@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Brain, Recycle, Zap, Droplet, Sprout, Globe, BookOpen, ListChecks, ArrowLeft } from "lucide-react";
-import { Badge, IconBox } from "../components";
+import { Brain, Recycle, Zap, Droplet, Sprout, Globe, ArrowLeft } from "lucide-react";
+import { IconBox } from "../components";
 import { apiRequest } from "../api/httpClient";
 import QuizHeroCard from "../components/quiz/QuizHeroCard";
 import QuizPath from "../components/quiz/QuizPath";
@@ -11,13 +11,7 @@ import QuizCardEnhanced from "../components/quiz/QuizCardEnhanced";
 // Mirroring Backend's Curriculum for Path Map
 const QUIZ_CURRICULUM = ["waste-1", "energy-1", "water-1", "climate-1", "biodiversity-1"];
 
-const categoryIcons = {
-  "waste-management": Recycle,
-  energy: Zap,
-  water: Droplet,
-  biodiversity: Sprout,
-  climate: Globe,
-};
+
 
 function Quizzes() {
   const [quizzes, setQuizzes] = useState([]);

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy, Star, Flame, TreePine, Droplet, Wind, Trash2,
-  ArrowRight, RotateCcw, X, Sparkles, Gamepad2, Brain, Recycle, Zap, Globe, Sprout
+  ArrowRight, RotateCcw, Sparkles, Brain, Recycle, Zap, Globe, Sprout
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import gamesConfigRaw from "../data/gamesConfig";

@@ -33,8 +33,7 @@ import {
   Hand,
   Sprout,
   Star,
-  PartyPopper,
-} from "lucide-react";
+  } from "lucide-react";
 import { EcoLoader } from "../components";
 import SproutyCard from "../components/SproutyCard";
 import EcoPlant from "../components/EcoPlant";
@@ -117,7 +116,7 @@ function formatCountdown(totalSeconds) {
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { triggerXPFromEvent, triggerBadgeUnlock, triggerLevelUp, triggerSuccess } =
+  const { triggerXPFromEvent, _triggerBadgeUnlock, triggerLevelUp, triggerSuccess } =
     useFeedback();
   const { playClick } = useSound();
   const [user, setUser] = useState(() => getStoredUser());

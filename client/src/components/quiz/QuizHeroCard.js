@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Play, Star, BookOpen, Clock, Flame } from "lucide-react";
+import { Play, BookOpen, Flame } from "lucide-react";
 import { Badge } from "../../components";
 
 const QuizProgressBar = ({ max, current, stars }) => {

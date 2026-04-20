@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import { Trophy, School, Sparkles, Crown, ArrowUpRight, ArrowDownRight, ArrowRight, Star, Clock, AlertTriangle, Play, Flame } from "lucide-react";
+import { Trophy, School, Crown, ArrowUpRight, ArrowDownRight, Clock, Flame } from "lucide-react";
 import { IconBox } from "../components";
 import { apiRequest } from "../api/httpClient";
 import { getStoredUser } from "../utils/authStorage";
@@ -117,7 +117,7 @@ function Leaderboard() {
   }
 
   const listRows = filteredStudents.slice(0, 20);
-  const myIndexInTop = listRows.findIndex((s) => String(s._id) === String(currentUser?.id || currentUser?._id));
+  
   const myCurrentRank = filteredStudents.findIndex((s) => String(s._id) === String(currentUser?.id || currentUser?._id)) + 1;
 
   const tabs = [{ id: "students", label: "Students", Icon: Trophy }, { id: "schools", label: "Schools", Icon: School }];

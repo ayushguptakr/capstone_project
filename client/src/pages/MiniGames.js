@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Gamepad2, Recycle, Brain, Globe, Zap, Sprout, BarChart3, Clock3,
-  ArrowRight, Play, Lock, Flame, Trophy, Star, ChevronLeft, ChevronRight,
-  Target, Sparkles, X, RotateCcw
+  Play, Lock, Flame, Trophy, Star, ChevronLeft, ChevronRight,
+  Target, X
 } from "lucide-react";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
@@ -14,7 +14,7 @@ import { apiRequest } from "../api/httpClient";
 import gamesConfigRaw from "../data/gamesConfig";
 
 // ── Icon mapping (config can't store React components) ─────────────
-const ICON_MAP = { Brain, Recycle, Zap, Globe, Sprout };
+
 const ID_ICON = {
   "eco-memory": Brain, "waste-sorting": Recycle, "trivia-race": Zap,
   "climate-hero": Globe, "plant-growth": Sprout, "ecosystem-builder": Sprout,
@@ -282,9 +282,9 @@ function LaunchModal({ game, onClose, onLaunch, userProgress }) {
 // ── Main Component ────────────────────────────────────────────────
 function MiniGames() {
   const navigate = useNavigate();
-  const { triggerXPFromEvent } = useFeedback();
+  
   const { playClick } = useSound();
-  const { showAlert } = useAlert();
+  
 
   const [activeCategory, setActiveCategory] = useState("all");
   const [launchGame, setLaunchGame] = useState(null);

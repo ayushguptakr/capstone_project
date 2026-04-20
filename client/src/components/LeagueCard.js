@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Trophy, ChevronUp, ChevronDown, Minus, Shield, Crown, Gem, Medal } from "lucide-react";
+import { ChevronUp, ChevronDown, Minus, Shield, Crown, Gem, Medal } from "lucide-react";
 
 const LEAGUES = [
   { id: "bronze", label: "Bronze", color: "from-amber-600 to-amber-800", text: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200", icon: Medal, minXP: 0 },
