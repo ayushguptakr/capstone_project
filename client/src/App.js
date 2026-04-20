@@ -50,9 +50,11 @@ import ResetPassword from "./pages/ResetPassword";
 import AlertProvider from "./components/ui/AlertProvider";
 import GamePlayer from "./pages/GamePlayer";
 import EcoHabitGame from "./pages/EcoHabitGame";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
+    <AuthProvider>
     <AlertProvider>
       <BrowserRouter>
       <Routes>
@@ -147,6 +149,7 @@ function App() {
       </Routes>
     </BrowserRouter>
     </AlertProvider>
+    </AuthProvider>
   );
 }
 

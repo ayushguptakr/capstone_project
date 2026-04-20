@@ -42,10 +42,10 @@ import StreakCalendar from "../components/StreakCalendar";
 import LeagueCard from "../components/LeagueCard";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
-import { getStoredUser } from "../utils/authStorage";
 import { fetchGamificationMe } from "../api/gamificationApi";
 import { apiRequest } from "../api/httpClient";
 import useProgressionEngine from "../hooks/useProgressionEngine";
+import { useAuth } from "../context/AuthContext";
 import confetti from "canvas-confetti";
 
 export const fireConfetti = () => {
@@ -114,7 +114,7 @@ function Dashboard() {
   const { triggerXPFromEvent, triggerLevelUp, triggerSuccess } =
     useFeedback();
   const { playClick } = useSound();
-  const [user, setUser] = useState(() => getStoredUser());
+  const { user } = useAuth();
   const [ecoReport, setEcoReport] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [weakCategory, setWeakCategory] = useState(null);
@@ -134,18 +134,12 @@ function Dashboard() {
   const missionsRef = useRef(null);
   const [prevBadges, setPrevBadges] = useState([]);
 
+  // Redirect if not authenticated (belt-and-suspenders with RequireAuth)
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
-      navigate("/login", { replace: true });
-      return;
-    }
-    try {
-      setUser(JSON.parse(storedUser));
-    } catch {
+    if (!user) {
       navigate("/login", { replace: true });
     }
-  }, [navigate]);
+  }, [user, navigate]);
 
   useEffect(() => {
     setStreak(parseInt(localStorage.getItem("ecoStreak") || "0", 10));
@@ -201,8 +195,13 @@ function Dashboard() {
     fetchNudge();
   }, [user?.role]);
 
+  // Main data fetch — runs once on mount, guarded by user check.
+  // Dependency is [] (empty), NOT [user], to prevent infinite re-fetches
+  // from object reference changes.
+  const hasFetchedData = useRef(false);
   useEffect(() => {
-    if (!user) return;
+    if (!user || hasFetchedData.current) return;
+    hasFetchedData.current = true;
     const fetchData = async () => {
       try {
         const [reportData, recData, weakData, meData, gamificationRes] = await Promise.all([
@@ -247,7 +246,8 @@ function Dashboard() {
       }
     };
     fetchData();
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!activeBadge) return;

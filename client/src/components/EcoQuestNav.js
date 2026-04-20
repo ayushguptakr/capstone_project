@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { getStoredUser, isAuthenticated } from "../utils/authStorage";
+import { useAuth } from "../context/AuthContext";
 import useSound from "../hooks/useSound";
 import { apiRequest } from "../api/httpClient";
 import {
@@ -75,8 +75,7 @@ function initials(name) {
  */
 export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
   const { pathname } = useLocation();
-  const user = getStoredUser();
-  const loggedIn = isAuthenticated() && user;
+  const { user, isLoggedIn: loggedIn, logout } = useAuth();
   const navigate = useNavigate();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
@@ -243,7 +242,7 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
                     type="button"
                     onClick={() => {
                       playClick();
-                      localStorage.clear();
+                      logout();
                       setProfileMenuOpen(false);
                       navigate("/", { replace: true });
                     }}
