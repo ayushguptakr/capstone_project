@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./EcoMemoryGame.css";
 import useFeedback from "../hooks/useFeedback";
+import useSound from "../hooks/useSound";
 import { apiRequest } from "../api/httpClient";
 import GameRewardModal from "../components/GameRewardModal";
 import gamesConfig from "../data/gamesConfig";
