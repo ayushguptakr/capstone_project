@@ -14,7 +14,6 @@ function Login() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const navigate = useNavigate();
   const { login } = useAuth();
 
   const validate = () => {
