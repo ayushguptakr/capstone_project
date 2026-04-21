@@ -134,9 +134,9 @@ function Dashboard() {
   const missionsRef = useRef(null);
   const [prevBadges, setPrevBadges] = useState([]);
 
-  // If user is null (logged out), render nothing — RequireAuth handles the redirect.
-  // Do NOT use useEffect + navigate here — it causes infinite loops with GuestOnly.
-  if (!user) return null;
+  // Unified authentication check: RequireAuth guards the route, and the return statement 
+  // below renders <EcoLoader /> if auth state is still resolving.
+  // We avoid an early return here to keep hooks order consistent.
 
   useEffect(() => {
     setStreak(parseInt(localStorage.getItem("ecoStreak") || "0", 10));
