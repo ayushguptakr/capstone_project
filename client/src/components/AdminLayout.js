@@ -1,7 +1,8 @@
 import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { LayoutDashboard, School, Users, LogOut } from "lucide-react";
-import { clearAuth } from "../utils/authStorage";
+import { useAuth } from "../context/AuthContext";
+import { EcoLogo } from "./EcoLogo";
 import "../pages/AdminPanel.css";
 
 const NAV_ITEMS = [
@@ -11,21 +12,21 @@ const NAV_ITEMS = [
 ];
 
 export default function AdminLayout() {
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    clearAuth();
-    navigate("/login");
+    logout();
+    navigate("/login", { replace: true });
   };
 
   return (
     <div className="admin-root" style={{ display: "flex" }}>
       {/* Sidebar */}
       <aside className="admin-sidebar">
-        <div className="admin-sidebar__brand">
-          <h2>
-            EcoQuest <span>/ Admin</span>
-          </h2>
+        <div className="admin-sidebar__brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <EcoLogo className="w-8 h-8" withText={true} showTagline={false} />
+          <span className="admin-role-badge admin-role-badge--admin" style={{ marginTop: '4px' }}>Admin</span>
         </div>
         <nav className="admin-sidebar__nav">
           {NAV_ITEMS.map((item) => (

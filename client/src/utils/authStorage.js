@@ -4,7 +4,7 @@ const getStorage = () => {
   return null;
 };
 
-/** Read user from localStorage (set at login/signup). */
+/** Read user from localStorage (set at login/signup). Strictly requires a token. */
 export function getStoredUser() {
   try {
     const storage = getStorage();
@@ -12,7 +12,7 @@ export function getStoredUser() {
       const raw = storage.getItem("eco_auth");
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.expiresAt < Date.now()) {
+        if (parsed.expiresAt < Date.now() || !parsed.token) {
           clearAuth();
           return null;
         }
@@ -22,7 +22,17 @@ export function getStoredUser() {
 
     // Fallback for old legacy sessions
     const rawLegacy = localStorage.getItem("user");
-    if (!rawLegacy) return null;
+    const legacyToken = localStorage.getItem("token");
+    
+    // STRICT GUARD: Must have both token and user
+    if (!rawLegacy || !legacyToken) {
+      if (rawLegacy || legacyToken) {
+        // If we have one but not the other, the session is corrupted/stale. Clear it.
+        clearAuth();
+      }
+      return null;
+    }
+    
     const u = JSON.parse(rawLegacy);
     return u && typeof u === "object" ? u : null;
   } catch {

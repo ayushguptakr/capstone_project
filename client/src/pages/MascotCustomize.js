@@ -5,13 +5,13 @@ import * as AllIcons from "lucide-react";
 import { Shuffle, Lock, Check, ShoppingBag, ArrowLeft } from "lucide-react";
 import { EcoLogo } from "../components";
 import { SPROUTY_SKINS, SKIN_CATEGORIES, getSkinsByType, RARITY_COLORS } from "../data/sproutySkins";
-import { getStoredUser } from "../utils/authStorage";
+import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/httpClient";
 import "./MascotCustomize.css";
 
 function MascotCustomize() {
   const navigate = useNavigate();
-  const [user] = useState(() => getStoredUser());
+  const { user, setUser } = useAuth();
   const [activeTab, setActiveTab] = useState("hat");
   const [equippedSkins, setEquippedSkins] = useState({
     hat: null, accessory: null, effect: null, evolution: null,
@@ -22,7 +22,6 @@ function MascotCustomize() {
 
   // Load user data and owned skins
   useEffect(() => {
-    if (!user) { navigate("/login", { replace: true }); return; }
 
     const load = async () => {
       try {
@@ -56,7 +55,7 @@ function MascotCustomize() {
       }
     };
     load();
-  }, [user, navigate]);
+  }, [navigate]);
 
   const handleEquip = useCallback(async (skinId, type) => {
     if (saving) return;
@@ -72,11 +71,15 @@ function MascotCustomize() {
       });
       const updatedSkins = data?.user?.equippedSkins || { ...equippedSkins, [type]: newSkinId };
       setEquippedSkins(updatedSkins);
-      // Sync to localStorage
-      const storedUser = getStoredUser();
-      if (storedUser) {
-        storedUser.equippedSkins = updatedSkins;
-        localStorage.setItem("user", JSON.stringify(storedUser));
+      // Update user in context which also syncs to storage via the hook if we wanted, 
+      // but we need to do it manually here since AuthContext doesn't auto-sync mutations
+      if (user) {
+        setUser({ ...user, equippedSkins: updatedSkins });
+        const storedUser = JSON.parse(localStorage.getItem("eco_auth") || "{}");
+        if (storedUser.user) {
+          storedUser.user.equippedSkins = updatedSkins;
+          localStorage.setItem("eco_auth", JSON.stringify(storedUser));
+        }
       }
     } catch (e) {
       console.error("Failed to update skin:", e);
@@ -103,10 +106,13 @@ function MascotCustomize() {
       }
     }
     setEquippedSkins(newSkins);
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      storedUser.equippedSkins = newSkins;
-      localStorage.setItem("user", JSON.stringify(storedUser));
+    if (user) {
+      setUser({ ...user, equippedSkins: newSkins });
+      const storedUser = JSON.parse(localStorage.getItem("eco_auth") || "{}");
+      if (storedUser.user) {
+        storedUser.user.equippedSkins = newSkins;
+        localStorage.setItem("eco_auth", JSON.stringify(storedUser));
+      }
     }
     setSaving(false);
   }, [equippedSkins, ownedSkinIds, saving]);

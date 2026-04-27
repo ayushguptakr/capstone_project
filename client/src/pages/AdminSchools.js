@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, UserPlus, X } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
+import { useAuth } from "../context/AuthContext";
 import "./AdminPanel.css";
 
 export default function AdminSchools() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user, isLoggedIn } = useAuth();
 
   // Create school form
   const [showCreate, setShowCreate] = useState(false);
@@ -27,13 +29,15 @@ export default function AdminSchools() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
+    if (!isLoggedIn || !user) return;
     fetchSchools();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, user]);
 
   const fetchSchools = async () => {
     try {
       const data = await apiRequest("/api/admin/schools");
-      setSchools(data.schools || []);
+      if (data) setSchools(data.schools || []);
     } catch (err) {
       console.error(err);
     } finally {

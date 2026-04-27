@@ -1,38 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import EcoQuestNav from "./EcoQuestNav";
-import { getStoredUser } from "../utils/authStorage";
+import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/httpClient";
 
 export default function DashboardLayout() {
-  const [globalXp, setGlobalXp] = useState(getStoredUser()?.points || 0);
+  const { user } = useAuth();
+  const [globalXp, setGlobalXp] = useState(user?.points || 0);
 
   // Sync latest XP on layout mount to ensure accuracy across tabs
   useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
     apiRequest("/api/auth/me")
       .then(res => {
-        const user = res?.user || res;
-        if (user && typeof user.points === "number") {
-          setGlobalXp(user.points);
-          // Sync storage silently
-          const stored = getStoredUser();
-          if (stored) {
-            stored.points = user.points;
-            localStorage.setItem("ecoQuest_user", JSON.stringify(stored));
-          }
+        if (cancelled) return;
+        const u = res?.user || res;
+        if (u && typeof u.points === "number") {
+          setGlobalXp(u.points);
         }
       })
-      .catch((err) => console.log("Silent profile fetch fail", err));
-  }, []);
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-[#F7FBF8] flex flex-col">
       <EcoQuestNav variant="app" xp={globalXp} />
-      {/* The main content area explicitly takes up remaining height minus sticky nav */}
       <main className="flex-grow w-full">
-        {/* Pass down globalXp and setGlobalXp to any child route that needs to manipulate or read it */}
         <Outlet context={{ globalXp, setGlobalXp }} />
       </main>
     </div>
   );
 }
+

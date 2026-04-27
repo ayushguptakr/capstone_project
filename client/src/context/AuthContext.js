@@ -16,6 +16,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getStoredUser());
   const [token, setToken] = useState(() => getToken());
+  const isLoading = false;
 
   const login = useCallback((userData, tokenStr, rememberMe = false) => {
     setAuthData(userData, tokenStr, rememberMe);
@@ -34,9 +35,21 @@ export function AuthProvider({ children }) {
   }, []);
 
   const isLoggedIn = Boolean(user && token);
+  const isAuthenticated = isLoggedIn;
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoggedIn, login, logout, setUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isLoggedIn,
+        isAuthenticated,
+        isLoading,
+        login,
+        logout,
+        setUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import * as AllIcons from "lucide-react";
 import { EcoLoader } from "../components";
-import { getStoredUser } from "../utils/authStorage";
+import { useAuth } from "../context/AuthContext";
 import { fetchGamificationMe } from "../api/gamificationApi";
 import { apiRequest } from "../api/httpClient";
 
@@ -49,7 +49,7 @@ function prettySource(source) {
 
 export default function Profile() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(() => getStoredUser());
+  const { user, setUser, logout } = useAuth();
   const [progress, setProgress] = useState(null);
   const [gamification, setGamification] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -62,15 +62,9 @@ export default function Profile() {
   const isStudent = user?.role === "student" || user?.role === "sponsor";
 
   useEffect(() => {
-    const u = getStoredUser();
-    const token = localStorage.getItem("token");
-    if (!u || !token) {
-      navigate("/login", { replace: true });
-      return;
-    }
-    setUser(u);
-
-    if (u.role !== "student" && u.role !== "sponsor") {
+    if (!user) return;
+    
+    if (user.role !== "student" && user.role !== "sponsor") {
       setLoading(false);
       return;
     }
@@ -104,7 +98,11 @@ export default function Profile() {
         };
         setUser(merged);
         try {
-          localStorage.setItem("user", JSON.stringify(merged));
+          const authData = JSON.parse(localStorage.getItem("eco_auth") || "{}");
+          if (authData.user) {
+            authData.user = merged;
+            localStorage.setItem("eco_auth", JSON.stringify(authData));
+          }
         } catch {
           /* ignore */
         }
@@ -120,7 +118,11 @@ export default function Profile() {
         body: { iconName }
       });
       setUser(data.user);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      const authData = JSON.parse(localStorage.getItem("eco_auth") || "{}");
+      if (authData.user) {
+        authData.user = data.user;
+        localStorage.setItem("eco_auth", JSON.stringify(authData));
+      }
     } catch (e) {
       console.error("Equip avatar failed:", e);
     }
@@ -147,7 +149,7 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    logout();
     navigate("/", { replace: true });
   };
 

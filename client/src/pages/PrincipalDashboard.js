@@ -20,11 +20,14 @@ import {
 import { apiRequest } from "../api/httpClient";
 import { clearAuth } from "../utils/authStorage";
 import { useAlert } from "../components/ui/AlertProvider";
+import { EcoLogo } from "../components/EcoLogo";
+import { useAuth } from "../context/AuthContext";
 
 export default function PrincipalDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
   const { showAlert } = useAlert();
+  const { user, isLoggedIn, logout } = useAuth();
 
   const [overview, setOverview] = useState({
     totalStudents: 0,
@@ -52,16 +55,18 @@ export default function PrincipalDashboard() {
   const [copiedField, setCopiedField] = useState("");
 
   useEffect(() => {
+    if (!isLoggedIn || !user) return;
     fetchOverview();
     fetchTeachers();
     fetchClasses();
     fetchEvents();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, user]);
 
   const fetchOverview = async () => {
     try {
       const data = await apiRequest("/api/principal/overview");
-      setOverview(data);
+      if (data) setOverview(data);
     } catch (e) {
       console.error(e);
     }
@@ -70,7 +75,7 @@ export default function PrincipalDashboard() {
   const fetchTeachers = async () => {
     try {
       const data = await apiRequest("/api/principal/teachers");
-      setTeachers(data.teachers || []);
+      if (data) setTeachers(data.teachers || []);
     } catch (e) {
       console.error(e);
     }
@@ -80,20 +85,21 @@ export default function PrincipalDashboard() {
   const [aiRefreshing, setAiRefreshing] = useState(false);
 
   useEffect(() => {
+    if (!isLoggedIn || !user) return;
     if (activeTab === "overview" && !aiInsight) {
       apiRequest("/api/principal/ai-insights")
         .then((res) => {
-          setAiInsight(res.text);
-          setAiRefreshing(res.refreshing);
+          setAiInsight(res?.text || "");
+          setAiRefreshing(res?.refreshing || false);
         })
         .catch(() => {});
     }
-  }, [activeTab, aiInsight]);
+  }, [activeTab, aiInsight, isLoggedIn, user]);
 
   const fetchClasses = async () => {
     try {
       const data = await apiRequest("/api/principal/classes");
-      setClassStats(data.classStats || []);
+      if (data) setClassStats(data.classStats || []);
     } catch (e) {
       console.error(e);
     }
@@ -102,7 +108,7 @@ export default function PrincipalDashboard() {
   const fetchEvents = async () => {
     try {
       const data = await apiRequest("/api/principal/events");
-      setEvents(data.events || []);
+      if (data) setEvents(data.events || []);
     } catch (e) {
       console.error(e);
     }
@@ -168,8 +174,8 @@ export default function PrincipalDashboard() {
   };
 
   const handleLogout = () => {
-    clearAuth();
-    navigate("/login");
+    logout();
+    navigate("/login", { replace: true });
   };
 
   const topClass = classStats.length > 0 ? classStats[0] : null;
@@ -180,11 +186,9 @@ export default function PrincipalDashboard() {
       
       {/* SIDEBAR */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-10">
-        <div className="p-6 border-b border-white/10">
-          <h2 className="font-display font-bold text-xl flex items-center gap-2 text-white">
-            <Building className="w-6 h-6 text-emerald-400" />
-            EcoQuest<span className="text-slate-400 text-sm"> / Principal</span>
-          </h2>
+        <div className="p-6 border-b border-white/10 flex items-center gap-2">
+          <EcoLogo className="w-8 h-8" withText={true} showTagline={false} />
+          <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] uppercase font-bold tracking-widest mt-1">Principal</span>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
           {[

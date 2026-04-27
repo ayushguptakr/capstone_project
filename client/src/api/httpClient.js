@@ -28,6 +28,20 @@ export async function apiRequest(path, options = {}) {
   } = options;
 
   const token = getToken();
+
+  // Allow auth-related endpoints to proceed without a token
+  const isPublicRoute = 
+    path.includes("/login") || 
+    path.includes("/signup") || 
+    path.includes("/forgot-password") || 
+    path.includes("/reset-password") ||
+    path.includes("/check-username");
+
+  if (!token && !isPublicRoute) {
+    console.warn(`No token provided, skipping protected API call: ${path}`);
+    return null; // Gracefully fail instead of throwing 401
+  }
+
   const requestHeaders = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...headers,

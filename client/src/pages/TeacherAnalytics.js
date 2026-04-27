@@ -15,12 +15,18 @@ import {
 } from "recharts";
 import TeacherShell from "../components/TeacherShell";
 import { fetchTeacherBootstrap } from "../api/teacherApi";
+import { useAuth } from "../context/AuthContext";
 
 export default function TeacherAnalytics() {
   const [analytics, setAnalytics] = useState(null);
+  const { user, isLoggedIn } = useAuth();
+  
   useEffect(() => {
-    fetchTeacherBootstrap().then((d) => setAnalytics(d.analytics));
-  }, []);
+    if (!isLoggedIn || !user) return;
+    fetchTeacherBootstrap().then((d) => {
+      if (d && d.analytics) setAnalytics(d.analytics);
+    });
+  }, [user, isLoggedIn]);
 
   const students = analytics?.students || [];
   const classRows = useMemo(() => {
@@ -45,7 +51,7 @@ export default function TeacherAnalytics() {
       <section className="grid xl:grid-cols-3 gap-4">
         <article className="xl:col-span-2 rounded-2xl border border-slate-200 bg-white p-5">
           <h2 className="font-display font-bold text-xl mb-3">Engagement Trends</h2>
-          <div className="h-72">
+          <div style={{ width: "100%", height: "300px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -60,7 +66,7 @@ export default function TeacherAnalytics() {
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-5">
           <h2 className="font-display font-bold text-xl mb-3">XP Distribution</h2>
-          <div className="h-72">
+          <div style={{ width: "100%", height: "300px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={xpDistribution} dataKey="value" nameKey="name" outerRadius={92} label>
@@ -74,7 +80,7 @@ export default function TeacherAnalytics() {
       </section>
       <article className="rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="font-display font-bold text-xl mb-3">Class Engagement</h2>
-        <div className="h-64">
+        <div style={{ width: "100%", height: "300px" }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={engagementData}>
               <CartesianGrid strokeDasharray="3 3" />

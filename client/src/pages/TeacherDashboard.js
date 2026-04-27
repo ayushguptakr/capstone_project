@@ -13,6 +13,7 @@ import {
 import TeacherShell from "../components/TeacherShell";
 import { fetchTeacherBootstrap } from "../api/teacherApi";
 import { apiRequest } from "../api/httpClient";
+import { useAuth } from "../context/AuthContext";
 
 function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
@@ -21,8 +22,11 @@ function TeacherDashboard() {
   const [events, setEvents] = useState([]);
   const [aiInsight, setAiInsight] = useState("");
   const [aiRefreshing, setAiRefreshing] = useState(false);
+  const { user, isLoggedIn } = useAuth();
 
   useEffect(() => {
+    if (!isLoggedIn || !user) return;
+    
     async function load() {
       try {
         const [data, eventsData, aiData] = await Promise.all([
@@ -30,11 +34,13 @@ function TeacherDashboard() {
           apiRequest("/api/events").catch(() => ({ events: [] })),
           apiRequest("/api/teacher/ai-insights").catch(() => null)
         ]);
-        setAnalytics(data.analytics);
-        setVerificationQueue(data.verificationQueue);
-        setEvents(eventsData.events || []);
+        if (data) {
+          setAnalytics(data.analytics || null);
+          setVerificationQueue(data.verificationQueue || []);
+        }
+        if (eventsData) setEvents(eventsData.events || []);
         if (aiData) {
-          setAiInsight(aiData.text);
+          setAiInsight(aiData.text || "");
           setAiRefreshing(aiData.refreshing || false);
         }
       } catch (error) {
@@ -44,7 +50,7 @@ function TeacherDashboard() {
       }
     }
     load();
-  }, []);
+  }, [user, isLoggedIn]);
 
   const students = useMemo(() => analytics?.students || [], [analytics?.students]);
   const createdTaskCount = analytics?.contentCreated?.tasks ?? 0;
@@ -215,8 +221,8 @@ function TeacherDashboard() {
 
         <article className="xl:col-span-2 rounded-2xl bg-white border border-slate-200 p-5">
           <h2 className="font-display font-bold text-xl mb-3">Insights</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: "100%", height: "300px" }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
               <BarChart data={engagementData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />

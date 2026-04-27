@@ -6,7 +6,8 @@ import { AuthShell, AuthFloatingLeaf, AuthInput } from "../components/auth";
 import { EcoLoader } from "../components";
 import { API_BASE_URL } from "../api/httpClient";
 import axios from "axios";
-import { getStoredUser, getToken } from "../utils/authStorage";
+import { getToken } from "../utils/authStorage";
+import { useAuth } from "../context/AuthContext";
 
 const ROLE_HOME = {
   student: "/dashboard",
@@ -21,6 +22,7 @@ export default function SetPassword() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, setUser } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,10 +45,17 @@ export default function SetPassword() {
       );
 
       // Update local user to reflect isFirstLogin = false
-      const user = getStoredUser();
       if (user) {
-        user.isFirstLogin = false;
-        localStorage.setItem("user", JSON.stringify(user));
+        const updatedUser = { ...user, isFirstLogin: false };
+        setUser(updatedUser);
+        
+        try {
+          const authData = JSON.parse(localStorage.getItem("eco_auth") || "{}");
+          if (authData.user) {
+            authData.user = updatedUser;
+            localStorage.setItem("eco_auth", JSON.stringify(authData));
+          }
+        } catch { /* ignore */ }
       }
 
       const role = user?.role || "student";

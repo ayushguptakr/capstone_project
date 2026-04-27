@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Trash2, ArrowRightLeft, Shield, X } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
+import { useAuth } from "../context/AuthContext";
 import "./AdminPanel.css";
 
 const ROLE_OPTIONS = ["student", "teacher", "principal"];
@@ -11,6 +12,7 @@ export default function AdminUsers() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState("all");
+  const { user, isLoggedIn } = useAuth();
 
   // Create user
   const [showCreate, setShowCreate] = useState(false);
@@ -32,14 +34,16 @@ export default function AdminUsers() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
+    if (!isLoggedIn || !user) return;
     fetchUsers();
     fetchSchools();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, user]);
 
   const fetchUsers = async () => {
     try {
       const data = await apiRequest("/api/admin/users");
-      setUsers(data.users || []);
+      if (data) setUsers(data.users || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -50,7 +54,7 @@ export default function AdminUsers() {
   const fetchSchools = async () => {
     try {
       const data = await apiRequest("/api/admin/schools");
-      setSchools(data.schools || []);
+      if (data) setSchools(data.schools || []);
     } catch (err) {
       console.error(err);
     }

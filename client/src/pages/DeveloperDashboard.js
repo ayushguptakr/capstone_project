@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut, School as SchoolIcon, Users, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
-import { clearAuth } from "../utils/authStorage";
 import { useAlert } from "../components/ui/AlertProvider";
+import { useAuth } from "../context/AuthContext";
 
 export default function DeveloperDashboard() {
   const [schools, setSchools] = useState([]);
@@ -11,6 +11,7 @@ export default function DeveloperDashboard() {
   const [activeTab, setActiveTab] = useState("schools"); // schools, users
   const navigate = useNavigate();
   const { showAlert } = useAlert();
+  const { logout } = useAuth();
 
   // New School Form
   const [schoolName, setSchoolName] = useState("");
@@ -104,8 +105,8 @@ export default function DeveloperDashboard() {
   };
 
   const handleLogout = () => {
-    clearAuth();
-    navigate("/login");
+    logout();
+    navigate("/login", { replace: true });
   };
 
   return (

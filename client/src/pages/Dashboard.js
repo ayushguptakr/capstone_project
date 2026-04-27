@@ -143,18 +143,16 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (user?.badges) {
-      const newBadge = user.badges.find(
-        (b) => !prevBadges.includes(b)
-      );
-
-      if (newBadge && prevBadges.length !== 0) {
-        fireConfetti();
-      }
-
-      setPrevBadges(user.badges);
+    if (!user || !user.badges) return;
+    const newBadge = user.badges.find(
+      (b) => !prevBadges.includes(b)
+    );
+    if (newBadge && prevBadges.length !== 0) {
+      fireConfetti();
     }
-  }, [user?.badges, prevBadges]);
+    setPrevBadges(user.badges);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.badges]);
 
   useEffect(() => {
     const onStreakUpdate = (event) => {
@@ -169,28 +167,24 @@ function Dashboard() {
   const hasFetchedNudge = useRef(false);
   
   useEffect(() => {
-    if (user?.role !== "student" || hasFetchedNudge.current) return;
+    if (!user || user.role !== "student" || hasFetchedNudge.current) return;
     hasFetchedNudge.current = true;
 
-    let isFetching = false;
+    let cancelled = false;
     const fetchNudge = async () => {
-      if (isFetching) return;
-      isFetching = true;
       try {
-        console.log("Nudge API called");
         const data = await apiRequest("/api/gamification/nudge");
-        if (data?.nudge) {
+        if (!cancelled && data?.nudge) {
           setNudge(data.nudge);
         }
       } catch (error) {
         // Safe catch
-      } finally {
-        isFetching = false;
       }
     };
 
     fetchNudge();
-  }, [user?.role]);
+    return () => { cancelled = true; };
+  }, [user]);
 
   // Main data fetch — runs once on mount, guarded by user check.
   // Dependency is [] (empty), NOT [user], to prevent infinite re-fetches
@@ -199,6 +193,8 @@ function Dashboard() {
   useEffect(() => {
     if (!user || hasFetchedData.current) return;
     hasFetchedData.current = true;
+
+    let cancelled = false;
     const fetchData = async () => {
       try {
         const [reportData, recData, weakData, meData, gamificationRes] = await Promise.all([
@@ -208,6 +204,7 @@ function Dashboard() {
           apiRequest("/api/auth/me"),
           fetchGamificationMe({ limit: 8, offset: 0 }).catch(() => null),
         ]);
+        if (cancelled) return;
         setEcoReport(reportData);
         setRecommendations(recData?.recommendations || []);
         setWeakCategory(weakData?.weakCategory || null);
@@ -233,6 +230,7 @@ function Dashboard() {
             apiRequest("/api/submissions/my"),
             apiRequest("/api/events").catch(()=>({events: []}))
           ]);
+          if (cancelled) return;
           setProgress(progressData);
           setAttempts(attemptsData);
           setMySubs(submissionsData);
@@ -243,6 +241,7 @@ function Dashboard() {
       }
     };
     fetchData();
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -288,16 +287,17 @@ function Dashboard() {
 
   // Commit previous state snapshot after each data cycle
   useEffect(() => {
+    if (!user) return;
     if (points > 0 || rank) commitState();
-  }, [points, rank, streak, levelNum, league, commitState]);
+  }, [user, points, rank, streak, levelNum, league, commitState]);
 
   // System sync — trigger animations from diffs
   useEffect(() => {
-    if (!hydrated) return;
+    if (!user || !hydrated) return;
     if (diffs.rankJumped) {
       fireConfetti();
     }
-  }, [diffs, hydrated]);
+  }, [user, diffs, hydrated]);
 
   useEffect(() => {
     if (prevLevelRef.current == null) {

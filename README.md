@@ -1,210 +1,126 @@
-# 🌍 Gamified Environmental Education Platform
+# 🌍 EcoQuest: Gamified Environmental Education Platform
 
-A full-stack MERN application that transforms environmental education through gamification, encouraging students to learn about sustainability while earning points, badges, and competing on leaderboards.
+[![MERN Stack](https://img.shields.io/badge/Stack-MERN-blue.svg)](https://www.mongodb.com/mern-stack)
+[![AI Powered](https://img.shields.io/badge/AI-Google%20Gemini-green.svg)](https://deepmind.google/technologies/gemini/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🎯 Project Overview
+**EcoQuest** is a cutting-edge, full-stack educational platform designed to transform environmental learning into an engaging, gamified experience. By combining real-world eco-actions with interactive digital rewards, EcoQuest empowers students to become sustainability leaders.
 
-This platform bridges the gap between environmental knowledge and real-world action by:
-- **Gamifying Learning**: Points, badges, levels, and leaderboards
-- **Interactive Quizzes**: Eco-quizzes covering waste management, energy, water, climate, and biodiversity
-- **Real-world Tasks**: Photo/text evidence submission for eco-actions
-- **Progress Tracking**: Personal dashboards and analytics
-- **Competition**: Inter-student and inter-school rankings
+---
 
-## 🚀 Features Implemented
+## ✨ Key "Hero" Features
 
-### ✅ Core Gamification Features
-- **Points System**: Earn points through quizzes and task completion
-- **Badge System**: Achievement badges for milestones (Quiz Master, Eco Scholar, etc.)
-- **Leaderboards**: Global and school-wise rankings
-- **Progress Tracking**: Personal stats and performance analytics
-- **Level System**: Experience points and level progression
+### 🤖 AI-Driven Adaptive Engine
+- **Dynamic Difficulty**: Automatically adjusts quiz and game difficulty based on student performance.
+- **Personalized Recommendations**: Suggests eco-tasks and learning content based on identified "weak categories."
+- **Behavioral Analysis**: Tracks accuracy, response time, and mistake patterns to optimize the learning curve.
 
-### ✅ Educational Components
-- **Eco-Quizzes**: Interactive quizzes with multiple categories
-- **Task Management**: Create and submit eco-tasks with evidence
-- **Knowledge Categories**: Waste Management, Energy, Water, Biodiversity, Climate
+### 🎮 Eco-Games Suite
+- **Waste Sorting**: A fast-paced arcade game for mastering waste segregation.
+- **Climate Hero**: Battle environmental threats in an interactive strategy game.
+- **Eco-Memory**: Test and improve knowledge of biodiversity through memory matching.
+- **Plant Growth**: Learn about botany and care by growing virtual plants with eco-points.
+- **Eco-Trivia Race**: Compete against time in high-stakes sustainability trivia.
 
-### ✅ User Roles
-- **Students**: Take quizzes, submit tasks, track progress
-- **Teachers**: Create quizzes/tasks, verify submissions, view analytics
-- **Admin**: Platform management and oversight
+### 📉 Sustainability Analytics & Impact
+- **Impact Quantification**: Converts real-world tasks (like recycling) into measurable metrics: CO₂ reduced, water saved, and waste diverted.
+- **School Green Rating**: Aggregated data provides schools with a sustainability grade (A/B/C).
+- **Global Leaderboards**: Real-time rankings for individuals, classes, and schools.
 
-### ✅ Eco-Impact & Sustainability (Extended Modules)
-- **Eco-Impact Quantification Engine**: Converts eco-tasks into CO₂, water, waste, energy metrics; PSI and configurable coefficients; `eco_impact_logs` with student/class/school aggregation
-- **Dynamic Sustainability Ranking**: Adjusted score (time decay, consistency, population normalizer); APIs: `/api/leaderboard/student`, `/class`, `/school`
-- **Hybrid Verification**: Trust score (0–100), duplicate image detection, timestamp/geo checks; `flagForReview` for manual review
-- **Sustainability Analytics**: Totals, monthly trends, category impact, School Green Rating (A/B/C); `/api/analytics/sustainability/dashboard`
-- **Adaptive Recommendations**: Task suggestions by weak category and local focus; `/api/recommendations/tasks`
-- **Green Credits**: Earned from impact, redeemable; balance and report: `/api/green-credits/balance`, `/report`
-- **Adaptive Eco‑Game Difficulty Engine**: Tracks quiz accuracy + timing + mistakes and mini-game retries; auto-adjusts difficulty, hints, reward multiplier, and task complexity; adaptive APIs: `/api/adaptive-engine/me`, `/api/quizzes/adaptive`, `/api/mini-games/adaptive`
+### 💰 Eco-Store & Green Credits
+- **Green Credit System**: Earn credits for every verified eco-action.
+- **Redemption Marketplace**: Spend credits on virtual rewards, profile customizations, and mascot upgrades.
+- **Mascot Customization**: Unlock unique skins and items for your personal Eco-Mascot.
 
-**How to verify:** See **`backend/docs/FEATURE_VERIFICATION.md`** for a full checklist and how to test each feature via API.
+---
 
 ## 🛠️ Technology Stack
 
-### Backend
-- **Node.js** with Express.js
-- **MongoDB** with Mongoose ODM
-- **JWT** for authentication
-- **Cloudinary** for image uploads
-- **Multer** for file handling
-
 ### Frontend
-- **React.js** with React Router
-- **CSS3** with responsive design
-- **Axios** for API calls
+- **React.js (v19)**: Modern UI development with Hooks and Functional Components.
+- **TailwindCSS**: Utility-first styling for a sleek, responsive design.
+- **Framer Motion**: Smooth, high-performance animations and transitions.
+- **Recharts**: Dynamic visualization of sustainability impact and progress.
+- **Lucide React**: Premium, scalable iconography.
 
-## 📦 Installation & Setup
+### Backend
+- **Node.js & Express.js**: Scalable server-side architecture.
+- **MongoDB & Mongoose**: Flexible NoSQL data modeling.
+- **Google Gemini AI**: Integration via `@google/generative-ai` for adaptive intelligence.
+- **Cloudinary**: Cloud-based media management for task evidence.
+- **JWT & Bcrypt**: Secure authentication and data protection.
+
+---
+
+## 📂 Project Structure
+
+```text
+capstone_project/
+├── client/                 # React Frontend
+│   ├── src/
+│   │   ├── components/     # Reusable UI & Logic Components
+│   │   ├── pages/          # Full-page Views (Dashboard, Games, Store)
+│   │   ├── hooks/          # Custom React Hooks (Progression, Adaptive)
+│   │   └── utils/          # Helper functions
+├── backend/                # Node.js Backend
+│   ├── controllers/        # Business Logic (AI, Games, Impact)
+│   ├── models/             # Mongoose Schemas
+│   ├── routes/             # API Endpoints
+│   ├── services/           # Core Engines (Adaptive Difficulty, Ranking)
+│   └── repositories/       # Data Access Layer
+└── docs/                   # Project Documentation & Reports
+```
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (local or Atlas)
-- Git
+- Node.js (v18+)
+- MongoDB (Local or Atlas)
+- Cloudinary Account (for image uploads)
+- Google Gemini API Key (for AI features)
 
-### 1. Clone the Repository
-```bash
-git clone <repository-url>
-cd capstone_project
-```
+### Installation
 
-### 2. Backend Setup
-```bash
-cd backend
-npm install
+1. **Clone the Repo**
+   ```bash
+   git clone <repository-url>
+   cd capstone_project
+   ```
 
-# Create .env file with:
-MONGO_URI=mongodb://localhost:27017/capstone_project
-JWT_SECRET=your_jwt_secret_key
-CLOUDINARY_CLOUD_NAME=your_cloudinary_name
-CLOUDINARY_API_KEY=your_cloudinary_key
-CLOUDINARY_API_SECRET=your_cloudinary_secret
+2. **Setup Backend**
+   ```bash
+   cd backend
+   npm install
+   # Create .env file based on the config/example.env
+   npm run seed-all   # Populates quizzes and rewards
+   npm run dev
+   ```
 
-# Seed sample quizzes (optional)
-npm run seed-quizzes
+3. **Setup Frontend**
+   ```bash
+   cd ../client
+   npm install
+   npm start
+   ```
 
-# Start backend server
-npm run dev
-```
+---
 
-### 3. Frontend Setup
-```bash
-cd ../client
-npm install
+## 🔐 Role-Based Access
 
-# Start frontend development server
-npm start
-```
+- **Students**: Play games, take quizzes, submit eco-tasks, and customize mascots.
+- **Teachers**: Manage classes, create content, verify student tasks, and view class analytics.
+- **Principals**: High-level school oversight and sustainability ratings.
+- **Admins**: Platform-wide management, user moderation, and system configuration.
 
-### 4. Access the Application
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
+---
 
-## 🎮 How to Use
+## 🏆 Acknowledgments
 
-### For Students:
-1. **Register/Login** with student role
-2. **Take Eco-Quizzes** to earn points and badges
-3. **Complete Tasks** by submitting evidence
-4. **Track Progress** on leaderboards and personal dashboard
-5. **Compete** with classmates and other schools
-
-### For Teachers:
-1. **Register/Login** with teacher role
-2. **Create Quizzes** with custom questions and categories
-3. **Create Tasks** for students to complete
-4. **Verify Submissions** and approve student work
-5. **Monitor Progress** through analytics dashboard
-
-## 🏆 Gamification Elements
-
-### Points System
-- Quiz completion: 5-15 points per question
-- Task completion: 10-50 points per task
-- Bonus points for perfect scores
-
-### Badge System
-- **Quiz Master**: 100% score on any quiz
-- **Eco Scholar**: 500+ total points
-- **Task Champion**: 10+ approved tasks
-- **Streak Master**: 7-day activity streak
-
-### Leaderboards
-- **Global Rankings**: All students across platform
-- **School Rankings**: School vs school competition
-- **Personal Progress**: Individual achievement tracking
-
-## 📊 Sample Data
-
-The platform includes sample eco-quizzes covering:
-
-1. **Waste Management Basics** (Easy) - 25 points
-2. **Energy Conservation Challenge** (Medium) - 34 points  
-3. **Water Conservation Expert** (Hard) - 51 points
-4. **Climate Change Awareness** (Medium) - 34 points
-
-## 🔧 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-
-### Quizzes
-- `GET /api/quizzes` - Get all active quizzes
-- `GET /api/quizzes/:id` - Get quiz by ID
-- `POST /api/quizzes/submit` - Submit quiz attempt
-- `POST /api/quizzes/create` - Create new quiz (Teacher/Admin)
-
-### Leaderboard
-- `GET /api/leaderboard` - Global leaderboard
-- `GET /api/leaderboard/progress` - User progress
-- `GET /api/leaderboard/schools` - School rankings
-
-### Tasks
-- `GET /api/tasks` - Get all tasks
-- `POST /api/tasks/create` - Create new task
-- `POST /api/submissions` - Submit task evidence
-
-## 🎨 UI/UX Features
-
-- **Responsive Design**: Works on desktop, tablet, and mobile
-- **Intuitive Navigation**: Easy-to-use interface for all user types
-- **Visual Feedback**: Progress bars, animations, and status indicators
-- **Accessibility**: Proper contrast, keyboard navigation, screen reader support
-
-## 🔮 Future Enhancements
-
-- **Eco-Merchandise Store**: Redeem points for rewards
-- **Social Features**: Friend system and team challenges
-- **Advanced Analytics**: Detailed progress reports
-- **Mobile App**: Native iOS/Android applications
-- **AI Integration**: Personalized learning recommendations
-- **Offline Mode**: Download quizzes for offline completion
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👥 Team
-
-- **Project Type**: Capstone Project
-- **Institution**: LPU (Lovely Professional University)
-- **Academic Year**: 2025-2026
-
-## 📞 Support
-
-For support and questions:
-- Create an issue in the repository
-- Contact the development team
-- Check the documentation
+- **Institution**: Lovely Professional University (LPU)
+- **Course**: Capstone Project 2025-2026
+- **Developer**: Ayush Gupta
 
 ---
 

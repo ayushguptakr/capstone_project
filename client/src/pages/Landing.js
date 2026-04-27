@@ -30,7 +30,7 @@ import {
   staggerItem,
   staggerContainer,
 } from "../components/motion";
-import { getStoredUser } from "../utils/authStorage";
+import { useAuth } from "../context/AuthContext";
 import { useCountUp } from "../hooks/useCountUp";
 
 const easeOut = [0.22, 1, 0.36, 1];
@@ -609,7 +609,7 @@ function Footer() {
 }
 
 export default function Landing() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const xp = typeof user?.points === "number" ? user.points : 0;
 
   return (

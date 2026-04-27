@@ -140,7 +140,14 @@ function App() {
           <Route path="/admin/schools" element={<AdminSchools />} />
           <Route path="/admin/users" element={<AdminUsers />} />
         </Route>
-        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <Navigate to="/admin/dashboard" replace />
+            </RequireAdmin>
+          }
+        />
         <Route path="/developer/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/developer" element={<Navigate to="/admin/dashboard" replace />} />
 

@@ -10,22 +10,30 @@ import {
   ToggleLeft,
 } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
+import { useAuth } from "../context/AuthContext";
 import "./AdminPanel.css";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [toggles, setToggles] = useState({ competitions: true, rewards: true });
   const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
+
+  if (!user) {
+    return null;
+  }
 
   useEffect(() => {
+    if (!user) return;
     fetchStats();
     fetchToggles();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const fetchStats = async () => {
     try {
       const data = await apiRequest("/api/admin/stats");
-      setStats(data);
+      if (data) setStats(data);
     } catch (err) {
       console.error("Failed to fetch stats", err);
     }
@@ -34,7 +42,7 @@ export default function AdminDashboard() {
   const fetchToggles = async () => {
     try {
       const data = await apiRequest("/api/admin/feature-toggles");
-      setToggles(data.toggles);
+      if (data) setToggles(data.toggles || { competitions: true, rewards: true });
     } catch (err) {
       console.error("Failed to fetch toggles", err);
     }
@@ -45,10 +53,12 @@ export default function AdminDashboard() {
     setToggles(updated);
     setSaving(true);
     try {
-      await apiRequest("/api/admin/feature-toggles", {
+      const res = await apiRequest("/api/admin/feature-toggles", {
         method: "PUT",
         body: { [key]: updated[key] },
       });
+      if (!res) setToggles(toggles); // revert if request dropped
+
     } catch (err) {
       console.error("Failed to update toggle", err);
       setToggles(toggles); // revert

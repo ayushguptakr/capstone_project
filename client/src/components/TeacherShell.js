@@ -18,6 +18,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { EcoLogo } from "./EcoLogo";
+import { useAuth } from "../context/AuthContext";
 
 const NAV_ITEMS = [
   { label: "Dashboard", to: "/teacher-dashboard", Icon: LayoutDashboard },
@@ -62,10 +63,11 @@ export default function TeacherShell({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [showProfile, setShowProfile] = useState(false);
-  const userName = useMemo(() => getUserName(), []);
+  const userName = useMemo(() => user?.name || getUserName(), [user]);
   const breadcrumb = BREADCRUMB_LABELS[location.pathname] || "Teacher Workspace";
 
   const quickActions = useMemo(
@@ -174,7 +176,7 @@ export default function TeacherShell({
                 <button
                   className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
                   onClick={() => {
-                    localStorage.clear();
+                    logout();
                     navigate("/", { replace: true });
                   }}
                 >
