@@ -55,7 +55,7 @@ function MascotCustomize() {
       }
     };
     load();
-  }, [navigate]);
+  }, []);
 
   const handleEquip = useCallback(async (skinId, type) => {
     if (saving) return;
@@ -86,7 +86,7 @@ function MascotCustomize() {
     } finally {
       setSaving(false);
     }
-  }, [equippedSkins, saving]);
+  }, [equippedSkins, saving, setUser, user]);
 
   const handleRandomize = useCallback(async () => {
     if (saving) return;
@@ -115,7 +115,7 @@ function MascotCustomize() {
       }
     }
     setSaving(false);
-  }, [equippedSkins, ownedSkinIds, saving]);
+  }, [equippedSkins, ownedSkinIds, saving, setUser, user]);
 
   const currentTabSkins = useMemo(() => getSkinsByType(activeTab), [activeTab]);
 

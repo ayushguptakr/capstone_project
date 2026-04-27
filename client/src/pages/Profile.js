@@ -96,7 +96,14 @@ export default function Profile() {
             user?.level ??
             1,
         };
-        setUser(merged);
+        setUser((prev) => {
+          if (!prev) return prev;
+          const samePoints = (prev.points ?? 0) === (merged.points ?? 0);
+          const sameLevel = (prev.level ?? 1) === (merged.level ?? 1);
+          const sameRank = (prev.rank ?? null) === (merged.rank ?? null);
+          if (samePoints && sameLevel && sameRank) return prev;
+          return merged;
+        });
         try {
           const authData = JSON.parse(localStorage.getItem("eco_auth") || "{}");
           if (authData.user) {
@@ -109,7 +116,7 @@ export default function Profile() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [navigate]);
+  }, [setUser, user]);
 
   const handleEquipAvatar = async (iconName) => {
     try {

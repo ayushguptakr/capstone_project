@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Building, 
   Users, 
   TrendingUp, 
   Award, 
@@ -18,7 +17,6 @@ import {
   X
 } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
-import { clearAuth } from "../utils/authStorage";
 import { useAlert } from "../components/ui/AlertProvider";
 import { EcoLogo } from "../components/EcoLogo";
 import { useAuth } from "../context/AuthContext";
