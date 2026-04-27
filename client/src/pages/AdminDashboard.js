@@ -19,10 +19,6 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
 
-  if (!user) {
-    return null;
-  }
-
   useEffect(() => {
     if (!user) return;
     fetchStats();

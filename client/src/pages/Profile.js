@@ -82,18 +82,18 @@ export default function Profile() {
         setRedemptions(Array.isArray(redemptionsRes) ? redemptionsRes : []);
 
         const merged = {
-          ...u,
+          ...user,
           ...(progressData?.student || {}),
           ...(gamificationData?.summary || {}),
           points:
             gamificationData?.summary?.points ??
             progressData?.student?.points ??
-            u.points ??
+            user?.points ??
             0,
           level:
             gamificationData?.summary?.level ??
             progressData?.student?.level ??
-            u.level ??
+            user?.level ??
             1,
         };
         setUser(merged);
