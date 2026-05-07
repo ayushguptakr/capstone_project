@@ -286,8 +286,10 @@ exports.getPrincipalAiInsights = async (req, res) => {
     const principal = req.user;
     if (!principal) return res.status(404).json({ message: "Principal not found" });
 
+    const focusClassName = String(req.query.className || "").trim();
     const todayKey = new Date().toISOString().slice(0, 10);
-    if (principal.aiInsightCache?.text && principal.aiInsightCache?.dateKey === todayKey) {
+    // Cache is only for the "overview" insight (no class filter).
+    if (!focusClassName && principal.aiInsightCache?.text && principal.aiInsightCache?.dateKey === todayKey) {
       return res.json({ text: principal.aiInsightCache.text });
     }
 
@@ -296,22 +298,35 @@ exports.getPrincipalAiInsights = async (req, res) => {
       { $match: { role: "student", schoolId, className: { $ne: null, $ne: "" } } },
       { $group: {
           _id: "$className",
-          avgXp: { $avg: "$points" }
+          avgXp: { $avg: "$points" },
+          totalXp: { $sum: "$points" },
+          studentCount: { $sum: 1 },
       }},
       { $sort: { avgXp: -1 } }
     ]);
     
     const topClass = classStatsRaw[0] ? classStatsRaw[0]._id : "None";
     const weakClass = classStatsRaw[classStatsRaw.length - 1] ? classStatsRaw[classStatsRaw.length - 1]._id : "None";
+    const focusRow = focusClassName
+      ? classStatsRaw.find((r) => String(r._id) === focusClassName) || null
+      : null;
 
     const metrics = {
       schoolName: "Your School",
       studentCount: await User.countDocuments({ role: "student", schoolId }),
       topClass,
-      weakClass
+      weakClass,
+      ...(focusClassName
+        ? {
+            focusClass: focusClassName,
+            focusClassStudentCount: Number(focusRow?.studentCount || 0),
+            focusClassAvgXp: Math.round(Number(focusRow?.avgXp || 0)),
+            focusClassTotalXp: Number(focusRow?.totalXp || 0),
+          }
+        : {}),
     };
 
-    if (principal.aiInsightCache?.text) {
+    if (!focusClassName && principal.aiInsightCache?.text) {
       aiService.generatePrincipalInsight(metrics).then(async (newText) => {
         await User.findByIdAndUpdate(principal._id, {
           "aiInsightCache.text": newText,
@@ -322,8 +337,10 @@ exports.getPrincipalAiInsights = async (req, res) => {
     }
 
     const newText = await aiService.generatePrincipalInsight(metrics);
-    principal.aiInsightCache = { text: newText, dateKey: todayKey, refreshing: false };
-    await principal.save();
+    if (!focusClassName) {
+      principal.aiInsightCache = { text: newText, dateKey: todayKey, refreshing: false };
+      await principal.save();
+    }
 
     res.json({ text: newText });
   } catch (error) {

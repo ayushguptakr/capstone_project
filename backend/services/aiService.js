@@ -138,7 +138,9 @@ Make it sound energetic and fun, explicitly mentioning the points or streak. No 
  * Generates a macro-scale insight for Principal dashboards.
  */
 async function generatePrincipalInsight(metrics) {
-  const fallback = `Class ${metrics.weakClass || "averages"} dropped slightly in engagement this week. Plan a short global competition to boost participation.`;
+  const fallback = metrics?.focusClass
+    ? `Class ${metrics.focusClass} needs attention this week. Assign one quick mission and one short quiz to lift engagement.`
+    : `Class ${metrics.weakClass || "averages"} dropped slightly in engagement this week. Plan a short global competition to boost participation.`;
 
   const promptText = `
 You are an AI advisor to a school principal focusing on sustainability education.

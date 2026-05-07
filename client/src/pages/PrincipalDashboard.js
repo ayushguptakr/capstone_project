@@ -101,6 +101,9 @@ export default function PrincipalDashboard() {
 
   const [aiInsight, setAiInsight] = useState("");
   const [aiRefreshing, setAiRefreshing] = useState(false);
+  const [selectedClassName, setSelectedClassName] = useState("");
+  const [classInsight, setClassInsight] = useState("");
+  const [classInsightLoading, setClassInsightLoading] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn || !user) return;
@@ -113,6 +116,20 @@ export default function PrincipalDashboard() {
         .catch(() => {});
     }
   }, [activeTab, aiInsight, isLoggedIn, user]);
+
+  const fetchClassInsight = async (className) => {
+    const cn = String(className || selectedClassName || "").trim();
+    if (!cn) return;
+    setClassInsightLoading(true);
+    try {
+      const res = await apiRequest(`/api/principal/ai-insights?className=${encodeURIComponent(cn)}`);
+      setClassInsight(res?.text || "");
+    } catch (e) {
+      setClassInsight("Could not generate class insight right now.");
+    } finally {
+      setClassInsightLoading(false);
+    }
+  };
 
   const fetchClasses = async () => {
     try {
@@ -327,6 +344,101 @@ export default function PrincipalDashboard() {
                     <p className="text-sm font-semibold text-red-800">Attention Required</p>
                     <p className="text-sm text-red-600 mt-1">Class {lowestClass?._id || "N/A"} requires monitoring for reduced engagement metrics.</p>
                   </div>
+                </div>
+
+                {/* Per-class insight */}
+                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">Insight for a specific class</p>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">Select a class to generate a focused insight.</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <select
+                        value={selectedClassName}
+                        onChange={(e) => { setSelectedClassName(e.target.value); setClassInsight(""); }}
+                        className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold"
+                      >
+                        <option value="">Select class</option>
+                        {classStats.map((c) => (
+                          <option key={c._id} value={c._id}>
+                            {c._id}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => fetchClassInsight(selectedClassName)}
+                        disabled={!selectedClassName || classInsightLoading}
+                        className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {classInsightLoading ? "Generating..." : "Generate"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {classInsight ? (
+                    <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700 font-medium">
+                      {classInsight}
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* All classes snapshot */}
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-bold text-slate-800">All classes</p>
+                    <p className="text-xs text-slate-500 font-semibold">{classStats.length} classes</p>
+                  </div>
+                  {classStats.length === 0 ? (
+                    <div className="text-sm text-slate-500">No class stats available yet.</div>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {classStats.map((c) => {
+                        const isTop = String(c._id) === String(topClass?._id || "");
+                        const isLow = String(c._id) === String(lowestClass?._id || "");
+                        return (
+                          <button
+                            key={c._id}
+                            onClick={() => { setSelectedClassName(String(c._id)); fetchClassInsight(String(c._id)); }}
+                            className={`text-left rounded-xl border p-4 bg-white hover:shadow-sm transition ${
+                              isTop ? "border-emerald-200" : isLow ? "border-rose-200" : "border-slate-200"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <p className="font-bold text-slate-800">Class {c._id}</p>
+                              {isTop ? (
+                                <span className="text-[10px] font-extrabold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  Top
+                                </span>
+                              ) : isLow ? (
+                                <span className="text-[10px] font-extrabold px-2 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                  Attention
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-200">
+                                  Normal
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-2 text-xs text-slate-600 font-semibold space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span>Students</span>
+                                <span className="text-slate-800">{Number(c.studentCount || 0)}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span>Avg XP</span>
+                                <span className="text-slate-800">{Math.round(Number(c.avgXp || 0)).toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span>Total XP</span>
+                                <span className="text-slate-800">{Math.round(Number(c.totalXp || 0)).toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </>
