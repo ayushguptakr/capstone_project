@@ -9,7 +9,6 @@ import SubmitTask from "./pages/SubmitTask";
 import Quizzes from "./pages/Quizzes";
 import TakeQuiz from "./pages/TakeQuiz";
 import Leaderboard from "./pages/Leaderboard";
-import CreateQuiz from "./pages/CreateQuiz";
 import EcoStore from "./pages/EcoStore";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherSubmissions from "./pages/TeacherSubmissions";
@@ -20,13 +19,20 @@ import TeacherAnalytics from "./pages/TeacherAnalytics";
 import TeacherAnnouncements from "./pages/TeacherAnnouncements";
 import TeacherClasses from "./pages/TeacherClasses";
 import TeacherSettings from "./pages/TeacherSettings";
+import TeacherStudentProfile from "./pages/TeacherStudentProfile";
 import MiniGames from "./pages/MiniGames";
 import WasteSortingGame from "./pages/WasteSortingGame";
 import EcoMemoryGame from "./pages/EcoMemoryGame";
 import ClimateHeroGame from "./pages/ClimateHeroGame";
 import EcoTriviaRace from "./pages/EcoTriviaRace";
 import PlantGrowthGame from "./pages/PlantGrowthGame";
-import TeacherMissions from "./pages/TeacherMissions";
+import RiverCleanupRush from "./pages/RiverCleanupRush";
+import SolarSprint from "./pages/SolarSprint";
+import EcoQuizBlaster from "./pages/EcoQuizBlaster";
+import PowerPlanner from "./pages/PowerPlanner";
+import EcosystemBalance from "./pages/EcosystemBalance";
+import CarbonChoices from "./pages/CarbonChoices";
+import WaterCycleLab from "./pages/WaterCycleLab";
 import RedemptionHistory from "./pages/RedemptionHistory";
 import SustainabilityDashboard from "./pages/SustainabilityDashboard";
 import GameHistory from "./pages/GameHistory";
@@ -104,20 +110,30 @@ function App() {
         <Route path="/mini-game/trivia-race" element={<RequireStudent><EcoTriviaRace /></RequireStudent>} />
         <Route path="/mini-game/plant-growth" element={<RequireStudent><PlantGrowthGame /></RequireStudent>} />
         <Route path="/mini-game/eco-habit" element={<RequireStudent><EcoHabitGame /></RequireStudent>} />
+        <Route path="/mini-game/river-cleanup-rush" element={<RequireStudent><RiverCleanupRush /></RequireStudent>} />
+        <Route path="/mini-game/solar-sprint" element={<RequireStudent><SolarSprint /></RequireStudent>} />
+        <Route path="/mini-game/eco-quiz-blaster" element={<RequireStudent><EcoQuizBlaster /></RequireStudent>} />
+        <Route path="/mini-game/power-planner" element={<RequireStudent><PowerPlanner /></RequireStudent>} />
+        <Route path="/mini-game/ecosystem-balance" element={<RequireStudent><EcosystemBalance /></RequireStudent>} />
+        <Route path="/mini-game/carbon-choices" element={<RequireStudent><CarbonChoices /></RequireStudent>} />
+        <Route path="/mini-game/water-cycle-lab" element={<RequireStudent><WaterCycleLab /></RequireStudent>} />
         <Route path="/play/:id" element={<RequireStudent><GamePlayer /></RequireStudent>} />
 
         {/* ============================================================
             TEACHER ROUTES — Teacher uses its own TeacherShell layout
             ============================================================ */}
-        <Route path="/create-quiz" element={<RequireTeacher><CreateQuiz /></RequireTeacher>} />
-        <Route path="/teacher-tasks" element={<RequireTeacher><TeacherMissions /></RequireTeacher>} />
-        <Route path="/submissions" element={<RequireTeacher><TeacherSubmissions /></RequireTeacher>} />
+        <Route path="/create-quiz" element={<RequireTeacher><Navigate to="/teacher/quizzes" replace /></RequireTeacher>} />
+        <Route path="/create-task" element={<RequireTeacher><Navigate to="/teacher/tasks" replace /></RequireTeacher>} />
+        <Route path="/mytasks" element={<RequireTeacher><Navigate to="/teacher/tasks" replace /></RequireTeacher>} />
+        <Route path="/teacher-tasks" element={<RequireTeacher><Navigate to="/teacher/tasks" replace /></RequireTeacher>} />
+        <Route path="/submissions" element={<RequireTeacher><Navigate to="/teacher/submissions" replace /></RequireTeacher>} />
         <Route path="/teacher-dashboard" element={<RequireTeacher><TeacherDashboard /></RequireTeacher>} />
         <Route path="/teacher" element={<Navigate to="/teacher-dashboard" replace />} />
         <Route path="/teacher/dashboard" element={<Navigate to="/teacher-dashboard" replace />} />
         <Route path="/teacher/submissions" element={<RequireTeacher><TeacherSubmissions /></RequireTeacher>} />
         <Route path="/teacher/scheduling" element={<RequireTeacher><TeacherScheduling /></RequireTeacher>} />
         <Route path="/teacher/students" element={<RequireTeacher><TeacherStudents /></RequireTeacher>} />
+        <Route path="/teacher/students/:studentId" element={<RequireTeacher><TeacherStudentProfile /></RequireTeacher>} />
         <Route path="/teacher/content" element={<RequireTeacher><TeacherContent /></RequireTeacher>} />
         <Route path="/teacher/quizzes" element={<RequireTeacher><TeacherContent /></RequireTeacher>} />
         <Route path="/teacher/tasks" element={<RequireTeacher><TeacherContent /></RequireTeacher>} />

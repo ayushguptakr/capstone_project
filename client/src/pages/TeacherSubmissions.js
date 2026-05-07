@@ -4,6 +4,7 @@ import { ShieldAlert, Image as ImageIcon, X, PlayCircle, Eye, Clock, Pencil, Che
 import TeacherShell from "../components/TeacherShell";
 import { verifySubmissionApi } from "../api/teacherApi";
 import { apiRequest, API_BASE_URL } from "../api/httpClient";
+import { formatSubmissionStatus, toneClasses } from "../utils/statusFormat";
 
 function flagLabel(flag) {
   if (flag === "duplicate_image") return "Duplicate image";
@@ -14,15 +15,10 @@ function flagLabel(flag) {
 }
 
 function StatusBadge({ status }) {
-  const map = {
-    approved: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    rejected: "bg-rose-100 text-rose-700 border-rose-200",
-    pending: "bg-amber-100 text-amber-700 border-amber-200",
-    resubmitted: "bg-blue-100 text-blue-700 border-blue-200",
-  };
+  const meta = formatSubmissionStatus(status);
   return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${map[status] || map.pending}`}>
-      {status ? status[0].toUpperCase() + status.slice(1) : "Pending"}
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${toneClasses(meta.tone)}`}>
+      {meta.label}
     </span>
   );
 }
@@ -49,12 +45,19 @@ export default function TeacherSubmissions() {
   const [message, setMessage] = useState("");
   const [previewSub, setPreviewSub] = useState(null);
   const [editingFeedback, setEditingFeedback] = useState({});
+  const [pagination, setPagination] = useState({ total: 0, limit: 30, offset: 0, hasMore: false });
 
-  async function fetchSubmissions(status) {
+  async function fetchSubmissions(status, offset = 0) {
     setLoading(true);
     try {
-      const data = await apiRequest(`/api/teacher/verification-queue?status=${status}`);
-      setQueue(data || []);
+      const data = await apiRequest(
+        `/api/teacher/verification-queue?status=${status}&limit=${pagination.limit}&offset=${offset}`
+      );
+      setQueue(Array.isArray(data) ? data : data?.items || []);
+      setPagination((p) => ({
+        ...p,
+        ...(data?.pagination || {}),
+      }));
     } catch (e) {
       console.error("Failed to fetch submissions:", e);
     } finally {
@@ -65,7 +68,8 @@ export default function TeacherSubmissions() {
   useEffect(() => {
     setEditingFeedback({});
     setFeedback({});
-    fetchSubmissions(statusFilter);
+    fetchSubmissions(statusFilter, 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   const rows = useMemo(() => {
@@ -100,7 +104,7 @@ export default function TeacherSubmissions() {
       setEditingFeedback(p => ({ ...p, [id]: false }));
       setMessage("Feedback updated.");
       setTimeout(() => setMessage(""), 1500);
-      fetchSubmissions(statusFilter);
+      fetchSubmissions(statusFilter, pagination.offset);
     } catch (e) {
       setMessage(e.message || "Failed to update feedback");
       setTimeout(() => setMessage(""), 2000);
@@ -415,6 +419,29 @@ export default function TeacherSubmissions() {
         {!loading && rows.length === 0 ? (
           <div className="p-8 text-center text-slate-500">No submissions match this filter.</div>
         ) : null}
+        {!loading && pagination.total > 0 && (
+          <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>
+              Showing {pagination.offset + 1}-{Math.min(pagination.offset + rows.length, pagination.total)} of {pagination.total}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={pagination.offset <= 0}
+                onClick={() => fetchSubmissions(statusFilter, Math.max(0, pagination.offset - pagination.limit))}
+                className="px-2 py-1 rounded border border-slate-200 disabled:opacity-40"
+              >
+                Prev
+              </button>
+              <button
+                disabled={!pagination.hasMore}
+                onClick={() => fetchSubmissions(statusFilter, pagination.offset + pagination.limit)}
+                className="px-2 py-1 rounded border border-slate-200 disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </TeacherShell>
   );

@@ -18,8 +18,34 @@ exports.createSchool = async (req, res) => {
 
 exports.getSchools = async (req, res) => {
   try {
-    const schools = await School.find().populate("principalId", "name email");
-    res.json({ schools });
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 25)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const q = String(req.query.q || "").trim();
+
+    const filter = {};
+    if (q) {
+      filter.$or = [
+        { name: { $regex: new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") } },
+        { address: { $regex: new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") } },
+      ];
+    }
+
+    const total = await School.countDocuments(filter);
+    const schools = await School.find(filter)
+      .populate("principalId", "name email")
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit);
+
+    res.json({
+      items: schools,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + schools.length < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -89,10 +115,40 @@ exports.assignPrincipal = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find()
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 25)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const role = String(req.query.role || "all").trim().toLowerCase();
+    const q = String(req.query.q || "").trim();
+
+    const filter = {};
+    if (role && role !== "all") {
+      filter.role = role;
+    }
+    if (q) {
+      const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { name: { $regex: new RegExp(safe, "i") } },
+        { email: { $regex: new RegExp(safe, "i") } },
+      ];
+    }
+
+    const total = await User.countDocuments(filter);
+    const users = await User.find(filter)
       .select("-password")
-      .populate("schoolId", "name");
-    res.json({ users });
+      .populate("schoolId", "name")
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit);
+
+    res.json({
+      items: users,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + users.length < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -150,6 +206,29 @@ exports.updateUserRole = async (req, res) => {
     const user = await User.findByIdAndUpdate(id, { role }, { new: true }).select("-password");
     if (!user) return res.status(404).json({ error: "User not found." });
     res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.updateUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const validStatuses = ["active", "inactive"];
+    if (!status || !validStatuses.includes(String(status))) {
+      return res.status(400).json({ error: `status must be one of: ${validStatuses.join(", ")}` });
+    }
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ error: "User not found." });
+    if (user.role === "admin") return res.status(403).json({ error: "Cannot change status of an admin user." });
+
+    user.status = status;
+    await user.save();
+
+    const safeUser = await User.findById(id).select("-password").populate("schoolId", "name");
+    return res.json({ user: safeUser });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

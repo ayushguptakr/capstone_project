@@ -2,11 +2,78 @@ const Submission = require("../models/Submission");
 const Task = require("../models/Task");
 const { computeImageHashFromUpload } = require("../utils/imageHash");
 const trustScoreService = require("../services/trustScoreService");
+const {
+  listStudentSchedules,
+  buildScheduleMatcher,
+  isWindowActive,
+} = require("../services/scheduleVisibilityService");
+
+function getUserClassKey(user) {
+  return user?.classAssigned || user?.className || user?.class || null;
+}
 
 // Create submission (schema: task, student, content, imageUrl; optional submittedAt, geoTag)
 exports.submitTask = async (req, res) => {
   try {
     const { taskId, text, submittedAt, lat, lng } = req.body;
+    if (!taskId) {
+      return res.status(400).json({ message: "taskId is required" });
+    }
+
+    const taskDoc = await Task.findById(taskId).lean();
+    if (!taskDoc) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    if (req.user?.role === "student") {
+      const schedules = await listStudentSchedules("task", req.user.schoolId || null);
+      const pickSchedule = buildScheduleMatcher(schedules);
+      if (!isWindowActive(pickSchedule(taskDoc))) {
+        return res.status(403).json({ message: "This task is currently outside its scheduled window." });
+      }
+    }
+
+    // School isolation (non-admin)
+    if (req.user?.role !== "admin") {
+      const userSchool = req.user?.schoolId || null;
+      const taskSchool = taskDoc.schoolId || null;
+      const isTaskGlobal = Boolean(taskDoc.isGlobal);
+      if (!isTaskGlobal && String(taskSchool || "") !== String(userSchool || "")) {
+        return res.status(403).json({ message: "You cannot submit to a task outside your school." });
+      }
+    }
+
+    // Class enforcement (students)
+    const classKey = getUserClassKey(req.user);
+    if (req.user?.role === "student" && taskDoc.targetClass) {
+      if (!classKey || String(taskDoc.targetClass) !== String(classKey)) {
+        return res.status(403).json({ message: "This task is not assigned to your class." });
+      }
+    }
+
+    // Deadline enforcement (if set)
+    if (taskDoc.deadline) {
+      const deadline = new Date(taskDoc.deadline).getTime();
+      if (!Number.isNaN(deadline) && Date.now() > deadline) {
+        return res.status(400).json({ message: "Task deadline has passed." });
+      }
+    }
+
+    // Proof type enforcement
+    const proofType = String(taskDoc.proofType || "any");
+    const hasFile = Boolean(req.file);
+    const hasText = typeof text === "string" && text.trim().length > 0;
+    if (proofType === "image" && !hasFile) {
+      return res.status(400).json({ message: "Image proof is required for this task." });
+    }
+    if (proofType === "text" && !hasText) {
+      return res.status(400).json({ message: "Text proof is required for this task." });
+    }
+    if (proofType === "video" && !hasFile) {
+      // Upload middleware currently supports a single file; treat as required file.
+      return res.status(400).json({ message: "Video proof is required for this task." });
+    }
+
     const task = taskId;
     const student = req.user.id;
     const content = text || "";
@@ -134,8 +201,24 @@ exports.resubmitTask = async (req, res) => {
 // Student: Get their own submissions
 exports.getMySubmissions = async (req, res) => {
   try {
-    const submissions = await Submission.find({ student: req.user.id }).populate("task", "title description points category difficulty");
-    res.json(submissions);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 30)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const filter = { student: req.user.id };
+    const total = await Submission.countDocuments(filter);
+    const submissions = await Submission.find(filter)
+      .populate("task", "title description points category difficulty")
+      .sort({ createdAt: -1 })
+      .skip(offset)
+      .limit(limit);
+    res.json({
+      items: submissions,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + submissions.length < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

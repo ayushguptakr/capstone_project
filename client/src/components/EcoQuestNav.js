@@ -106,11 +106,11 @@ export default function EcoQuestNav({ variant = "landing", xp = 0 }) {
   useEffect(() => {
     if (showGames && loggedIn) {
       Promise.all([
-        apiRequest("/api/tasks").catch(() => []),
-        apiRequest("/api/submissions/my").catch(() => [])
+        apiRequest("/api/tasks?limit=200&offset=0").catch(() => []),
+        apiRequest("/api/submissions/my?limit=200&offset=0").catch(() => [])
       ]).then(([tasksResp, subResp]) => {
-        const tList = Array.isArray(tasksResp) ? tasksResp : tasksResp?.tasks || [];
-        const sList = Array.isArray(subResp) ? subResp : subResp?.submissions || [];
+        const tList = Array.isArray(tasksResp) ? tasksResp : tasksResp?.items || tasksResp?.tasks || [];
+        const sList = Array.isArray(subResp) ? subResp : subResp?.items || subResp?.submissions || [];
         const active = tList.filter(t => {
           const sub = sList.find(s => s.task?._id === t._id || s.task === t._id);
           return !sub || sub.status === "rejected";

@@ -5,7 +5,9 @@ const Submission = require("../models/Submission");
 // Get leaderboard (school-scoped by default, global opt-in)
 const getLeaderboard = async (req, res) => {
   try {
-    const { limit = 50, type = "school", class: classValue, section } = req.query;
+    const { type = "school", class: classValue, section } = req.query;
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 50)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
     
     let filter = { role: "student" };
 
@@ -26,17 +28,29 @@ const getLeaderboard = async (req, res) => {
       filter.section = section;
     }
 
+    const total = await User.countDocuments(filter);
     const leaderboard = await User.find(filter)
-      .select("name className class section points level badges league weeklyXP streakCurrent")
+      .select("name className class section points level badges league weeklyXP streakCurrent school schoolId")
+      .populate("schoolId", "name")
       .sort({ points: -1 })
-      .limit(parseInt(limit));
+      .skip(offset)
+      .limit(limit);
 
     const leaderboardWithRank = leaderboard.map((user, index) => ({
       ...user.toObject(),
-      rank: index + 1
+      schoolName: user?.schoolId?.name || user?.school || "",
+      rank: offset + index + 1
     }));
 
-    res.json(leaderboardWithRank);
+    res.json({
+      items: leaderboardWithRank,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + leaderboardWithRank.length < total,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -62,24 +76,44 @@ const getStudentProgress = async (req, res) => {
     const higherRankedCount = await User.countDocuments(rankFilter);
     const rank = higherRankedCount + 1;
 
-    // Get quiz stats
-    const quizAttempts = await QuizAttempt.find({ student: studentId });
+    // Get quiz stats with aggregation (avoids loading all attempts into memory)
+    const quizAgg = await QuizAttempt.aggregate([
+      { $match: { student: student._id } },
+      {
+        $group: {
+          _id: null,
+          totalAttempts: { $sum: 1 },
+          averageScore: { $avg: "$percentage" },
+          bestScore: { $max: "$percentage" },
+        },
+      },
+    ]);
+    const quizSummary = quizAgg[0] || {};
     const quizStats = {
-      totalAttempts: quizAttempts.length,
-      averageScore: quizAttempts.length > 0 
-        ? quizAttempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / quizAttempts.length 
-        : 0,
-      bestScore: quizAttempts.length > 0 
-        ? Math.max(...quizAttempts.map(attempt => attempt.percentage)) 
-        : 0
+      totalAttempts: Number(quizSummary.totalAttempts || 0),
+      averageScore: Number(quizSummary.averageScore || 0),
+      bestScore: Number(quizSummary.bestScore || 0),
     };
 
-    // Get task submission stats
-    const submissions = await Submission.find({ student: studentId });
+    // Get task submission stats with aggregation (single query)
+    const submissionAgg = await Submission.aggregate([
+      { $match: { student: student._id } },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const submissionCounts = submissionAgg.reduce((acc, row) => {
+      acc[String(row._id || "unknown")] = Number(row.count || 0);
+      return acc;
+    }, {});
+    const totalSubmissions = Object.values(submissionCounts).reduce((sum, n) => sum + n, 0);
     const taskStats = {
-      totalSubmissions: submissions.length,
-      approvedSubmissions: submissions.filter(s => s.status === "approved").length,
-      pendingSubmissions: submissions.filter(s => s.status === "pending").length
+      totalSubmissions,
+      approvedSubmissions: Number(submissionCounts.approved || 0),
+      pendingSubmissions: Number(submissionCounts.pending || 0),
     };
 
     res.json({

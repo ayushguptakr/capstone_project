@@ -79,7 +79,7 @@ export default function Profile() {
 
         setProgress(progressData);
         setGamification(gamificationData);
-        setRedemptions(Array.isArray(redemptionsRes) ? redemptionsRes : []);
+        setRedemptions(Array.isArray(redemptionsRes) ? redemptionsRes : redemptionsRes?.items || []);
 
         const merged = {
           ...user,

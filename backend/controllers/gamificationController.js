@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const XPEvent = require("../models/XPEvent");
 const { levelFromPoints, syncActivity, applyPlantDecay } = require("../services/gamificationService");
+const progression = require("../config/progression");
 
 async function getMyGamification(req, res) {
   try {
@@ -19,8 +20,8 @@ async function getMyGamification(req, res) {
 
     const currentPoints = Number(user.points || 0);
     const computedLevel = levelFromPoints(currentPoints);
-    const nextLevelPoints = computedLevel * 100;
-    const pointsToNextLevel = Math.max(0, nextLevelPoints - currentPoints);
+    const nextLevelPoints = progression.nextLevelPointsForLevel(computedLevel);
+    const pointsToNextLevel = progression.pointsToNextLevel(currentPoints);
 
     const eventQuery = { user: req.user.id };
     if (sourceFilter) eventQuery.source = sourceFilter;
@@ -81,9 +82,7 @@ module.exports = {
 
       // Strict data-driven boundaries calculation
       const xpPoints = Number(user.points || 0);
-      const nextLevel = Math.floor(xpPoints / 250) + 2;
-      const requiredForNext = (nextLevel - 1) * 250;
-      const pointsToNextLevel = Math.max(requiredForNext - xpPoints, 0);
+      const pointsToNextLevel = progression.pointsToNextLevel(xpPoints);
       const streak = user.streakCurrent || 0;
 
       // Time-zone safe daily cache boundary

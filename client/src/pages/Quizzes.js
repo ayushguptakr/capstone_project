@@ -7,6 +7,7 @@ import { apiRequest } from "../api/httpClient";
 import QuizHeroCard from "../components/quiz/QuizHeroCard";
 import QuizPath from "../components/quiz/QuizPath";
 import QuizCardEnhanced from "../components/quiz/QuizCardEnhanced";
+import ScheduleStatusHint from "../components/ScheduleStatusHint";
 
 // Mirroring Backend's Curriculum for Path Map
 const QUIZ_CURRICULUM = ["waste-1", "energy-1", "water-1", "climate-1", "biodiversity-1"];
@@ -74,7 +75,12 @@ function Quizzes() {
       return !isLocked && (!prog || prog.stars < 3);
     });
 
-    priorityQuiz = activeToday || inProgress || lowestUnlocked || quizzes[0];
+    priorityQuiz =
+      activeToday ||
+      inProgress ||
+      lowestUnlocked ||
+      quizzes.find((q) => q.isAvailableNow !== false) ||
+      quizzes[0];
   }
 
   if (loading) {
@@ -97,14 +103,17 @@ function Quizzes() {
             </h1>
             <p className="text-gray-600 mt-1">Test your knowledge & earn XP!</p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/dashboard")}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-eco-primary text-white font-semibold"
-          >
-            <ArrowLeft className="w-4 h-4" /> Dashboard
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <ScheduleStatusHint />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate("/dashboard")}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-eco-primary text-white font-semibold"
+            >
+              <ArrowLeft className="w-4 h-4" /> Dashboard
+            </motion.button>
+          </div>
         </div>
 
         {/* Hero Section */}

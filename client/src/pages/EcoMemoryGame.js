@@ -3,24 +3,41 @@ import { useNavigate } from "react-router-dom";
 import "./EcoMemoryGame.css";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
-import { apiRequest } from "../api/httpClient";
 import GameRewardModal from "../components/GameRewardModal";
 import gamesConfig from "../data/gamesConfig";
+import { Leaf, Recycle, Droplets, Sun, Globe, Flower2, Bike, Trees, Waves, Battery } from "lucide-react";
+import useMiniGameRun from "../hooks/useMiniGameRun";
+import MiniGameDebugPanel from "../components/game/MiniGameDebugPanel";
 
 const ecoCards = [
-  { id: 1, content: "🌱", fact: "Plants produce oxygen" }, { id: 2, content: "🌱", fact: "Plants produce oxygen" },
-  { id: 3, content: "♻️", fact: "Recycling saves energy" }, { id: 4, content: "♻️", fact: "Recycling saves energy" },
-  { id: 5, content: "💧", fact: "Water is precious" }, { id: 6, content: "💧", fact: "Water is precious" },
-  { id: 7, content: "🌞", fact: "Solar energy is renewable" }, { id: 8, content: "🌞", fact: "Solar energy is renewable" },
-  { id: 9, content: "🌍", fact: "Earth needs protection" }, { id: 10, content: "🌍", fact: "Earth needs protection" },
-  { id: 11, content: "🐝", fact: "Bees pollinate plants" }, { id: 12, content: "🐝", fact: "Bees pollinate plants" },
-  { id: 13, content: "🚲", fact: "Biking reduces emissions" }, { id: 14, content: "🚲", fact: "Biking reduces emissions" },
-  { id: 15, content: "🌳", fact: "Forests are earth's lungs" }, { id: 16, content: "🌳", fact: "Forests are earth's lungs" },
-  { id: 17, content: "🌊", fact: "Oceans regulate climate" }, { id: 18, content: "🌊", fact: "Oceans regulate climate" },
-  { id: 19, content: "🔋", fact: "Rechargeable batteries rock" }, { id: 20, content: "🔋", fact: "Rechargeable batteries rock" },
-  { id: 21, content: "🌻", fact: "Sunflowers absorb toxins" }, { id: 22, content: "🌻", fact: "Sunflowers absorb toxins" },
-  { id: 23, content: "🍂", fact: "Compost feeds the soil" }, { id: 24, content: "🍂", fact: "Compost feeds the soil" }
+  { id: 1, content: "leaf", fact: "Plants produce oxygen" }, { id: 2, content: "leaf", fact: "Plants produce oxygen" },
+  { id: 3, content: "recycle", fact: "Recycling saves energy" }, { id: 4, content: "recycle", fact: "Recycling saves energy" },
+  { id: 5, content: "water", fact: "Water is precious" }, { id: 6, content: "water", fact: "Water is precious" },
+  { id: 7, content: "sun", fact: "Solar energy is renewable" }, { id: 8, content: "sun", fact: "Solar energy is renewable" },
+  { id: 9, content: "earth", fact: "Earth needs protection" }, { id: 10, content: "earth", fact: "Earth needs protection" },
+  { id: 11, content: "flower", fact: "Pollinators support plants" }, { id: 12, content: "flower", fact: "Pollinators support plants" },
+  { id: 13, content: "bike", fact: "Biking reduces emissions" }, { id: 14, content: "bike", fact: "Biking reduces emissions" },
+  { id: 15, content: "trees", fact: "Forests are earth's lungs" }, { id: 16, content: "trees", fact: "Forests are earth's lungs" },
+  { id: 17, content: "waves", fact: "Oceans regulate climate" }, { id: 18, content: "waves", fact: "Oceans regulate climate" },
+  { id: 19, content: "battery", fact: "Rechargeable batteries help reduce waste" }, { id: 20, content: "battery", fact: "Rechargeable batteries help reduce waste" },
+  { id: 21, content: "flower2", fact: "Sunflowers absorb toxins" }, { id: 22, content: "flower2", fact: "Sunflowers absorb toxins" },
+  { id: 23, content: "leaf2", fact: "Compost feeds the soil" }, { id: 24, content: "leaf2", fact: "Compost feeds the soil" }
 ];
+
+const CARD_ICON = {
+  leaf: Leaf,
+  recycle: Recycle,
+  water: Droplets,
+  sun: Sun,
+  earth: Globe,
+  flower: Flower2,
+  bike: Bike,
+  trees: Trees,
+  waves: Waves,
+  battery: Battery,
+  flower2: Flower2,
+  leaf2: Leaf,
+};
 
 function EcoMemoryGame() {
   const [cards, setCards] = useState([]);
@@ -36,11 +53,11 @@ function EcoMemoryGame() {
   const numCards = level === 1 ? 12 : level === 2 ? 16 : 24;
 
   const [timeLeft, setTimeLeft] = useState(initialTime);
-  const [masteryData, setMasteryData] = useState(null);
   const navigate = useNavigate();
   const { triggerXPFromEvent, triggerSuccess } = useFeedback();
   const { playClick } = useSound();
   const gameConfig = gamesConfig.find(g => g.id === "eco-memory");
+  const { run, submitting, submitResult, submitScore } = useMiniGameRun({ gameId: "eco-memory", level });
 
   useEffect(() => {
     initializeGame();
@@ -100,23 +117,7 @@ function EcoMemoryGame() {
     const finalScore = matchedCards.length === cards.length ? score + (timeLeft * 2) : score;
     triggerSuccess();
     
-    try {
-      const resp = await apiRequest("/api/mini-games/submit-score", {
-        method: "POST",
-        body: {
-          gameId: "eco-memory",
-          level,
-          score: finalScore,
-          timeSpent: initialTime - timeLeft
-        },
-        retries: 0,
-      });
-      if (resp.mastery) {
-        setMasteryData(resp.mastery);
-      }
-    } catch (error) {
-      console.error("Error submitting score:", error);
-    }
+    await submitScore({ score: finalScore, timeSpent: initialTime - timeLeft });
   };
 
   if (gameOver) {
@@ -125,11 +126,12 @@ function EcoMemoryGame() {
       <div className="memory-game-container">
         <GameRewardModal
           show={true}
-          xpEarned={finalScore}
+          xpEarned={Number(submitResult?.pointsEarned || 0)}
           streakBonus={Math.floor(finalScore * 0.1)}
           ecoImpact={gameConfig.ecoImpact}
           gameName={gameConfig.name}
-          masteryData={masteryData}
+          masteryData={submitResult?.mastery || null}
+          capInfo={submitResult?.capInfo || null}
           onPlayAgain={() => { playClick(); window.location.reload(); }}
           onClose={() => { playClick(); navigate("/mini-games"); }}
         />
@@ -140,7 +142,7 @@ function EcoMemoryGame() {
   return (
     <div className="memory-game-container">
       <div className="game-header">
-        <h1>🧠 Eco Memory Game</h1>
+        <h1>Eco Memory Game</h1>
         <div className="game-stats">
           <div className="stat">
             <span className="stat-label">Score:</span>
@@ -168,7 +170,12 @@ function EcoMemoryGame() {
           >
             <div className="card-front">?</div>
             <div className="card-back">
-              <div className="card-emoji">{card.content}</div>
+              <div className="card-emoji">
+                {(() => {
+                  const Icon = CARD_ICON[card.content] || Leaf;
+                  return <Icon className="w-9 h-9" />;
+                })()}
+              </div>
               <div className="card-fact">{card.fact}</div>
             </div>
           </div>
@@ -177,10 +184,17 @@ function EcoMemoryGame() {
 
       <button 
         className="quit-btn"
-        onClick={() => { playClick(); navigate("/mini-games"); }}
+        onClick={() => { playClick(); endGame(); }}
       >
         ← Quit Game
       </button>
+      <MiniGameDebugPanel
+        gameId="eco-memory"
+        level={level}
+        run={run}
+        submitting={submitting}
+        submitResult={submitResult}
+      />
     </div>
   );
 }

@@ -10,9 +10,9 @@ const {
 } = require("../controllers/ecoImpactController");
 
 router.get("/student/:studentId", protect, getStudentImpact);
-router.get("/aggregate/student", protect, getStudentAggregate);
-router.get("/aggregate/school", protect, getSchoolAggregate);
-router.get("/aggregate/class", protect, getClassAggregate);
+router.get("/aggregate/student", protect, authorizeRoles("teacher", "principal", "admin"), getStudentAggregate);
+router.get("/aggregate/school", protect, authorizeRoles("principal", "admin"), getSchoolAggregate);
+router.get("/aggregate/class", protect, authorizeRoles("teacher", "principal", "admin"), getClassAggregate);
 router.post("/refresh-ranking/:studentId", protect, authorizeRoles("teacher", "admin"), refreshRanking);
 
 module.exports = router;

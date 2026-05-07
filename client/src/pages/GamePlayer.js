@@ -20,24 +20,64 @@ export default function GamePlayer() {
   const [isLoading, setIsLoading] = useState(true);
   const [showReward, setShowReward] = useState(false);
   const [gameScore, setGameScore] = useState(0);
+  const [lastSubmit, setLastSubmit] = useState(null); // { pointsEarned, capInfo, mastery }
+  const [run, setRun] = useState(null); // { runId, runToken, maxScore, level }
+  const [runNonce, setRunNonce] = useState(0);
+  const [iframeKey, setIframeKey] = useState(0);
+  const [runStartedAt, setRunStartedAt] = useState(null);
 
   const game = gamesConfig.find(g => g.id === id);
 
+  const isDevEndButtonEnabled =
+    process.env.NODE_ENV !== "production" &&
+    (localStorage.getItem("ecoquest:debug") === "1" || localStorage.getItem("ecoquest:debug") === "true");
+
   const submitScore = useCallback(async (s) => {
     if (!game) return;
+    if (!run?.runId || !run?.runToken) return;
     try {
-      await apiRequest("/api/mini-games/submit-score", {
+      const timeSpent = runStartedAt ? Math.max(0, Math.floor((Date.now() - runStartedAt) / 1000)) : 0;
+      const resp = await apiRequest("/api/mini-games/submit-score", {
         method: "POST",
         body: {
           gameId: game.id,
           score: s,
-          timeSpent: 30 // Approximate or generic time
+          timeSpent,
+          runId: run.runId,
+          runToken: run.runToken,
         }
       });
+      setLastSubmit(resp || null);
     } catch (e) {
       console.error("Failed to submit score:", e);
+      setLastSubmit(null);
     }
-  }, [game]);
+  }, [game, run, runStartedAt]);
+
+  // Start a server-verified run on mount / game change
+  useEffect(() => {
+    let cancelled = false;
+    const start = async () => {
+      if (!game) return;
+      try {
+        const data = await apiRequest("/api/mini-games/start-run", {
+          method: "POST",
+          body: { gameId: game.id, level: 1 },
+        });
+        if (!cancelled) {
+          setRun(data);
+          setRunStartedAt(Date.now());
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setRun(null);
+          setRunStartedAt(null);
+        }
+      }
+    };
+    start();
+    return () => { cancelled = true; };
+  }, [game?.id, runNonce]);
 
   // Listen for game completion messages from iframe
   const handleMessage = useCallback((event) => {
@@ -126,16 +166,23 @@ export default function GamePlayer() {
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
           <button
-            onClick={() => { 
-              const s = game.xp || 100;
-              setGameScore(s); 
-              submitScore(s);
-              setShowReward(true); 
-            }}
-            className="px-3 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-          >
-            End Game
-          </button>
+            onClick={() => {}}
+            className="hidden"
+          />
+          {isDevEndButtonEnabled && (
+            <button
+              onClick={() => { 
+                const s = Math.min(Number(game.xp || 0) || 0, Number(run?.maxScore || 100));
+                setGameScore(s); 
+                submitScore(s);
+                setShowReward(true); 
+              }}
+              className="px-3 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              title="Debug only (enable ecoquest:debug=1)"
+            >
+              End Game (Debug)
+            </button>
+          )}
         </div>
       </div>
 
@@ -153,6 +200,7 @@ export default function GamePlayer() {
         {gameUrl ? (
           // External HTML5 game via iframe
           <iframe
+            key={iframeKey}
             src={gameUrl}
             title={game.name}
             className="w-full h-full border-0"
@@ -188,12 +236,23 @@ export default function GamePlayer() {
       {/* Reward Modal */}
       <GameRewardModal
         show={showReward}
-        xpEarned={gameScore}
+        xpEarned={Number(lastSubmit?.pointsEarned ?? 0)}
         streakBonus={Math.floor(gameScore * 0.1)}
         ecoImpact={game.ecoImpact}
         gameName={game.name}
+        masteryData={lastSubmit?.mastery || null}
+        capInfo={lastSubmit?.capInfo || null}
         onClose={() => { setShowReward(false); navigate("/mini-games"); }}
-        onPlayAgain={() => { setShowReward(false); setGameScore(0); setIsLoading(true); }}
+        onPlayAgain={() => {
+          setShowReward(false);
+          setGameScore(0);
+          setIsLoading(true);
+          setRun(null);
+          setRunStartedAt(null);
+          setLastSubmit(null);
+          setRunNonce((n) => n + 1);
+          setIframeKey((k) => k + 1);
+        }}
       />
     </div>
   );

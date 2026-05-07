@@ -40,9 +40,10 @@ export default function NotificationBell() {
 
   // Fetch on mount
   useEffect(() => {
-    apiRequest("/api/announcements/student")
+    apiRequest("/api/announcements/student?limit=20&offset=0")
       .then((data) => {
-        setAnnouncements(Array.isArray(data) ? data : []);
+        const items = Array.isArray(data) ? data : (data?.items || []);
+        setAnnouncements(Array.isArray(items) ? items : []);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));

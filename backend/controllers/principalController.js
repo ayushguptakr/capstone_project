@@ -106,7 +106,25 @@ exports.getOverview = async (req, res) => {
 exports.getTeacherPerformance = async (req, res) => {
   try {
     const schoolId = req.user.schoolId;
-    const teachers = await User.find({ role: "teacher", schoolId }).select("name email points lastActivityAt");
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 25)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const q = String(req.query.q || "").trim();
+
+    const teacherFilter = { role: "teacher", schoolId };
+    if (q) {
+      const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      teacherFilter.$or = [
+        { name: { $regex: new RegExp(safe, "i") } },
+        { email: { $regex: new RegExp(safe, "i") } },
+      ];
+    }
+
+    const total = await User.countDocuments(teacherFilter);
+    const teachers = await User.find(teacherFilter)
+      .select("name email points lastActivityAt")
+      .sort({ lastActivityAt: -1, createdAt: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit);
     
     // In a real app we'd aggregate tasks created by them and submissions approved by them.
     // For MVp, we'll map them with some basic metrics.
@@ -126,7 +144,15 @@ exports.getTeacherPerformance = async (req, res) => {
     // Sort by engagement
     performance.sort((a, b) => b.engagementScore - a.engagementScore);
 
-    res.json({ teachers: performance });
+    res.json({
+      items: performance,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + performance.length < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -157,9 +183,25 @@ exports.getClassStudents = async (req, res) => {
   try {
     const schoolId = req.user.schoolId;
     const { className } = req.params;
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 25)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const q = String(req.query.q || "").trim();
     
-    const students = await User.find({ role: "student", schoolId, className })
-      .select("name email points level lastActivityAt");
+    const studentFilter = { role: "student", schoolId, className };
+    if (q) {
+      const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      studentFilter.$or = [
+        { name: { $regex: new RegExp(safe, "i") } },
+        { email: { $regex: new RegExp(safe, "i") } },
+      ];
+    }
+
+    const total = await User.countDocuments(studentFilter);
+    const students = await User.find(studentFilter)
+      .select("name email points level lastActivityAt")
+      .sort({ points: -1, createdAt: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit);
 
     const studentData = await Promise.all(students.map(async (st) => {
       const tasksCompleted = await Submission.countDocuments({ student: st._id, status: { $in: ["approved", "completed"] } });
@@ -177,7 +219,15 @@ exports.getClassStudents = async (req, res) => {
     // Sort by points descending
     studentData.sort((a, b) => (b.points || 0) - (a.points || 0));
 
-    res.json({ students: studentData });
+    res.json({
+      items: studentData,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + studentData.length < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -208,8 +258,22 @@ exports.createEvent = async (req, res) => {
 exports.getEvents = async (req, res) => {
   try {
     const schoolId = req.user.schoolId;
-    const events = await Event.find({ schoolId }).sort("-createdAt");
-    res.json({ events });
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 25)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const total = await Event.countDocuments({ schoolId });
+    const events = await Event.find({ schoolId })
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit);
+    res.json({
+      items: events,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + events.length < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -303,7 +367,13 @@ exports.getSchoolClasses = async (req, res) => {
     const schoolId = req.user.schoolId;
     if (!schoolId) return res.status(400).json({ message: "No school assigned." });
 
-    const classes = await Class.find({ schoolId }).sort({ name: 1, section: 1 });
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 25)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const total = await Class.countDocuments({ schoolId });
+    const classes = await Class.find({ schoolId })
+      .sort({ name: 1, section: 1, _id: 1 })
+      .skip(offset)
+      .limit(limit);
 
     // Enrich with student/teacher counts
     const enriched = await Promise.all(
@@ -330,7 +400,15 @@ exports.getSchoolClasses = async (req, res) => {
       })
     );
 
-    res.json({ classes: enriched });
+    res.json({
+      items: enriched,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + enriched.length < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

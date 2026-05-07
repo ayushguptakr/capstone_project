@@ -32,8 +32,9 @@ export default function DeveloperDashboard() {
 
   const fetchSchools = async () => {
     try {
-      const data = await apiRequest("/api/admin/schools");
-      setSchools(data.schools || []);
+      const data = await apiRequest("/api/admin/schools?limit=200&offset=0");
+      const items = Array.isArray(data) ? data : (data?.items || data?.schools || []);
+      setSchools(items || []);
     } catch (err) {
       console.error(err);
     }
@@ -41,8 +42,9 @@ export default function DeveloperDashboard() {
 
   const fetchUsers = async () => {
     try {
-      const data = await apiRequest("/api/admin/users");
-      setUsers(data.users || []);
+      const data = await apiRequest("/api/admin/users?limit=200&offset=0&role=all");
+      const items = Array.isArray(data) ? data : (data?.items || data?.users || []);
+      setUsers(items || []);
     } catch (err) {
       console.error(err);
     }
@@ -52,7 +54,7 @@ export default function DeveloperDashboard() {
     e.preventDefault();
     try {
       if (!schoolName) return;
-      await apiRequest("/api/admin/schools", "POST", { name: schoolName, address: schoolAddress });
+      await apiRequest("/api/admin/schools", { method: "POST", body: { name: schoolName, address: schoolAddress } });
       setSchoolName("");
       setSchoolAddress("");
       fetchSchools();
@@ -65,7 +67,7 @@ export default function DeveloperDashboard() {
   const handleDeleteUser = async (id) => {
     if (!window.confirm("Are you sure?")) return;
     try {
-      await apiRequest(`/api/admin/users/${id}`, "DELETE");
+      await apiRequest(`/api/admin/users/${id}`, { method: "DELETE" });
       fetchUsers();
       showAlert({ type: "success", message: "User deleted" });
     } catch (err) {
@@ -87,11 +89,14 @@ export default function DeveloperDashboard() {
     setAssignError("");
     setAssignSuccess("");
     try {
-      await apiRequest("/api/admin/schools/assign", "POST", {
-        schoolId: assignSchoolId,
-        name: principalName,
-        email: principalEmail,
-        password: principalPassword,
+      await apiRequest("/api/admin/schools/assign", {
+        method: "POST",
+        body: {
+          schoolId: assignSchoolId,
+          name: principalName,
+          email: principalEmail,
+          password: principalPassword,
+        },
       });
       setAssignSuccess(`Principal "${principalName}" created and assigned successfully!`);
       setPrincipalName("");

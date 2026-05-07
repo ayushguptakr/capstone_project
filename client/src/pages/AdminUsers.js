@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash2, ArrowRightLeft, Shield, X } from "lucide-react";
+import { Plus, Trash2, ArrowRightLeft, Shield, X, Power } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
 import { useAuth } from "../context/AuthContext";
 import "./AdminPanel.css";
@@ -12,6 +12,8 @@ export default function AdminUsers() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const [pagination, setPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
   const { user, isLoggedIn } = useAuth();
 
   // Create user
@@ -35,15 +37,33 @@ export default function AdminUsers() {
 
   useEffect(() => {
     if (!isLoggedIn || !user) return;
-    fetchUsers();
+    fetchUsers({ role: roleFilter, q: query, offset: 0 });
     fetchSchools();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, user]);
 
-  const fetchUsers = async () => {
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
+    const t = setTimeout(() => {
+      fetchUsers({ role: roleFilter, q: query, offset: 0 });
+    }, 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleFilter, query]);
+
+  const fetchUsers = async ({ role = roleFilter, q = query, offset = 0 } = {}) => {
+    setLoading(true);
     try {
-      const data = await apiRequest("/api/admin/users");
-      if (data) setUsers(data.users || []);
+      const limit = pagination.limit;
+      const data = await apiRequest(
+        `/api/admin/users?role=${encodeURIComponent(role)}&q=${encodeURIComponent(q || "")}&limit=${limit}&offset=${offset}`
+      );
+      const items = Array.isArray(data) ? data : data?.items || [];
+      setUsers(items);
+      setPagination((p) => ({
+        ...p,
+        ...(data?.pagination || { total: 0, limit, offset, hasMore: false }),
+      }));
     } catch (err) {
       console.error(err);
     } finally {
@@ -53,8 +73,10 @@ export default function AdminUsers() {
 
   const fetchSchools = async () => {
     try {
-      const data = await apiRequest("/api/admin/schools");
-      if (data) setSchools(data.schools || []);
+      // For dropdowns, load a larger first page (keeps UI responsive on big installs)
+      const data = await apiRequest("/api/admin/schools?limit=200&offset=0");
+      const items = Array.isArray(data) ? data : data?.items || [];
+      if (items) setSchools(items);
     } catch (err) {
       console.error(err);
     }
@@ -154,8 +176,27 @@ export default function AdminUsers() {
     }
   };
 
-  // ---- Filtering ----
-  const filtered = roleFilter === "all" ? users : users.filter((u) => u.role === roleFilter);
+  const handleToggleStatus = async (targetUser) => {
+    const currentStatus = targetUser.status || "active";
+    const nextStatus = currentStatus === "inactive" ? "active" : "inactive";
+    try {
+      await apiRequest(`/api/admin/users/${targetUser._id}/status`, {
+        method: "PUT",
+        body: { status: nextStatus },
+      });
+      setSuccess(
+        nextStatus === "inactive"
+          ? "User account set to inactive."
+          : "User account reactivated."
+      );
+      fetchUsers();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err.message || "Failed to update account status.");
+    }
+  };
+
+  const filtered = users;
 
   return (
     <>
@@ -272,7 +313,21 @@ export default function AdminUsers() {
                 </button>
               ))}
             </div>
-            <span className="admin-toolbar__count">{filtered.length} users</span>
+            <span className="admin-toolbar__count">
+              {pagination.total || filtered.length} users
+            </span>
+          </div>
+
+          <div className="admin-card" style={{ marginTop: 12, padding: 12 }}>
+            <div className="admin-form-group" style={{ margin: 0 }}>
+              <label className="admin-label">Search users</label>
+              <input
+                className="admin-input"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name or email…"
+              />
+            </div>
           </div>
 
           <div className="admin-table-wrap">
@@ -282,6 +337,7 @@ export default function AdminUsers() {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Status</th>
                   <th>School</th>
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
@@ -294,6 +350,11 @@ export default function AdminUsers() {
                     <td>
                       <span className={`admin-role-badge admin-role-badge--${u.role}`}>
                         {u.role}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`admin-status-badge admin-status-badge--${u.status || "active"}`}>
+                        {u.status || "active"}
                       </span>
                     </td>
                     <td>
@@ -319,6 +380,13 @@ export default function AdminUsers() {
                             <ArrowRightLeft style={{ width: 16, height: 16 }} />
                           </button>
                           <button
+                            className="admin-btn--icon"
+                            onClick={() => handleToggleStatus(u)}
+                            title={u.status === "inactive" ? "Reactivate Account" : "Set Inactive"}
+                          >
+                            <Power style={{ width: 16, height: 16 }} />
+                          </button>
+                          <button
                             className="admin-btn--icon admin-btn--icon-danger"
                             onClick={() => handleDelete(u._id)}
                             title="Delete User"
@@ -332,7 +400,7 @@ export default function AdminUsers() {
                 ))}
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="admin-empty">
+                    <td colSpan="6" className="admin-empty">
                       {roleFilter === "all" ? "No users found." : `No ${roleFilter}s found.`}
                     </td>
                   </tr>
@@ -341,6 +409,32 @@ export default function AdminUsers() {
             </table>
           </div>
         </div>
+
+        {!loading && pagination.total > 0 && (
+          <div className="admin-section" style={{ paddingTop: 0 }}>
+            <div className="admin-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+              <span style={{ color: "#64748b", fontSize: 12, fontWeight: 600 }}>
+                Showing {pagination.offset + 1}-{Math.min(pagination.offset + filtered.length, pagination.total)} of {pagination.total}
+              </span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="admin-btn admin-btn--secondary"
+                  disabled={pagination.offset <= 0}
+                  onClick={() => fetchUsers({ role: roleFilter, offset: Math.max(0, pagination.offset - pagination.limit) })}
+                >
+                  Prev
+                </button>
+                <button
+                  className="admin-btn admin-btn--secondary"
+                  disabled={!pagination.hasMore}
+                  onClick={() => fetchUsers({ role: roleFilter, offset: pagination.offset + pagination.limit })}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* -------- Change Role Modal -------- */}
         {roleUser && (

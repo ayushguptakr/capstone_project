@@ -6,7 +6,8 @@ import useGameLogic from "../hooks/useGameLogic";
 import QuestionCard from "../components/game/QuestionCard";
 import GameRewardModal from "../components/GameRewardModal";
 import gamesConfig from "../data/gamesConfig";
-import { apiRequest } from "../api/httpClient";
+import useMiniGameRun from "../hooks/useMiniGameRun";
+import MiniGameDebugPanel from "../components/game/MiniGameDebugPanel";
 
 /**
  * EcoHabitGame — "Eco Habit Challenge"
@@ -18,26 +19,18 @@ export default function EcoHabitGame() {
   const level = parseInt(searchParams.get("level")) || 1;
   const game = useGameLogic(level);
   const [scoreSubmitted, setScoreSubmitted] = React.useState(false);
-  const [masteryData, setMasteryData] = React.useState(null);
-  
+  const { run, submitting, submitResult, submitScore, restartRun } = useMiniGameRun({ gameId: "eco-habit", level });
   const gameConfig = gamesConfig.find(g => g.id === "eco-habit");
 
   React.useEffect(() => {
     if (game.phase === "ended" && !scoreSubmitted) {
       setScoreSubmitted(true);
-      apiRequest("/api/mini-games/submit-score", {
-        method: "POST",
-        body: {
-          gameId: "eco-habit",
-          level,
-          score: game.score,
-          timeSpent: game.totalRounds * game.maxTime
-        }
-      }).then((resp) => {
-        if (resp.mastery) setMasteryData(resp.mastery);
-      }).catch(console.error);
+      submitScore({
+        score: game.score,
+        timeSpent: game.totalRounds * game.maxTime,
+      }).catch(() => null);
     }
-  }, [game.phase, game.score, scoreSubmitted, level, game.totalRounds, game.maxTime]);
+  }, [game.phase, game.score, scoreSubmitted, game.totalRounds, game.maxTime, submitScore]);
 
   // ── Ready Screen ───────────────────────────────────────────────
   if (game.phase === "ready") {
@@ -87,9 +80,10 @@ export default function EcoHabitGame() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={game.startGame}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-lg inline-flex items-center justify-center gap-3 shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 transition-shadow"
+            disabled={game.loadingQuestions}
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-lg inline-flex items-center justify-center gap-3 shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 transition-shadow disabled:opacity-70 disabled:cursor-wait"
           >
-            <Play className="w-5 h-5 fill-white" /> Start Game
+            <Play className="w-5 h-5 fill-white" /> {game.loadingQuestions ? "Loading Questions..." : "Start Game"}
           </motion.button>
 
           <motion.button
@@ -111,12 +105,17 @@ export default function EcoHabitGame() {
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
         <GameRewardModal
           show={true}
-          xpEarned={game.score}
+          xpEarned={Number(submitResult?.pointsEarned || 0)}
           streakBonus={Math.floor(game.score * 0.1)}
           ecoImpact={gameConfig?.ecoImpact}
           gameName={gameConfig?.name || "Eco Habit"}
-          masteryData={masteryData}
-          onPlayAgain={game.startGame}
+          masteryData={submitResult?.mastery || null}
+          capInfo={submitResult?.capInfo || null}
+          onPlayAgain={() => {
+            setScoreSubmitted(false);
+            restartRun();
+            game.startGame();
+          }}
           onClose={() => navigate("/mini-games")}
         />
       </div>
@@ -156,6 +155,13 @@ export default function EcoHabitGame() {
           phase={game.phase}
           onAnswer={game.handleAnswer}
           onNext={game.nextQuestion}
+        />
+        <MiniGameDebugPanel
+          gameId="eco-habit"
+          level={level}
+          run={run}
+          submitting={submitting}
+          submitResult={submitResult}
         />
       </div>
     </div>

@@ -2,11 +2,12 @@ const express = require("express");
 const router = express.Router();
 const Event = require("../models/Event");
 const { protect } = require("../middleware/authMiddleware");
+const { requireFeature } = require("../middleware/featureToggle");
 
 // @route   GET /api/events
 // @desc    Get all active events for the logged-in user's school
 // @access  Private (Teacher, Student)
-router.get("/", protect, async (req, res) => {
+router.get("/", protect, requireFeature("competitions"), async (req, res) => {
   try {
     const schoolId = req.user.schoolId;
     if (!schoolId) {

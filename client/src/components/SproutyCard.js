@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sprout, Loader2 } from "lucide-react";
+import { Sprout, Loader2, Target, Info, Leaf } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
 
 /**
@@ -44,7 +44,7 @@ export default function SproutyCard({ ecoScore = 60, streak = 0, missionsPending
         setAiMessage(res.reply.slice(0, 120));
       }
     } catch (err) {
-      setAiMessage("I'm taking a quick nap! Catch you later. 🌿");
+      setAiMessage("I'm taking a quick nap. Catch you later.");
     } finally {
       setIsLoading(false);
     }
@@ -101,21 +101,30 @@ export default function SproutyCard({ ecoScore = 60, streak = 0, missionsPending
               disabled={isLoading}
               className="text-left text-sm font-semibold text-gray-700 hover:text-green-700 hover:bg-green-50 focus:bg-green-50 px-3 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-wait"
             >
-              🌱 Get an Eco Tip
+              <span className="inline-flex items-center gap-2">
+                <Leaf className="w-4 h-4 text-emerald-600" />
+                Get an eco tip
+              </span>
             </button>
             <button 
               onClick={() => handleAI("next")}
               disabled={isLoading}
               className="text-left text-sm font-semibold text-gray-700 hover:text-green-700 hover:bg-green-50 focus:bg-green-50 px-3 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-wait"
             >
-              🎯 What should I do next?
+              <span className="inline-flex items-center gap-2">
+                <Target className="w-4 h-4 text-emerald-600" />
+                What should I do next?
+              </span>
             </button>
             <button 
               onClick={() => handleAI("why")}
               disabled={isLoading}
               className="text-left text-sm font-semibold text-gray-700 hover:text-green-700 hover:bg-green-50 focus:bg-green-50 px-3 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-wait"
             >
-              🌍 Why does this matter?
+              <span className="inline-flex items-center gap-2">
+                <Info className="w-4 h-4 text-emerald-600" />
+                Why does this matter?
+              </span>
             </button>
           </motion.div>
         )}

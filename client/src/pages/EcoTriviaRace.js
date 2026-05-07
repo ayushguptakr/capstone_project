@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./EcoTriviaRace.css";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
-import { apiRequest } from "../api/httpClient";
 import GameRewardModal from "../components/GameRewardModal";
 import gamesConfig from "../data/gamesConfig";
+import useMiniGameRun from "../hooks/useMiniGameRun";
+import MiniGameDebugPanel from "../components/game/MiniGameDebugPanel";
+import useGameQuestionPool from "../hooks/useGameQuestionPool";
 
 const questions = [
   { q: "Which gas do trees absorb?", a: ["CO2", "O2", "N2", "H2"], c: 0 },
@@ -30,16 +32,35 @@ function EcoTriviaRace() {
 
   const [timeLeft, setTimeLeft] = useState(initialTime);
   const [gameOver, setGameOver] = useState(false);
-  const [masteryData, setMasteryData] = useState(null);
   const [streak, setStreak] = useState(0);
   const navigate = useNavigate();
   const { triggerXPFromEvent, triggerSuccess } = useFeedback();
   const { playClick } = useSound();
   const gameConfig = gamesConfig.find(g => g.id === "trivia-race");
+  const { run, submitting, submitResult, submitScore } = useMiniGameRun({ gameId: "eco-trivia-race", level });
+
+  const fallbackPool = useMemo(
+    () =>
+      questions.map((x, idx) => ({
+        id: `trivia-fb-${idx}`,
+        question: x.q,
+        options: x.a,
+        answerIndex: x.c,
+        fact: "",
+      })),
+    []
+  );
+  const { nextQuestion: getNextQuestion } = useGameQuestionPool({
+    topic: "environment basics",
+    level,
+    desiredCount: 18,
+    fallback: fallbackPool,
+  });
+  const [active, setActive] = useState(() => getNextQuestion() || fallbackPool[0]);
 
   useEffect(() => {
     if (timeLeft <= 0) {
-      nextQuestion();
+      advanceQuestion();
       return;
     }
     const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -49,7 +70,7 @@ function EcoTriviaRace() {
 
   const handleAnswer = (index, event) => {
     playClick();
-    if (index === questions[currentQ].c) {
+    if (index === active?.answerIndex) {
       const points = 10 + (timeLeft * 2) + (streak * 5);
       setScore(score + points);
       setStreak(streak + 1);
@@ -57,31 +78,27 @@ function EcoTriviaRace() {
     } else {
       setStreak(0);
     }
-    nextQuestion();
+    advanceQuestion();
   };
 
-  const nextQuestion = () => {
-    if (currentQ >= questions.length - 1) {
+  const advanceQuestion = () => {
+    if (currentQ >= 9) {
       endGame();
     } else {
       setCurrentQ(currentQ + 1);
       setTimeLeft(initialTime);
+      const q = getNextQuestion() || active || fallbackPool[0];
+      setActive(q);
     }
   };
 
   const endGame = async () => {
     setGameOver(true);
     triggerSuccess();
-    try {
-      const resp = await apiRequest("/api/mini-games/submit-score", {
-        method: "POST",
-        body: { gameId: "eco-trivia-race", level, score, timeSpent: (questions.length * initialTime) - timeLeft },
-        retries: 0,
-      });
-      if (resp.mastery) {
-        setMasteryData(resp.mastery);
-      }
-    } catch (error) {}
+    await submitScore({
+      score,
+      timeSpent: (questions.length * initialTime) - timeLeft,
+    });
   };
 
   if (gameOver) {
@@ -89,11 +106,12 @@ function EcoTriviaRace() {
       <div className="trivia-race-container">
         <GameRewardModal
           show={true}
-          xpEarned={score}
+          xpEarned={Number(submitResult?.pointsEarned || 0)}
           streakBonus={Math.floor(score * 0.1)}
           ecoImpact={gameConfig.ecoImpact}
           gameName={gameConfig.name}
-          masteryData={masteryData}
+          masteryData={submitResult?.mastery || null}
+          capInfo={submitResult?.capInfo || null}
           onPlayAgain={() => { playClick(); window.location.reload(); }}
           onClose={() => { playClick(); navigate("/mini-games"); }}
         />
@@ -104,10 +122,10 @@ function EcoTriviaRace() {
   return (
     <div className="trivia-race-container">
       <div className="game-header">
-        <h1>⚡ Eco Trivia Race</h1>
+        <h1>Eco Trivia Race</h1>
         <div className="game-stats">
           <div className="stat"><span>Score:</span><span>{score}</span></div>
-          <div className="stat"><span>Streak:</span><span>{streak}🔥</span></div>
+          <div className="stat"><span>Streak:</span><span>{streak}</span></div>
           <div className="stat"><span>Q:</span><span>{currentQ + 1}/{questions.length}</span></div>
         </div>
       </div>
@@ -118,15 +136,22 @@ function EcoTriviaRace() {
       </div>
 
       <div className="question-card">
-        <h2>{questions[currentQ].q}</h2>
+        <h2>{active?.question || "Question"}</h2>
         <div className="answers-grid">
-          {questions[currentQ].a.map((answer, index) => (
+          {(active?.options || []).map((answer, index) => (
             <button key={index} className="answer-btn" onClick={(e) => handleAnswer(index, e)}>
               {answer}
             </button>
           ))}
         </div>
       </div>
+      <MiniGameDebugPanel
+        gameId="eco-trivia-race"
+        level={level}
+        run={run}
+        submitting={submitting}
+        submitResult={submitResult}
+      />
     </div>
   );
 }

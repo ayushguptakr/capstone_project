@@ -9,6 +9,7 @@ const {
   getUsers,
   createUser,
   updateUserRole,
+  updateUserStatus,
   transferUser,
   deleteUser,
   getPlatformStats,
@@ -33,6 +34,7 @@ router.post("/schools/assign", assignPrincipal);
 router.get("/users", getUsers);
 router.post("/users", createUser);
 router.put("/users/:id/role", updateUserRole);
+router.put("/users/:id/status", updateUserStatus);
 router.put("/users/:id/transfer", transferUser);
 router.delete("/users/:id", deleteUser);
 

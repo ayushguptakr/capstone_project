@@ -4,18 +4,38 @@ import { motion } from "framer-motion";
 import { FolderOpen, MapPin, Paperclip, Calendar, ArrowLeft } from "lucide-react";
 import { IconBox } from "../components";
 import { apiRequest, API_BASE_URL } from "../api/httpClient";
+import { formatSubmissionStatus, toneClasses } from "../utils/statusFormat";
 
 function Submissions() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ total: 0, limit: 30, offset: 0, hasMore: false });
   const navigate = useNavigate();
 
   useEffect(() => {
-    apiRequest("/api/submissions/my")
-      .then((d) => setSubmissions(d || []))
+    apiRequest(`/api/submissions/my?limit=${30}&offset=0`)
+      .then((d) => {
+        const items = Array.isArray(d) ? d : d?.items || [];
+        setSubmissions(items || []);
+        if (d?.pagination) setPagination((p) => ({ ...p, ...d.pagination }));
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  async function fetchPage(nextOffset) {
+    setLoading(true);
+    try {
+      const d = await apiRequest(`/api/submissions/my?limit=${pagination.limit}&offset=${nextOffset}`);
+      const items = Array.isArray(d) ? d : d?.items || [];
+      setSubmissions(items || []);
+      if (d?.pagination) setPagination((p) => ({ ...p, ...d.pagination }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen pb-20">
@@ -51,6 +71,7 @@ function Submissions() {
           <div className="space-y-4">
             {submissions.map((sub, i) => {
               const isRejected = sub.status === "rejected";
+              const statusMeta = formatSubmissionStatus(sub.status);
               const latestFeedback = sub.feedbackHistory?.length 
                 ? sub.feedbackHistory[sub.feedbackHistory.length - 1] 
                 : null;
@@ -75,8 +96,8 @@ function Submissions() {
                       </h3>
                       <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
                         <Calendar className="w-4 h-4" /> {new Date(sub.createdAt).toLocaleString()}
-                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-xs font-bold uppercase tracking-wide">
-                          {sub.status || "—"}
+                        <span className={`px-2 py-0.5 rounded-full border text-xs font-bold uppercase tracking-wide ${toneClasses(statusMeta.tone)}`}>
+                          {statusMeta.label}
                         </span>
                       </p>
                     </div>
@@ -126,6 +147,29 @@ function Submissions() {
                 </motion.div>
               );
             })}
+            {pagination.total > 0 ? (
+              <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span>
+                  Showing {pagination.offset + 1}-{Math.min(pagination.offset + submissions.length, pagination.total)} of {pagination.total}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    className="px-3 py-2 rounded-xl border border-slate-200 disabled:opacity-40"
+                    disabled={pagination.offset <= 0}
+                    onClick={() => fetchPage(Math.max(0, pagination.offset - pagination.limit))}
+                  >
+                    Prev
+                  </button>
+                  <button
+                    className="px-3 py-2 rounded-xl border border-slate-200 disabled:opacity-40"
+                    disabled={!pagination.hasMore}
+                    onClick={() => fetchPage(pagination.offset + pagination.limit)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </div>

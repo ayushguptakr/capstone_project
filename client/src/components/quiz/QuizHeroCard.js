@@ -26,7 +26,16 @@ export default function QuizHeroCard({ quiz, progress, label = "Recommended", on
   if (!quiz) return null;
   
   const stars = progress?.stars || 0;
-  const btnText = progress?.attempts > 0 ? "Continue" : "Start Learning";
+  const unavailableBySchedule = quiz?.isAvailableNow === false;
+  const btnText = unavailableBySchedule ? "Unavailable Now" : (progress?.attempts > 0 ? "Continue" : "Start Learning");
+  const scheduleText =
+    quiz?.schedule?.status === "upcoming"
+      ? "Opens Soon"
+      : quiz?.schedule?.status === "closed"
+        ? "Closed"
+        : quiz?.schedule?.status === "active"
+          ? "Scheduled"
+          : "Live";
   
   return (
     <div className="relative">
@@ -46,6 +55,7 @@ export default function QuizHeroCard({ quiz, progress, label = "Recommended", on
               <BookOpen className="w-5 h-5" />
             </div>
             <Badge variant={(quiz.difficulty || "medium").toLowerCase()}>{quiz.difficulty || "Medium"}</Badge>
+            <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">{scheduleText}</span>
           </div>
           
           <h2 className="font-display font-black text-2xl sm:text-3xl text-slate-800 mb-2">{quiz.title}</h2>
@@ -58,8 +68,9 @@ export default function QuizHeroCard({ quiz, progress, label = "Recommended", on
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onPlay(quiz._id)}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold shadow-lg shadow-indigo-200 hover:shadow-xl transition-shadow flex items-center justify-center gap-2"
+            onClick={() => { if (!unavailableBySchedule) onPlay(quiz._id); }}
+            disabled={unavailableBySchedule}
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold shadow-lg shadow-indigo-200 hover:shadow-xl transition-shadow flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Play className="w-5 h-5 fill-white" /> {btnText}
           </motion.button>

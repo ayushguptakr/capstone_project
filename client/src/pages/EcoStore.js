@@ -20,7 +20,7 @@ import {
   Target,
 } from "lucide-react";
 import { Confetti } from "../components";
-import { apiRequest } from "../api/httpClient";
+import { apiRequest, isFeatureDisabledError } from "../api/httpClient";
 import "./EcoStore.css";
 
 /* ─── Category config ───────────────────────────────────── */
@@ -319,6 +319,7 @@ export default function EcoStore() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", iconName: "" });
   const [xpFloat, setXpFloat] = useState(null);
+  const [featureDisabledMessage, setFeatureDisabledMessage] = useState("");
   
   // Mystery Box Modal State
   const [mysteryResult, setMysteryResult] = useState(null);
@@ -329,14 +330,17 @@ export default function EcoStore() {
   const fetchData = useCallback(async () => {
     try {
       const [rewardsData, progData, redemptionsData] = await Promise.all([
-        apiRequest("/api/rewards"),
+        apiRequest("/api/rewards?limit=200&offset=0"),
         apiRequest("/api/leaderboard/progress"),
         apiRequest("/api/rewards/my-redemptions")
       ]);
-      setRewards(Array.isArray(rewardsData) ? rewardsData : []);
+      setRewards(Array.isArray(rewardsData) ? rewardsData : (rewardsData?.items || []));
       setUserPoints(progData?.student?.points ?? progData?.points ?? 0);
-      setRedemptions(Array.isArray(redemptionsData) ? redemptionsData : []);
+      setRedemptions(Array.isArray(redemptionsData) ? redemptionsData : redemptionsData?.items || []);
     } catch (err) {
+      if (isFeatureDisabledError(err)) {
+        setFeatureDisabledMessage("Rewards are currently disabled by admin.");
+      }
       console.error("Failed to load store data:", err);
     } finally {
       setLoading(false);
@@ -522,6 +526,14 @@ export default function EcoStore() {
       </AnimatePresence>
 
       <Toast show={toast.show} message={toast.message} iconName={toast.iconName} onDone={() => setToast({ show: false })} />
+
+      {featureDisabledMessage ? (
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 font-semibold">
+            {featureDisabledMessage}
+          </div>
+        </div>
+      ) : null}
 
       {/* ─── MYSTERY BOX MODAL ─── */}
       <AnimatePresence>

@@ -16,7 +16,9 @@ const mongoose = require("mongoose");
  */
 
 function buildScope(user, opts = {}) {
-  if (!user) return {};
+  // Fail-closed: unauthenticated callers should never see tenant-scoped data.
+  // Returning {} would match everything.
+  if (!user) return { _id: { $exists: false } };
 
   // Admin: platform-wide access, no filter
   if (user.role === "admin") return {};
@@ -54,7 +56,8 @@ function buildScope(user, opts = {}) {
  * content alongside school-specific content.
  */
 function buildContentScope(user, opts = {}) {
-  if (!user) return {};
+  // Fail-closed: unauthenticated callers should never see content.
+  if (!user) return { _id: { $exists: false } };
   if (user.role === "admin") return {};
 
   const base = buildScope(user, opts);

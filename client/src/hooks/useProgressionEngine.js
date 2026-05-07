@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from "react";
+import { XP_PER_LEVEL, levelFromPoints, nextLevelPointsForLevel, pointsToNextLevel } from "../config/progression";
 
 /**
  * Unified Progression Engine — Single Source of Truth.
@@ -15,6 +16,7 @@ export default function useProgressionEngine({
   streak,
   recommendations,
   missionsDone,
+  leagueStatus,
 }) {
   // ── Previous-state tracking for diffs ──
   const prevRef = useRef({
@@ -37,12 +39,14 @@ export default function useProgressionEngine({
     0;
 
   const weeklyXP =
+    leagueStatus?.weeklyXP ??
     progress?.student?.weeklyXP ??
     meProfile?.weeklyXP ??
     user?.weeklyXP ??
     0;
 
   const league =
+    leagueStatus?.league ??
     progress?.student?.league ??
     meProfile?.league ??
     user?.league ??
@@ -55,7 +59,7 @@ export default function useProgressionEngine({
       ? progress.student.level
       : meProfile?.level != null && meProfile.level > 0
         ? meProfile.level
-        : Math.max(1, Math.floor(points / 100) + 1);
+        : levelFromPoints(points);
 
   const lastActiveIso =
     gamificationSummary?.lastActivityAt ??
@@ -64,9 +68,9 @@ export default function useProgressionEngine({
     null;
 
   // ── Derived computations ──
-  const nextLevelFloor = (levelNum - 1) * 100;
-  const nextLevelCeil = levelNum * 100;
-  const xpToNext = Math.max(0, nextLevelCeil - points);
+  const nextLevelFloor = (levelNum - 1) * XP_PER_LEVEL;
+  const nextLevelCeil = nextLevelPointsForLevel(levelNum);
+  const xpToNext = pointsToNextLevel(points);
   const pct = Math.max(
     0,
     Math.min(

@@ -351,6 +351,89 @@ Output nothing else, no markdown fences.
   }
 }
 
+/**
+ * Generate multiple-choice questions for mini-games.
+ * Output schema:
+ * [{ id, question, options: [..], answerIndex, fact }]
+ */
+async function generateGameQuestions({ topic = "environment", level = 1, count = 12, exclude = [] }) {
+  const safeCount = Math.max(6, Math.min(30, parseInt(count, 10) || 12));
+  const safeLevel = Math.max(1, Math.min(3, parseInt(level, 10) || 1));
+  const excludeSet = new Set((Array.isArray(exclude) ? exclude : []).map((s) => String(s)));
+
+  // Solid fallback set (no AI dependency)
+  const fallback = [
+    { id: "w1", question: "Which action saves water the most?", options: ["Longer showers", "Fix leaks", "Wash car daily"], answerIndex: 1, fact: "Small leaks waste lots of water over time." },
+    { id: "w2", question: "Best item for compost?", options: ["Banana peel", "Glass bottle", "Plastic wrap"], answerIndex: 0, fact: "Organic waste can become compost instead of landfill methane." },
+    { id: "e1", question: "Which is renewable energy?", options: ["Wind", "Coal", "Diesel"], answerIndex: 0, fact: "Wind is naturally replenished and produces no smoke." },
+    { id: "c1", question: "Trees help climate mainly by...", options: ["Making noise", "Absorbing CO₂", "Creating plastic"], answerIndex: 1, fact: "Trees absorb CO₂ and store carbon in biomass." },
+    { id: "r1", question: "Which is NOT usually recyclable?", options: ["Paper", "Glass", "Styrofoam"], answerIndex: 2, fact: "Styrofoam is hard to recycle in many places." },
+    { id: "p1", question: "What reduces 'phantom power'?", options: ["Leave chargers plugged", "Unplug devices", "Open windows"], answerIndex: 1, fact: "Standby devices draw power even when not used." },
+  ].filter((q) => !excludeSet.has(q.id));
+
+  const promptText = `
+You generate short, accurate environmental quiz questions for students.
+Topic: "${String(topic).slice(0, 60)}"
+Difficulty level: ${safeLevel} (1 easy, 2 medium, 3 hard)
+Need: ${safeCount} unique questions.
+Exclude these ids: ${JSON.stringify(Array.from(excludeSet).slice(0, 120))}
+
+Return ONLY valid JSON as an array of objects with EXACT keys:
+[
+  {
+    "id": "short-unique-id",
+    "question": "string (15-120 chars)",
+    "options": ["A","B","C"],
+    "answerIndex": 0,
+    "fact": "one-sentence explanation (max 140 chars, no emojis)"
+  }
+]
+
+Rules:
+- Exactly 3 options per question.
+- answerIndex must be 0,1,2.
+- No emojis.
+- Avoid repeated questions.
+Output nothing else.
+`.trim();
+
+  const task = async () => {
+    const raw = await callGenerativeModelText(promptText, true);
+    const jsonStr = raw.replace(/^```json/i, "").replace(/```$/i, "").trim();
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("Invalid questions structure");
+
+    const cleaned = [];
+    const seen = new Set();
+    for (const q of parsed) {
+      const id = String(q?.id || "").trim();
+      if (!id || excludeSet.has(id) || seen.has(id)) continue;
+      const question = String(q?.question || "").trim();
+      const options = Array.isArray(q?.options) ? q.options.map((o) => String(o).trim()).filter(Boolean) : [];
+      const answerIndex = Number(q?.answerIndex);
+      const fact = String(q?.fact || "").trim();
+      if (question.length < 15 || question.length > 140) continue;
+      if (options.length !== 3) continue;
+      if (![0, 1, 2].includes(answerIndex)) continue;
+      if (!fact || fact.length > 160) continue;
+      if (/[^\x00-\x7F]/.test(fact)) {
+        // still allow unicode letters, but we want to avoid emoji; lightweight filter:
+        // keep as-is and rely on prompt; do not hard-fail
+      }
+      cleaned.push({ id, question, options, answerIndex, fact });
+      seen.add(id);
+      if (cleaned.length >= safeCount) break;
+    }
+    return cleaned.length >= 6 ? cleaned : fallback;
+  };
+
+  try {
+    return await withTimeout(task(), 7000, fallback);
+  } catch {
+    return fallback;
+  }
+}
+
 module.exports = {
   generateTeacherInsight,
   generateMission,
@@ -359,5 +442,6 @@ module.exports = {
   generateQuiz,
   draftSubmissionFeedback,
   generateSproutyResponse,
-  generateEcoPlan
+  generateEcoPlan,
+  generateGameQuestions,
 };

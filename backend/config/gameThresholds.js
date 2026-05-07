@@ -41,6 +41,55 @@ const GAME_THRESHOLDS = {
     2: { thresholds: [450, 600, 750], maxScore: 900 }, // 10 rounds + tighter timer
     3: { thresholds: [700, 900, 1100], maxScore: 1300 }, // 15 rounds
     scoring: { base: 10, timeMutliplier: 2, streakMultiplier: 10 },
+  },
+
+  "river-cleanup-rush": {
+    1: { thresholds: [120, 220, 320], maxScore: 500 },
+    2: { thresholds: [180, 300, 420], maxScore: 650 },
+    3: { thresholds: [240, 380, 520], maxScore: 800 },
+    scoring: { collect: 12, missPenalty: -6 },
+  },
+
+  "solar-sprint": {
+    1: { thresholds: [100, 180, 260], maxScore: 450 },
+    2: { thresholds: [150, 240, 340], maxScore: 600 },
+    3: { thresholds: [200, 320, 460], maxScore: 750 },
+    scoring: { goodOrb: 10, badOrbPenalty: -8 },
+  },
+
+  "eco-quiz-blaster": {
+    1: { thresholds: [120, 220, 320], maxScore: 520 },
+    2: { thresholds: [170, 280, 410], maxScore: 700 },
+    3: { thresholds: [230, 360, 520], maxScore: 900 },
+    scoring: { correct: 18, wrongPenalty: -8 },
+  },
+
+  "power-planner": {
+    1: { thresholds: [120, 220, 320], maxScore: 520 },
+    2: { thresholds: [170, 280, 410], maxScore: 700 },
+    3: { thresholds: [230, 360, 520], maxScore: 900 },
+    scoring: { correct: 14, wrongPenalty: -8 },
+  },
+
+  "ecosystem-balance": {
+    1: { thresholds: [220, 320, 420], maxScore: 600 },
+    2: { thresholds: [260, 370, 470], maxScore: 700 },
+    3: { thresholds: [300, 420, 540], maxScore: 850 },
+    scoring: { stability: 1 },
+  },
+
+  "carbon-choices": {
+    1: { thresholds: [40, 70, 95], maxScore: 140 },
+    2: { thresholds: [55, 85, 115], maxScore: 170 },
+    3: { thresholds: [70, 105, 140], maxScore: 210 },
+    scoring: { choice: 1 },
+  },
+
+  "water-cycle-lab": {
+    1: { thresholds: [120, 220, 340], maxScore: 520 },
+    2: { thresholds: [160, 270, 390], maxScore: 620 },
+    3: { thresholds: [220, 340, 460], maxScore: 760 },
+    scoring: { cycles: 55, rainTick: 6 },
   }
 };
 

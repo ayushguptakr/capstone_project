@@ -17,4 +17,9 @@ const xpEventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Query-performance indexes for gamification summaries and cap checks
+xpEventSchema.index({ user: 1, occurredAt: -1 });
+xpEventSchema.index({ user: 1, source: 1, occurredAt: -1 });
+xpEventSchema.index({ user: 1, source: 1, sourceRef: 1, occurredAt: -1 });
+
 module.exports = mongoose.model("XPEvent", xpEventSchema);

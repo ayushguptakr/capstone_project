@@ -43,7 +43,7 @@ import LeagueCard from "../components/LeagueCard";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import { fetchGamificationMe } from "../api/gamificationApi";
-import { apiRequest } from "../api/httpClient";
+import { apiRequest, isFeatureDisabledError } from "../api/httpClient";
 import useProgressionEngine from "../hooks/useProgressionEngine";
 import { useAuth } from "../context/AuthContext";
 import confetti from "canvas-confetti";
@@ -128,6 +128,8 @@ function Dashboard() {
   const [activeBadge, setActiveBadge] = useState(null);
   const [dailySecondsLeft, setDailySecondsLeft] = useState(6 * 60 * 60);
   const [activeSchoolEvents, setActiveSchoolEvents] = useState([]);
+  const [competitionsDisabled, setCompetitionsDisabled] = useState(false);
+  const [leagueStatus, setLeagueStatus] = useState(null);
   const [typedGreeting, setTypedGreeting] = useState("");
   const [levelFlash, setLevelFlash] = useState(false);
   const prevLevelRef = useRef(null);
@@ -197,12 +199,18 @@ function Dashboard() {
     let cancelled = false;
     const fetchData = async () => {
       try {
-        const [reportData, recData, weakData, meData, gamificationRes] = await Promise.all([
+        const [reportData, recData, weakData, meData, gamificationRes, leaguesRes] = await Promise.all([
           apiRequest("/api/green-credits/report"),
           apiRequest("/api/recommendations/tasks?limit=3"),
           apiRequest("/api/recommendations/weak-category"),
           apiRequest("/api/auth/me"),
           fetchGamificationMe({ limit: 8, offset: 0 }).catch(() => null),
+          apiRequest("/api/leagues/status").catch((err) => {
+            if (isFeatureDisabledError(err)) {
+              setCompetitionsDisabled(true);
+            }
+            return null;
+          }),
         ]);
         if (cancelled) return;
         setEcoReport(reportData);
@@ -223,20 +231,29 @@ function Dashboard() {
             localStorage.setItem("ecoStreak", String(s));
           }
         }
+        if (leaguesRes?.league) {
+          setLeagueStatus(leaguesRes);
+        }
         if (user.role === "student") {
           const [progressData, attemptsData, submissionsData, schoolEventsData] = await Promise.all([
             apiRequest("/api/leaderboard/progress"),
             apiRequest("/api/quizzes/attempts/my"),
-            apiRequest("/api/submissions/my"),
-            apiRequest("/api/events").catch(()=>({events: []}))
+            apiRequest("/api/submissions/my?limit=200&offset=0"),
+            apiRequest("/api/events")
           ]);
           if (cancelled) return;
           setProgress(progressData);
           setAttempts(attemptsData);
-          setMySubs(submissionsData);
+          setMySubs(Array.isArray(submissionsData) ? submissionsData : (submissionsData?.items || submissionsData?.submissions || []));
+          setCompetitionsDisabled(false);
           setActiveSchoolEvents(schoolEventsData?.events || []);
         }
       } catch (e) {
+        if (isFeatureDisabledError(e)) {
+          setCompetitionsDisabled(true);
+          setActiveSchoolEvents([]);
+          return;
+        }
         console.error(e);
       }
     };
@@ -276,6 +293,7 @@ function Dashboard() {
     streak,
     recommendations,
     missionsDone,
+    leagueStatus,
   });
 
   const { points, levelNum, xpToNext, pct, ecoScore, rank, league, weeklyXP,
@@ -521,7 +539,7 @@ function Dashboard() {
   };
 
   const studentQuickActions = [
-    { Icon: MapPin, label: "Tasks", path: "/tasks", color: "green" },
+    { Icon: MapPin, label: "Missions", path: "/missions", color: "green" },
     { Icon: Brain, label: "Quizzes", path: "/quizzes", color: "blue" },
     { Icon: Gamepad2, label: "Games", path: "/mini-games", color: "yellow" },
     { Icon: ShoppingBag, label: "Store", path: "/store", color: "green" },
@@ -530,11 +548,11 @@ function Dashboard() {
   ];
 
   const teacherActions = [
-    { Icon: Plus, label: "Create Task", path: "/create-task", color: "green" },
+    { Icon: Plus, label: "Create Task", path: "/teacher/tasks", color: "green" },
     { Icon: Brain, label: "Create Quiz", path: "/create-quiz", color: "blue" },
     { Icon: BarChart3, label: "Analytics", path: "/teacher-dashboard", color: "green" },
     { Icon: Globe, label: "Sustainability", path: "/sustainability-dashboard", color: "blue" },
-    { Icon: BookOpen, label: "My Tasks", path: "/mytasks", color: "green" },
+    { Icon: BookOpen, label: "My Tasks", path: "/teacher/tasks", color: "green" },
     { Icon: Eye, label: "Submissions", path: "/submissions", color: "blue" },
   ];
 
@@ -580,13 +598,55 @@ function Dashboard() {
               <Sprout className="w-4 h-4 text-green-500 shrink-0" strokeWidth={2} />
               {nudge ? nudge : "You're making a real impact today"}
             </p>
-            <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-4">
-              <button 
+            <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
+              <button
                 onClick={() => missionsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="px-6 py-3 rounded-full bg-eco-primary text-white font-bold shadow-lg shadow-eco-primary/30 hover:shadow-xl hover:-translate-y-0.5 transition-all w-fit"
+                className="group relative px-6 py-3 rounded-full bg-gradient-to-r from-eco-primary to-[#5E9F57] text-white font-bold shadow-lg shadow-eco-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all w-fit overflow-hidden"
               >
-                Continue Today&apos;s Mission
+                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.35),transparent_55%)]" />
+                <span className="relative inline-flex items-center gap-2">
+                  Continue Today&apos;s Mission
+                  <ArrowRight className="w-4 h-4" />
+                </span>
               </button>
+
+              <button
+                onClick={() => navigate("/leaderboard")}
+                className="px-5 py-3 rounded-full bg-white/65 backdrop-blur border border-white/70 text-slate-800 font-bold shadow-sm hover:bg-white/80 hover:-translate-y-0.5 transition-all w-fit inline-flex items-center gap-2"
+              >
+                <Trophy className="w-4 h-4 text-amber-600" />
+                View Rankings
+              </button>
+
+              <div className="flex items-center gap-3 sm:ml-1">
+                <div className="w-14 h-14 rounded-2xl bg-white/60 border border-white/70 shadow-sm flex items-center justify-center">
+                  <div className="relative w-9 h-9">
+                    <svg viewBox="0 0 36 36" className="w-9 h-9 -rotate-90">
+                      <path
+                        d="M18 2.5a15.5 15.5 0 1 1 0 31a15.5 15.5 0 1 1 0-31"
+                        fill="none"
+                        stroke="rgba(148,163,184,0.35)"
+                        strokeWidth="4"
+                      />
+                      <path
+                        d="M18 2.5a15.5 15.5 0 1 1 0 31a15.5 15.5 0 1 1 0-31"
+                        fill="none"
+                        stroke="rgba(16,185,129,0.9)"
+                        strokeLinecap="round"
+                        strokeWidth="4"
+                        strokeDasharray={`${Math.max(0, Math.min(100, ecoScore))}, 100`}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center text-[11px] font-extrabold text-emerald-700">
+                      {ecoScore}%
+                    </div>
+                  </div>
+                </div>
+                <div className="hidden sm:block">
+                  <div className="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Eco Health</div>
+                  <div className="text-sm font-semibold text-slate-600">{streakAtRisk ? "Streak needs attention today" : "Streak looking good"}</div>
+                </div>
+              </div>
             </div>
           </motion.div>
           
@@ -599,7 +659,17 @@ function Dashboard() {
                xp={points}
                contextMessage={sproutyContext}
              />
-             <EcoPlant plantStage={plantStage} streakAtRisk={streakAtRisk} streak={streak} xp={points} />
+             <div className="relative">
+               <motion.div
+                 aria-hidden
+                 className="absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-emerald-200/35 via-lime-100/20 to-amber-100/20 blur-2xl"
+                 animate={{ opacity: [0.6, 0.85, 0.6] }}
+                 transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+               />
+               <div className="relative">
+                 <EcoPlant plantStage={plantStage} streakAtRisk={streakAtRisk} streak={streak} xp={points} />
+               </div>
+             </div>
           </div>
         </div>
 
@@ -610,7 +680,13 @@ function Dashboard() {
             </div>
 
             <div className="mb-8 w-full">
-              <LeagueCard league={league} weeklyXP={weeklyXP} />
+              {competitionsDisabled ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-700">
+                  Leagues are currently disabled by admin.
+                </div>
+              ) : (
+                <LeagueCard league={league} weeklyXP={weeklyXP} />
+              )}
             </div>
 
             <motion.section
@@ -704,7 +780,6 @@ function Dashboard() {
                         key={t._id}
                         type="button"
                         onClick={(e) => {
-                          triggerXPFromEvent(t.points ?? 10, e);
                           navigate(`/submit/${t._id}`);
                         }}
                         whileHover={{ scale: 1.01, y: -4 }}
@@ -772,7 +847,7 @@ function Dashboard() {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 300 }}
-                  onClick={() => navigate("/tasks")}
+                  onClick={() => navigate("/missions")}
                   className="px-6 py-3 rounded-full bg-eco-primary text-white font-bold shadow-lg shadow-eco-primary/30 hover:shadow-xl transition-all"
                 >
                   Explore Missions
@@ -962,11 +1037,14 @@ function Dashboard() {
                   Icon: Medal,
                   label: "Global Rank",
                   to: typeof rank === "number" ? rank : null,
-                  value: typeof rank === "number" ? `#${rank}` : String(rank),
+                  value: typeof rank === "number" ? `#${rank}` : "—",
                   format: (n) => `#${n}`,
                   glow: "group-hover:shadow-[0_16px_36px_-20px_rgba(14,165,233,0.75)]",
                   iconColor: "text-sky-600",
-                  helperText: typeof rank === "number" && rank <= 10 ? "Top in your class" : "Keep climbing",
+                  helperText:
+                    typeof rank === "number"
+                      ? (rank <= 10 ? "Top in your class" : "Keep climbing")
+                      : "Will update after you earn XP",
                 },
                 {
                   Icon: CheckCircle2,
@@ -1026,7 +1104,7 @@ function Dashboard() {
                   <div className="px-4 py-8 text-center bg-white/30">
                     <p className="text-gray-700 font-medium font-body mb-6 flex items-center justify-center gap-2">
                       <Sprout className="w-4 h-4 text-green-500" strokeWidth={2} />
-                      Start your first mission to make an impact
+                      Eco-Impact updates after a teacher approves your mission
                     </p>
                     <div className="flex flex-col gap-4 max-w-sm mx-auto opacity-40 grayscale pointer-events-none">
                       <div className="h-2 rounded-full bg-emerald-200/50 w-full" />
@@ -1113,6 +1191,11 @@ function Dashboard() {
                 School Events
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
+                {competitionsDisabled && (
+                  <div className="col-span-full rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 font-semibold">
+                    Competitions are currently disabled by admin.
+                  </div>
+                )}
                 {activeSchoolEvents.map((ev) => (
                   <div key={ev._id} className="rounded-2xl bg-gradient-to-br from-purple-50/70 to-fuchsia-50/70 border border-purple-200/60 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                     <div>
@@ -1129,7 +1212,7 @@ function Dashboard() {
                     </button>
                   </div>
                 ))}
-                {activeSchoolEvents.length === 0 && (
+                {activeSchoolEvents.length === 0 && !competitionsDisabled && (
                   <div className="col-span-full text-slate-500 font-medium text-center py-6 border border-dashed border-slate-300 rounded-2xl bg-white/40">
                     No active school events right now. Check back later!
                   </div>

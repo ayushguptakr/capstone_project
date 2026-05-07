@@ -43,6 +43,7 @@ export default function GameRewardModal({
   ecoImpact = null,
   gameName = "Game",
   masteryData = null,
+  capInfo = null,
   onClose,
   onPlayAgain,
   show = false
@@ -60,6 +61,12 @@ export default function GameRewardModal({
 
   const ImpactIcon = ecoImpact ? (impactIcons[ecoImpact.type] || Sparkles) : Sparkles;
   const totalXP = xpEarned + streakBonus;
+  const capMessage =
+    capInfo?.type === "daily"
+      ? `Daily game XP cap reached (${capInfo.cap}/day). Try missions or quizzes for more XP.`
+      : capInfo?.type === "perGameDaily"
+        ? `You hit today’s XP limit for this game (${capInfo.cap}/day). Try another game or do a mission.`
+        : null;
 
   // ── Poki-style Continuous Loop Logic ───────────────────
   const currentGame = gamesConfig.find(g => g.name === gameName) || gamesConfig[0];
@@ -158,6 +165,12 @@ export default function GameRewardModal({
                     <span className="text-amber-600 font-bold text-sm">XP</span>
                   </motion.div>
                 </div>
+                
+                {capMessage && (
+                  <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 font-semibold">
+                    {capMessage}
+                  </div>
+                )}
 
                 {/* Breakdown */}
                 <div className="space-y-2.5">

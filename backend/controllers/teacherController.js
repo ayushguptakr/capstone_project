@@ -10,6 +10,7 @@ const EcoImpactEngine = require("../services/EcoImpactEngine");
 const sustainabilityRankingService = require("../services/sustainabilityRankingService");
 const gamificationService = require("../services/gamificationService");
 const aiService = require("../services/aiService");
+const mongoose = require("mongoose");
 
 function getEngagementPercent(avgPoints) {
   return Math.max(20, Math.min(100, Math.round(avgPoints / 8)));
@@ -62,7 +63,7 @@ const getTeacherAnalytics = async (req, res) => {
     const students = await User.find({ 
       role: "student", 
       schoolId: teacher.schoolId 
-    }).select("name points level badges lastActivityAt className class section schoolId");
+    }).select("name email points level badges lastActivityAt className class section schoolId");
 
     // Get pending submissions for verification (scoped to teacher's school)
     const pendingSubmissions = await Submission.find({ status: "pending", schoolId: teacher.schoolId })
@@ -184,6 +185,8 @@ const getVerificationQueue = async (req, res) => {
   try {
     const filter = {};
     const statusParam = (req.query.status || "").toLowerCase();
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 30)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
     if (["pending", "approved", "rejected"].includes(statusParam)) {
       filter.status = statusParam;
     }
@@ -194,11 +197,13 @@ const getVerificationQueue = async (req, res) => {
       filter.schoolId = teacher.schoolId;
     }
 
+    const total = await Submission.countDocuments(filter);
     const submissions = await Submission.find(filter)
       .populate("student", "name school className class section level")
       .populate("task", "title description points category difficulty")
       .sort({ flagForReview: -1, createdAt: -1 })
-      .limit(200);
+      .skip(offset)
+      .limit(limit);
 
     const imageCounts = new Map();
     const contentCounts = new Map();
@@ -217,7 +222,15 @@ const getVerificationQueue = async (req, res) => {
       autoFlags: buildSubmissionFlags(s, duplicateImages, repeatedContent),
     }));
 
-    res.json(enriched);
+    res.json({
+      items: enriched,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + enriched.length < total,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -235,6 +248,21 @@ const verifySubmission = async (req, res) => {
 
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
+    }
+
+    // Cross-tenant guard: teacher/principal must be in same school as submission (admin is exempt)
+    if (req.user.role !== "admin") {
+      const verifierSchool = String(req.user.schoolId || "");
+      const submissionSchool = String(submission.schoolId || "");
+      if (!verifierSchool || !submissionSchool || verifierSchool !== submissionSchool) {
+        return res.status(403).json({ message: "Not authorized to verify submissions outside your school." });
+      }
+    }
+
+    // Status whitelist
+    const allowed = new Set(["approved", "rejected", "pending"]);
+    if (!allowed.has(String(status || ""))) {
+      return res.status(400).json({ message: "Invalid status" });
     }
 
     submission.status = status;
@@ -317,8 +345,23 @@ const createAnnouncement = async (req, res) => {
 
 const getAnnouncements = async (req, res) => {
   try {
-    const items = await Announcement.find({ teacher: req.user.id }).sort({ createdAt: -1 }).limit(50);
-    res.json(items);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 25)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const filter = { teacher: req.user.id };
+    const total = await Announcement.countDocuments(filter);
+    const items = await Announcement.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(offset)
+      .limit(limit);
+    res.json({
+      items,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + items.length < total,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -326,17 +369,45 @@ const getAnnouncements = async (req, res) => {
 
 const createSchedule = async (req, res) => {
   try {
-    const { type, title, visibility, startDate, endDate } = req.body;
+    const { type, title, visibility, startDate, endDate, contentId } = req.body;
     if (!type || !title || !startDate) {
       return res.status(400).json({ message: "type, title and startDate are required" });
     }
+    if (!["quiz", "task"].includes(String(type))) {
+      return res.status(400).json({ message: "Invalid schedule type" });
+    }
+    if (endDate && new Date(endDate).getTime() < new Date(startDate).getTime()) {
+      return res.status(400).json({ message: "endDate cannot be before startDate" });
+    }
+
     const teacher = await User.findById(req.user.id).select("schoolId");
+    let resolvedTitle = String(title).trim();
+    let resolvedContentId = null;
+
+    if (contentId && mongoose.Types.ObjectId.isValid(contentId)) {
+      const Model = type === "task" ? Task : Quiz;
+      const content = await Model.findById(contentId).select("_id title schoolId isGlobal").lean();
+      if (!content) {
+        return res.status(404).json({ message: `${type} not found` });
+      }
+      if (req.user.role !== "admin") {
+        const teacherSchool = String(teacher?.schoolId || "");
+        const contentSchool = String(content.schoolId || "");
+        if (!content.isGlobal && (!teacherSchool || teacherSchool !== contentSchool)) {
+          return res.status(403).json({ message: "Cannot schedule content outside your school scope." });
+        }
+      }
+      resolvedTitle = String(content.title || resolvedTitle);
+      resolvedContentId = content._id;
+    }
+
     const created = await ScheduledContent.create({
       teacher: req.user.id,
       school: "", // legacy
       schoolId: teacher?.schoolId || null,
       type,
-      title,
+      title: resolvedTitle,
+      contentId: resolvedContentId,
       visibility: visibility || "students",
       startDate,
       endDate: endDate || null,
@@ -349,8 +420,23 @@ const createSchedule = async (req, res) => {
 
 const getSchedules = async (req, res) => {
   try {
-    const items = await ScheduledContent.find({ teacher: req.user.id }).sort({ createdAt: -1 }).limit(100);
-    res.json(items);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 25)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const filter = { teacher: req.user.id };
+    const total = await ScheduledContent.countDocuments(filter);
+    const items = await ScheduledContent.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(offset)
+      .limit(limit);
+    res.json({
+      items,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + items.length < total,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -537,6 +623,82 @@ const draftFeedback = async (req, res) => {
   }
 };
 
+const getStudentProfile = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({ message: "Invalid studentId" });
+    }
+
+    const teacher = await User.findById(req.user.id).select("schoolId");
+    const student = await User.findOne({
+      _id: studentId,
+      role: "student",
+      ...(teacher?.schoolId ? { schoolId: teacher.schoolId } : {}),
+    }).select("name email class className section points level badges lastActivityAt streakCurrent greenCredits schoolId createdAt");
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found in your school" });
+    }
+
+    const [quizAgg, recentAttempts, submissionAgg, recentSubmissions] = await Promise.all([
+      QuizAttempt.aggregate([
+        { $match: { student: student._id } },
+        {
+          $group: {
+            _id: null,
+            totalAttempts: { $sum: 1 },
+            avgPercentage: { $avg: "$percentage" },
+            bestPercentage: { $max: "$percentage" },
+          },
+        },
+      ]),
+      QuizAttempt.find({ student: student._id })
+        .populate("quiz", "title category difficulty")
+        .sort({ createdAt: -1 })
+        .limit(10),
+      Submission.aggregate([
+        { $match: { student: student._id } },
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      Submission.find({ student: student._id })
+        .populate("task", "title points category difficulty")
+        .sort({ createdAt: -1 })
+        .limit(10),
+    ]);
+
+    const quizSummary = quizAgg[0] || {};
+    const submissionCounts = submissionAgg.reduce((acc, row) => {
+      acc[String(row._id || "unknown")] = Number(row.count || 0);
+      return acc;
+    }, {});
+
+    return res.json({
+      student,
+      quizStats: {
+        totalAttempts: Number(quizSummary.totalAttempts || 0),
+        avgPercentage: Number(quizSummary.avgPercentage || 0),
+        bestPercentage: Number(quizSummary.bestPercentage || 0),
+      },
+      submissionStats: {
+        total: Object.values(submissionCounts).reduce((sum, n) => sum + n, 0),
+        approved: Number(submissionCounts.approved || 0),
+        pending: Number(submissionCounts.pending || 0),
+        rejected: Number(submissionCounts.rejected || 0),
+      },
+      recentAttempts,
+      recentSubmissions,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTeacherAnalytics,
   getVerificationQueue,
@@ -551,5 +713,6 @@ module.exports = {
   getAiInsights,
   generateMission,
   generateQuiz,
-  draftFeedback
+  draftFeedback,
+  getStudentProfile
 };

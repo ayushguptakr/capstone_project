@@ -7,7 +7,10 @@
     "start": "node server.js",
     "seed-quizzes": "node seedQuizzes.js",
     "seed-rewards": "node seedRewards.js",
-    "seed-all": "node seedQuizzes.js && node seedRewards.js",
+    "seed-mini-games": "node seedMiniGames.js",
+    "seed-demo-schools": "node seedDemoSchools.js",
+    "prune-demo-schools": "node pruneDemoSchools.js",
+    "seed-all": "node seedQuizzes.js && node seedRewards.js && node seedMiniGames.js",
     "test": "node tests/formulas.test.js && node tests/trustScoreService.test.js && node tests/adaptiveRules.test.js"
   },
   "keywords": [],

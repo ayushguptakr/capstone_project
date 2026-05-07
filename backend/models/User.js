@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema(
       enum: ["student", "teacher", "admin", "sponsor", "principal"],
       default: "student",
     },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
     school: { type: String },
     schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "School" },
     isFirstLogin: { type: Boolean, default: true },
@@ -97,6 +102,12 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Query-performance indexes for leaderboard/dashboard paths
+userSchema.index({ role: 1, schoolId: 1, points: -1 });
+userSchema.index({ role: 1, points: -1 });
+userSchema.index({ schoolId: 1, className: 1, points: -1 });
+userSchema.index({ schoolId: 1, weeklyXP: -1 });
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

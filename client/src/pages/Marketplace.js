@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Sprout, Trophy, Ticket, Package, ShoppingBag, ArrowLeft, ClipboardList } from "lucide-react";
 import { IconBox } from "../components";
-import { apiRequest } from "../api/httpClient";
+import { apiRequest, isFeatureDisabledError } from "../api/httpClient";
 import { useAlert } from "../components/ui/AlertProvider";
 
 const categoryIcons = {
@@ -18,19 +18,26 @@ function Marketplace() {
   const [userPoints, setUserPoints] = useState(0);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(null);
+  const [featureDisabledMessage, setFeatureDisabledMessage] = useState("");
   const navigate = useNavigate();
   const { showAlert } = useAlert();
 
   useEffect(() => {
     Promise.all([
-      apiRequest("/api/rewards"),
+      apiRequest("/api/rewards?limit=200&offset=0"),
       apiRequest("/api/leaderboard/progress"),
     ])
       .then(([rewardsData, progData]) => {
-        setRewards(rewardsData);
+        setRewards(Array.isArray(rewardsData) ? rewardsData : (rewardsData?.items || []));
         setUserPoints(progData?.student?.points ?? 0);
       })
-      .catch(console.error)
+      .catch((err) => {
+        if (isFeatureDisabledError(err)) {
+          setFeatureDisabledMessage("Rewards are currently disabled by admin.");
+          return;
+        }
+        console.error(err);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -50,6 +57,10 @@ function Marketplace() {
       setUserPoints((p) => p - reward.pointsCost);
       setRewards((r) => r.map((x) => (x._id === reward._id ? { ...x, stock: x.stock - 1 } : x)));
     } catch (e) {
+      if (isFeatureDisabledError(e)) {
+        setFeatureDisabledMessage("Rewards are currently disabled by admin.");
+        return;
+      }
       showAlert({ type: "error", message: e.message || "Failed to redeem" });
     } finally {
       setRedeeming(null);
@@ -92,6 +103,11 @@ function Marketplace() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {featureDisabledMessage ? (
+            <div className="sm:col-span-2 lg:col-span-3 rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 font-semibold">
+              {featureDisabledMessage}
+            </div>
+          ) : null}
           {rewards.map((r, i) => {
             const canRedeem = userPoints >= r.pointsCost && r.stock > 0;
             return (

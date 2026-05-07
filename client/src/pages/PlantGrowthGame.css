@@ -5,7 +5,7 @@
   font-family: Arial, sans-serif;
 }
 
-.game-header {
+.plant-game-container .game-header {
   background: white;
   padding: 20px;
   border-radius: 15px;
@@ -13,31 +13,31 @@
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-.game-header h1 {
+.plant-game-container .game-header h1 {
   color: #2e7d32;
   margin: 0 0 15px 0;
   text-align: center;
 }
 
-.game-stats {
+.plant-game-container .game-stats {
   display: flex;
   justify-content: space-around;
 }
 
-.stat span:first-child {
+.plant-game-container .stat span:first-child {
   display: block;
   color: #666;
   font-size: 0.9rem;
 }
 
-.stat span:last-child {
+.plant-game-container .stat span:last-child {
   display: block;
   font-size: 1.3rem;
   font-weight: bold;
   color: #4CAF50;
 }
 
-.message-box {
+.plant-game-container .message-box {
   background: #e8f5e8;
   padding: 15px;
   border-radius: 10px;
@@ -48,7 +48,7 @@
   border: 2px solid #4CAF50;
 }
 
-.plant-display-area {
+.plant-game-container .plant-display-area {
   background: linear-gradient(to bottom, #87CEEB, #90EE90);
   height: 250px;
   border-radius: 15px;
@@ -59,7 +59,7 @@
   box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
 }
 
-.plant-emoji {
+.plant-game-container .plant-emoji {
   font-size: 8rem;
   animation: grow 0.5s ease;
 }
@@ -69,28 +69,28 @@
   to { transform: scale(1); }
 }
 
-.resources {
+.plant-game-container .resources {
   display: flex;
   flex-direction: column;
   gap: 20px;
   margin-bottom: 30px;
 }
 
-.resource {
+.plant-game-container .resource {
   background: white;
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-.resource-label {
+.plant-game-container .resource-label {
   font-size: 1.1rem;
   font-weight: bold;
   margin-bottom: 10px;
   color: #333;
 }
 
-.resource-bar {
+.plant-game-container .resource-bar {
   height: 30px;
   background: #f5f5f5;
   border-radius: 15px;
@@ -99,20 +99,20 @@
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.resource-fill {
+.plant-game-container .resource-fill {
   height: 100%;
   transition: width 0.3s ease;
 }
 
-.resource-fill.water {
+.plant-game-container .resource-fill.water {
   background: linear-gradient(90deg, #2196F3, #64B5F6);
 }
 
-.resource-fill.sunlight {
+.plant-game-container .resource-fill.sunlight {
   background: linear-gradient(90deg, #FFC107, #FFD54F);
 }
 
-.resource-btn {
+.plant-game-container .resource-btn {
   background: #4CAF50;
   color: white;
   border: none;
@@ -125,24 +125,24 @@
   transition: all 0.3s ease;
 }
 
-.resource-btn:hover {
+.plant-game-container .resource-btn:hover {
   background: #45a049;
   transform: scale(1.02);
 }
 
-.tips {
+.plant-game-container .tips {
   background: #fff3e0;
   padding: 20px;
   border-radius: 12px;
   border: 2px solid #FF9800;
 }
 
-.tips h3 {
+.plant-game-container .tips h3 {
   color: #f57c00;
   margin: 0 0 10px 0;
 }
 
-.tips p {
+.plant-game-container .tips p {
   margin: 5px 0;
   color: #666;
 }

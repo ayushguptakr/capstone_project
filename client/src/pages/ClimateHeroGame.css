@@ -5,7 +5,7 @@
   font-family: Arial, sans-serif;
 }
 
-.game-header {
+.climate-hero-container .game-header {
   background: white;
   padding: 20px;
   border-radius: 15px;
@@ -13,36 +13,36 @@
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-.game-header h1 {
+.climate-hero-container .game-header h1 {
   color: #2e7d32;
   margin: 0 0 15px 0;
   text-align: center;
 }
 
-.game-stats {
+.climate-hero-container .game-stats {
   display: flex;
   justify-content: space-around;
   gap: 20px;
 }
 
-.stat {
+.climate-hero-container .stat {
   text-align: center;
 }
 
-.stat span:first-child {
+.climate-hero-container .stat span:first-child {
   display: block;
   color: #666;
   font-size: 0.9rem;
 }
 
-.stat span:last-child {
+.climate-hero-container .stat span:last-child {
   display: block;
   font-size: 1.3rem;
   font-weight: bold;
   color: #4CAF50;
 }
 
-.game-instructions {
+.climate-hero-container .game-instructions {
   background: #e3f2fd;
   padding: 15px;
   border-radius: 10px;
@@ -52,7 +52,7 @@
   font-weight: 500;
 }
 
-.game-area {
+.climate-hero-container .game-area {
   position: relative;
   height: 400px;
   background: linear-gradient(to bottom, #87CEEB 0%, #98D8C8 100%);
@@ -61,21 +61,21 @@
   margin-bottom: 20px;
 }
 
-.falling-item {
+.climate-hero-container .falling-item {
   position: absolute;
   font-size: 2rem;
   transition: top 0.05s linear;
 }
 
-.falling-item.good {
+.climate-hero-container .falling-item.good {
   filter: drop-shadow(0 0 5px #4CAF50);
 }
 
-.falling-item.bad {
+.climate-hero-container .falling-item.bad {
   filter: drop-shadow(0 0 5px #f44336);
 }
 
-.hero {
+.climate-hero-container .hero {
   position: absolute;
   bottom: 10px;
   font-size: 3rem;
@@ -83,14 +83,14 @@
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
-.controls {
+.climate-hero-container .controls {
   display: flex;
   gap: 15px;
   justify-content: center;
   margin-bottom: 20px;
 }
 
-.controls button {
+.climate-hero-container .controls button {
   background: #4CAF50;
   color: white;
   border: none;
@@ -102,7 +102,7 @@
   transition: all 0.3s ease;
 }
 
-.controls button:hover {
+.climate-hero-container .controls button:hover {
   background: #45a049;
   transform: scale(1.05);
 }
@@ -174,13 +174,13 @@
 }
 
 @media (max-width: 768px) {
-  .game-area {
+  .climate-hero-container .game-area {
     height: 300px;
   }
-  .hero {
+  .climate-hero-container .hero {
     font-size: 2rem;
   }
-  .falling-item {
+  .climate-hero-container .falling-item {
     font-size: 1.5rem;
   }
 }

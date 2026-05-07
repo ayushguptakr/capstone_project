@@ -17,6 +17,23 @@ function buildUrl(path) {
   return `${API_BASE_URL}${path}`;
 }
 
+function parseResponseBody(text, contentType = "") {
+  if (!text) return null;
+  const looksJson = contentType.includes("application/json");
+  if (looksJson) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { message: text };
+    }
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}
+
 export async function apiRequest(path, options = {}) {
   const {
     method = "GET",
@@ -71,11 +88,15 @@ export async function apiRequest(path, options = {}) {
       );
 
       const text = await response.text();
-      const data = text ? JSON.parse(text) : null;
+      const contentType = response.headers.get("content-type") || "";
+      const data = parseResponseBody(text, contentType);
       if (!response.ok) {
-        const err = new Error(data?.message || `Request failed (${response.status})`);
+        const err = new Error(
+          data?.message || data?.error || `Request failed (${response.status})`
+        );
         err.status = response.status;
         err.payload = data;
+        err.request = { path, method };
         throw err;
       }
       return data;
@@ -91,5 +112,13 @@ export async function apiRequest(path, options = {}) {
     attempt += 1;
   }
   throw lastError;
+}
+
+export function isFeatureDisabledError(error) {
+  return (
+    error?.status === 403 &&
+    (error?.payload?.code === "FEATURE_DISABLED" ||
+      String(error?.payload?.message || error?.message || "").toLowerCase().includes("feature"))
+  );
 }
 

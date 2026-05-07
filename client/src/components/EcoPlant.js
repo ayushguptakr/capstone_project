@@ -126,7 +126,7 @@ export default function EcoPlant({ plantStage = "seed", streakAtRisk = false, st
           {isBroken ? "Wilted Seed" : stage.label}
         </p>
         <p className={`text-xs font-semibold mt-0.5 max-w-[150px] leading-tight ${streakAtRisk ? 'text-red-500' : 'text-gray-500'}`}>
-          {streakAtRisk ? "Your streak needs attention today" : isBroken ? "Start a new streak to revive." : "You're building a strong eco habit 🌱"}
+          {streakAtRisk ? "Your streak needs attention today" : isBroken ? "Start a new streak to revive." : "You're building a strong eco habit"}
         </p>
       </div>
     </div>

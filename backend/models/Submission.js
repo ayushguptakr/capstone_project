@@ -52,4 +52,11 @@ const submissionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Query-performance indexes for teacher queue/student history/task views
+submissionSchema.index({ student: 1, createdAt: -1 });
+submissionSchema.index({ student: 1, status: 1, createdAt: -1 });
+submissionSchema.index({ schoolId: 1, status: 1, createdAt: -1 });
+submissionSchema.index({ task: 1, schoolId: 1, createdAt: -1 });
+submissionSchema.index({ verifiedBy: 1, verifiedAt: -1 });
+
 module.exports = mongoose.model("Submission", submissionSchema);

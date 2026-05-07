@@ -3,19 +3,21 @@ import { useNavigate } from "react-router-dom";
 import "./WasteSortingGame.css";
 import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
-import { apiRequest } from "../api/httpClient";
 import GameRewardModal from "../components/GameRewardModal";
 import gamesConfig from "../data/gamesConfig";
+import { Recycle, Leaf, ShieldAlert, Package } from "lucide-react";
+import useMiniGameRun from "../hooks/useMiniGameRun";
+import MiniGameDebugPanel from "../components/game/MiniGameDebugPanel";
 
 const wasteItems = [
-  { id: 1, name: "Plastic Bottle", type: "recyclable", emoji: "🍼" },
-  { id: 2, name: "Banana Peel", type: "organic", emoji: "🍌" },
-  { id: 3, name: "Glass Jar", type: "recyclable", emoji: "🫙" },
-  { id: 4, name: "Battery", type: "hazardous", emoji: "🔋" },
-  { id: 5, name: "Apple Core", type: "organic", emoji: "🍎" },
-  { id: 6, name: "Newspaper", type: "recyclable", emoji: "📰" },
-  { id: 7, name: "Paint Can", type: "hazardous", emoji: "🎨" },
-  { id: 8, name: "Food Scraps", type: "organic", emoji: "🥬" }
+  { id: 1, name: "Plastic Bottle", type: "recyclable", code: "PL" },
+  { id: 2, name: "Banana Peel", type: "organic", code: "OR" },
+  { id: 3, name: "Glass Jar", type: "recyclable", code: "GL" },
+  { id: 4, name: "Battery", type: "hazardous", code: "HZ" },
+  { id: 5, name: "Apple Core", type: "organic", code: "OR" },
+  { id: 6, name: "Newspaper", type: "recyclable", code: "PP" },
+  { id: 7, name: "Paint Can", type: "hazardous", code: "HZ" },
+  { id: 8, name: "Food Scraps", type: "organic", code: "OR" }
 ];
 
 function WasteSortingGame() {
@@ -23,7 +25,6 @@ function WasteSortingGame() {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const [masteryData, setMasteryData] = useState(null);
   
   const searchParams = new URLSearchParams(window.location.search);
   const level = parseInt(searchParams.get("level")) || 1;
@@ -35,6 +36,7 @@ function WasteSortingGame() {
   const { triggerXP, triggerSuccess } = useFeedback();
   const { playClick } = useSound();
   const gameConfig = gamesConfig.find(g => g.id === "waste-sorting");
+  const { run, submitting, submitResult, submitScore } = useMiniGameRun({ gameId: "waste-sorting", level });
 
   useEffect(() => {
     shuffleItems();
@@ -62,7 +64,7 @@ function WasteSortingGame() {
     if (item.type === binType) {
       setScore(prev => prev + 10);
       triggerXP(10, position);
-      setFeedback("✅ Correct! Well done!");
+      setFeedback("Correct! Well done.");
       setCurrentItems(prev => prev.filter(i => i.id !== itemId));
       
       if (currentItems.length === 1) {
@@ -70,7 +72,7 @@ function WasteSortingGame() {
       }
     } else {
       setScore(prev => Math.max(0, prev - 5));
-      setFeedback("❌ Wrong bin! Try again.");
+      setFeedback("Wrong bin. Try again.");
     }
 
     setTimeout(() => setFeedback(""), 2000);
@@ -79,23 +81,8 @@ function WasteSortingGame() {
   const endGame = async () => {
     setGameOver(true);
     triggerSuccess();
-    try {
-      const resp = await apiRequest("/api/mini-games/submit-score", {
-        method: "POST",
-        body: {
-          gameId: "waste-sorting",
-          level,
-          score,
-          timeSpent: initialTime - timeLeft
-        },
-        retries: 0,
-      });
-      if (resp.mastery) {
-        setMasteryData(resp.mastery);
-      }
-    } catch (error) {
-      console.error("Error submitting score:", error);
-    }
+    await submitScore({ score, timeSpent: initialTime - timeLeft });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   };
 
   const allowDrop = (e) => e.preventDefault();
@@ -111,11 +98,12 @@ function WasteSortingGame() {
       <div className="waste-sorting-container">
         <GameRewardModal
           show={true}
-          xpEarned={score}
+          xpEarned={Number(submitResult?.pointsEarned || 0)}
           streakBonus={Math.floor(score * 0.1)}
           ecoImpact={gameConfig.ecoImpact}
           gameName={gameConfig.name}
-          masteryData={masteryData}
+          masteryData={submitResult?.mastery || null}
+          capInfo={submitResult?.capInfo || null}
           onPlayAgain={() => { playClick(); window.location.reload(); }}
           onClose={() => { playClick(); navigate("/mini-games"); }}
         />
@@ -124,85 +112,95 @@ function WasteSortingGame() {
   }
 
   return (
-    <div className="waste-sorting-container">
-      <div className="game-header">
-        <h1>♻️ Waste Sorting Game</h1>
-        <div className="game-stats">
-          <div className="stat">
-            <span className="stat-label">Score:</span>
-            <span className="stat-value">{score}</span>
+    <div className="waste-sorting-container ws-container">
+      <div className="ws-header">
+        <h1>Waste Sorting Game</h1>
+        <div className="ws-stats">
+          <div className="ws-stat">
+            <span className="ws-stat-label">Score:</span>
+            <span className="ws-stat-value">{score}</span>
           </div>
-          <div className="stat">
-            <span className="stat-label">Time:</span>
-            <span className="stat-value">{timeLeft}s</span>
+          <div className="ws-stat">
+            <span className="ws-stat-label">Time:</span>
+            <span className="ws-stat-value">{timeLeft}s</span>
           </div>
         </div>
       </div>
 
       {feedback && (
-        <div className={`feedback ${feedback.includes('✅') ? 'correct' : 'wrong'}`}>
+        <div className={`ws-feedback ${feedback.startsWith("Correct") ? 'correct' : 'wrong'}`}>
           {feedback}
         </div>
       )}
 
-      <div className="game-area">
-        <div className="waste-items">
+      <div className="ws-area">
+        <div className="ws-items">
           <h3>Drag items to correct bins:</h3>
-          <div className="items-grid">
+          <div className="ws-items-grid">
             {currentItems.map(item => (
               <div
                 key={item.id}
                 id={item.id}
-                className="waste-item"
+                className="ws-item"
                 draggable
                 onDragStart={drag}
               >
-                <span className="item-emoji">{item.emoji}</span>
-                <span className="item-name">{item.name}</span>
+                <span className={`ws-item-icon ws-item-${item.type}`}>
+                  <Package className="w-5 h-5" />
+                </span>
+                <span className="ws-item-name">{item.name}</span>
+                <span className="ws-item-code">{item.code}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bins-container">
+        <div className="ws-bins">
           <div 
-            className="bin recyclable"
+            className="ws-bin recyclable"
             onDrop={(e) => drop(e, "recyclable")}
             onDragOver={allowDrop}
           >
-            <div className="bin-icon">♻️</div>
-            <div className="bin-label">Recyclable</div>
-            <div className="bin-examples">Plastic, Glass, Paper</div>
+            <div className="ws-bin-icon"><Recycle className="w-8 h-8" /></div>
+            <div className="ws-bin-label">Recyclable</div>
+            <div className="ws-bin-examples">Plastic, Glass, Paper</div>
           </div>
 
           <div 
-            className="bin organic"
+            className="ws-bin organic"
             onDrop={(e) => drop(e, "organic")}
             onDragOver={allowDrop}
           >
-            <div className="bin-icon">🌱</div>
-            <div className="bin-label">Organic</div>
-            <div className="bin-examples">Food Waste, Peels</div>
+            <div className="ws-bin-icon"><Leaf className="w-8 h-8" /></div>
+            <div className="ws-bin-label">Organic</div>
+            <div className="ws-bin-examples">Food Waste, Peels</div>
           </div>
 
           <div 
-            className="bin hazardous"
+            className="ws-bin hazardous"
             onDrop={(e) => drop(e, "hazardous")}
             onDragOver={allowDrop}
           >
-            <div className="bin-icon">⚠️</div>
-            <div className="bin-label">Hazardous</div>
-            <div className="bin-examples">Batteries, Chemicals</div>
+            <div className="ws-bin-icon"><ShieldAlert className="w-8 h-8" /></div>
+            <div className="ws-bin-label">Hazardous</div>
+            <div className="ws-bin-examples">Batteries, Chemicals</div>
           </div>
         </div>
       </div>
 
       <button 
-        className="quit-btn"
-        onClick={() => { playClick(); navigate("/mini-games"); }}
+        className="ws-quit-btn"
+        onClick={() => { playClick(); endGame(); }}
       >
         ← Quit Game
       </button>
+      <MiniGameDebugPanel
+        gameId="waste-sorting"
+        level={level}
+        run={run}
+        submitting={submitting}
+        submitResult={submitResult}
+      />
     </div>
   );
 }

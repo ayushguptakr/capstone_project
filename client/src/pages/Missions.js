@@ -24,6 +24,7 @@ import useFeedback from "../hooks/useFeedback";
 import useSound from "../hooks/useSound";
 import confetti from "canvas-confetti";
 import { getStoredUser } from "../utils/authStorage";
+import { formatSubmissionStatus } from "../utils/statusFormat";
 
 function getDifficultyColor(d) {
   const diff = String(d || "easy").toLowerCase();
@@ -46,12 +47,12 @@ export default function Missions() {
 
   useEffect(() => {
     Promise.all([
-      apiRequest("/api/tasks").catch(() => []),
-      apiRequest("/api/submissions/my").catch(() => [])
+      apiRequest("/api/tasks?limit=200&offset=0").catch(() => []),
+      apiRequest("/api/submissions/my?limit=200&offset=0").catch(() => [])
     ])
       .then(([tasksResp, subResp]) => {
-        const t = Array.isArray(tasksResp) ? tasksResp : tasksResp.tasks || [];
-        const s = Array.isArray(subResp) ? subResp : subResp.submissions || [];
+        const t = Array.isArray(tasksResp) ? tasksResp : tasksResp?.items || tasksResp.tasks || [];
+        const s = Array.isArray(subResp) ? subResp : subResp?.items || subResp.submissions || [];
         setTasks(t);
         setSubmissions(s);
       })
@@ -71,7 +72,7 @@ export default function Missions() {
         active.push(t);
       } else if (relatedSub.status === "pending") {
         pending.push({ ...t, submission: relatedSub });
-      } else if (relatedSub.status === "approved" || relatedSub.status === "completed") {
+      } else if (relatedSub.status === "approved") {
         completed.push({ ...t, submission: relatedSub });
       }
     });
@@ -84,7 +85,7 @@ export default function Missions() {
     let mCount = 0;
     let xpSum = 0;
     submissions.forEach(s => {
-      if ((s.status === "approved" || s.status === "completed") && new Date(s.updatedAt || s.createdAt).toDateString() === today) {
+      if (s.status === "approved" && new Date(s.updatedAt || s.createdAt).toDateString() === today) {
         mCount++;
         const t = tasks.find(tsk => tsk._id === (s.task?._id || s.task));
         if (t && t.points) {
@@ -97,10 +98,32 @@ export default function Missions() {
 
   const featuredMission = useMemo(() => {
     if (categorized.active.length > 0) {
-      return categorized.active.find(t => t.difficulty === "easy") || categorized.active[0];
+      return (
+        categorized.active.find((t) => t.isAvailableNow !== false && t.difficulty === "easy") ||
+        categorized.active.find((t) => t.isAvailableNow !== false) ||
+        categorized.active[0]
+      );
     }
     return null;
   }, [categorized.active]);
+
+  const getScheduleBadge = (task) => {
+    const status = task?.schedule?.status || "unscheduled";
+    if (status === "upcoming") return { text: "Opens Soon", cls: "bg-blue-100 text-blue-700 border-blue-200" };
+    if (status === "closed") return { text: "Closed", cls: "bg-rose-100 text-rose-700 border-rose-200" };
+    if (status === "active") return { text: "Scheduled", cls: "bg-indigo-100 text-indigo-700 border-indigo-200" };
+    return { text: "Live", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" };
+  };
+
+  const getScheduleHint = (task) => {
+    const status = task?.schedule?.status || "unscheduled";
+    const start = task?.schedule?.startDate ? new Date(task.schedule.startDate).toLocaleDateString() : null;
+    const end = task?.schedule?.endDate ? new Date(task.schedule.endDate).toLocaleDateString() : null;
+    if (status === "upcoming" && start) return `Starts ${start}`;
+    if (status === "closed") return end ? `Closed on ${end}` : "No longer available";
+    if (status === "active" && end) return `Ends ${end}`;
+    return "";
+  };
 
   if (loading) return <EcoLoader text="Loading Mission Control..." />;
 
@@ -244,10 +267,15 @@ export default function Missions() {
                   <span className="font-display font-bold text-xl text-white">+{featuredMission.points} XP</span>
                 </div>
                 <button
-                  onClick={() => { playClick(); navigate(`/submit/${featuredMission._id}`); }}
-                  className="group flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-900 font-bold text-sm shadow-lg hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all active:scale-95"
+                  onClick={() => {
+                    if (featuredMission.isAvailableNow === false) return;
+                    playClick();
+                    navigate(`/submit/${featuredMission._id}`);
+                  }}
+                  disabled={featuredMission.isAvailableNow === false}
+                  className="group flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-900 font-bold text-sm shadow-lg hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Start Mission <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  {featuredMission.isAvailableNow === false ? "Unavailable Now" : "Start Mission"} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             </div>
@@ -358,13 +386,25 @@ export default function Missions() {
 
                     <div className="flex items-start justify-between mb-4 relative z-10">
                       <Badge variant={isCompleted ? "success" : isPending ? "warning" : "info"}>
-                        {isCompleted ? "Approved" : isPending ? "In Review" : "New Mission"}
+                        {isCompleted
+                          ? formatSubmissionStatus(task?.submission?.status).label
+                          : isPending
+                            ? formatSubmissionStatus(task?.submission?.status).label
+                            : "New Mission"}
                       </Badge>
-                      <Badge variant={getDifficultyColor(task.difficulty)}>{task.difficulty || "Medium"}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={getDifficultyColor(task.difficulty)}>{task.difficulty || "Medium"}</Badge>
+                        <span className={`text-[11px] font-bold px-2 py-1 rounded-full border ${getScheduleBadge(task).cls}`}>
+                          {getScheduleBadge(task).text}
+                        </span>
+                      </div>
                     </div>
 
                     <h3 className="font-display font-bold text-xl text-slate-800 leading-tight mb-2 relative z-10">{task.title}</h3>
                     <p className="text-sm font-medium text-slate-500 mb-5 line-clamp-2 pr-2 relative z-10 flex-grow">{task.description}</p>
+                    {getScheduleHint(task) ? (
+                      <p className="text-xs font-semibold text-slate-500 mb-3 relative z-10">{getScheduleHint(task)}</p>
+                    ) : null}
 
                     <div className="mt-auto relative z-10 space-y-4">
                       {/* Sub-info bar */}
@@ -384,10 +424,15 @@ export default function Missions() {
                       {/* Action Button */}
                       {!isCompleted && !isPending && (
                         <button
-                          onClick={() => { playClick(); navigate(`/submit/${task._id}`); }}
-                          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-900 hover:bg-emerald-600 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                          onClick={() => {
+                            if (task.isAvailableNow === false) return;
+                            playClick();
+                            navigate(`/submit/${task._id}`);
+                          }}
+                          disabled={task.isAvailableNow === false}
+                          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-900 hover:bg-emerald-600 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Start Mission <ArrowRight className="w-4 h-4" />
+                          {task.isAvailableNow === false ? "Unavailable Now" : "Start Mission"} <ArrowRight className="w-4 h-4" />
                         </button>
                       )}
 

@@ -45,8 +45,9 @@ async function aggregateByStudent(school = null, startDate = null, endDate = nul
   return EcoImpactLog.aggregate(pipeline);
 }
 
-async function aggregateBySchool(startDate = null, endDate = null) {
+async function aggregateBySchool(startDate = null, endDate = null, school = null) {
   const match = {};
+  if (school) match.school = school;
   if (startDate || endDate) {
     match.createdAt = {};
     if (startDate) match.createdAt.$gte = new Date(startDate);

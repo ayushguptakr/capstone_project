@@ -24,4 +24,9 @@ const quizAttemptSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Query-performance indexes for student progress and quiz analytics
+quizAttemptSchema.index({ student: 1, completedAt: -1 });
+quizAttemptSchema.index({ student: 1, quiz: 1, completedAt: -1 });
+quizAttemptSchema.index({ quiz: 1, completedAt: -1 });
+
 module.exports = mongoose.model("QuizAttempt", quizAttemptSchema);

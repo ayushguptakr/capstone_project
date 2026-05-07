@@ -13,7 +13,8 @@ const {
   getAiInsights,
   generateMission,
   generateQuiz,
-  draftFeedback
+  draftFeedback,
+  getStudentProfile
 } = require("../controllers/teacherController");
 const { protect, authorize, requirePasswordSet } = require("../middleware/authMiddleware");
 const { aiRateLimiter } = require("../middleware/rateLimiter");
@@ -35,5 +36,6 @@ router.get("/ai-insights", protect, requirePasswordSet, authorize("teacher", "ad
 router.post("/generate-mission", protect, requirePasswordSet, authorize("teacher", "admin"), aiRateLimiter, generateMission);
 router.post("/generate-quiz", protect, requirePasswordSet, authorize("teacher", "admin"), aiRateLimiter, generateQuiz);
 router.post("/draft-feedback", protect, requirePasswordSet, authorize("teacher", "admin"), aiRateLimiter, draftFeedback);
+router.get("/students/:studentId/profile", protect, requirePasswordSet, authorize("teacher", "admin"), getStudentProfile);
 
 module.exports = router;

@@ -27,8 +27,8 @@ export default function TeacherContent() {
 
   useEffect(() => {
     fetchTeacherBootstrap().then((d) => {
-      setTasks(d.tasks || []);
-      setQuizzes(d.quizzes || []);
+      setTasks(Array.isArray(d.tasks) ? d.tasks : []);
+      setQuizzes(Array.isArray(d.quizzes) ? d.quizzes : []);
     });
   }, []);
 
@@ -156,7 +156,7 @@ export default function TeacherContent() {
           <div className="mt-3 overflow-hidden rounded-xl border border-slate-100">
             <table className="w-full text-sm">
               <thead className="bg-slate-50"><tr><th className="p-2 text-left">Title</th><th className="p-2 text-left">Difficulty</th></tr></thead>
-              <tbody>{quizzes.slice(0, 12).map((q) => <tr key={q._id} className="border-t"><td className="p-2">{q.title}</td><td className="p-2 capitalize">{q.difficulty}</td></tr>)}</tbody>
+              <tbody>{(Array.isArray(quizzes) ? quizzes : []).slice(0, 12).map((q) => <tr key={q._id} className="border-t"><td className="p-2">{q.title}</td><td className="p-2 capitalize">{q.difficulty}</td></tr>)}</tbody>
             </table>
           </div>
         </div>
@@ -168,7 +168,7 @@ export default function TeacherContent() {
           <div className="mt-3 overflow-hidden rounded-xl border border-slate-100">
             <table className="w-full text-sm">
               <thead className="bg-slate-50"><tr><th className="p-2 text-left">Title</th><th className="p-2 text-left">Points</th></tr></thead>
-              <tbody>{tasks.slice(0, 12).map((t) => <tr key={t._id} className="border-t"><td className="p-2">{t.title}</td><td className="p-2">{t.points}</td></tr>)}</tbody>
+              <tbody>{(Array.isArray(tasks) ? tasks : []).slice(0, 12).map((t) => <tr key={t._id} className="border-t"><td className="p-2">{t.title}</td><td className="p-2">{t.points}</td></tr>)}</tbody>
             </table>
           </div>
         </div>

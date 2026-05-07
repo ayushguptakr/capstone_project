@@ -138,6 +138,62 @@ const sampleRewards = [
     stock: -1,
     rarity: "epic",
   },
+
+  // ── Eco Rewards (real-world items) ──────────────────────
+  {
+    name: "EcoQuest T‑Shirt",
+    description: "Premium cotton t‑shirt with EcoQuest logo. Wear your impact!",
+    pointsCost: 6000,
+    category: "eco-rewards",
+    icon: "Shirt",
+    stock: 25,
+    rarity: "rare",
+  },
+  {
+    name: "Reusable Water Bottle",
+    description: "Stainless steel bottle to reduce plastic waste (750ml).",
+    pointsCost: 4500,
+    category: "eco-rewards",
+    icon: "CupSoda",
+    stock: 40,
+    rarity: "common",
+  },
+  {
+    name: "Plant Seed Pack",
+    description: "Seed pack (seasonal). Grow a plant and track your streak.",
+    pointsCost: 3000,
+    category: "eco-rewards",
+    icon: "Sprout",
+    stock: 80,
+    rarity: "common",
+  },
+  {
+    name: "Eco Plant Pot",
+    description: "Biodegradable pot for your seedlings. Perfect for school gardens.",
+    pointsCost: 3500,
+    category: "eco-rewards",
+    icon: "Flower2",
+    stock: 60,
+    rarity: "common",
+  },
+  {
+    name: "Surprise Goodies Box",
+    description: "Mystery eco-goodies: stickers, badges, and small surprises!",
+    pointsCost: 8000,
+    category: "eco-rewards",
+    icon: "PackageOpen",
+    stock: 15,
+    rarity: "epic",
+  },
+  {
+    name: "School Garden Kit",
+    description: "Mini garden starter kit for your class (seeds + tools + guide).",
+    pointsCost: 12000,
+    category: "eco-rewards",
+    icon: "Shovel",
+    stock: 6,
+    rarity: "legendary",
+  },
 ];
 
 const seedRewards = async () => {

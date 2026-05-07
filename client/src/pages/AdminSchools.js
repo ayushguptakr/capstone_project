@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, UserPlus, X } from "lucide-react";
+import { Plus, Pencil, Trash2, UserPlus, X, Power } from "lucide-react";
 import { apiRequest } from "../api/httpClient";
 import { useAuth } from "../context/AuthContext";
 import "./AdminPanel.css";
@@ -7,6 +7,8 @@ import "./AdminPanel.css";
 export default function AdminSchools() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
+  const [query, setQuery] = useState("");
   const { user, isLoggedIn } = useAuth();
 
   // Create school form
@@ -30,14 +32,28 @@ export default function AdminSchools() {
 
   useEffect(() => {
     if (!isLoggedIn || !user) return;
-    fetchSchools();
+    fetchSchools({ q: query, offset: 0 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, user]);
 
-  const fetchSchools = async () => {
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
+    const t = setTimeout(() => fetchSchools({ q: query, offset: 0 }), 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  const fetchSchools = async ({ q = query, offset = 0 } = {}) => {
+    setLoading(true);
     try {
-      const data = await apiRequest("/api/admin/schools");
-      if (data) setSchools(data.schools || []);
+      const limit = pagination.limit;
+      const data = await apiRequest(`/api/admin/schools?q=${encodeURIComponent(q || "")}&limit=${limit}&offset=${offset}`);
+      const items = Array.isArray(data) ? data : data?.items || [];
+      setSchools(items);
+      setPagination((p) => ({
+        ...p,
+        ...(data?.pagination || { total: 0, limit, offset, hasMore: false }),
+      }));
     } catch (err) {
       console.error(err);
     } finally {
@@ -101,6 +117,27 @@ export default function AdminSchools() {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(err.message || "Failed to deactivate school.");
+    }
+  };
+
+  // ---- Toggle School Status ----
+  const handleToggleSchoolStatus = async (school) => {
+    const currentStatus = school.status || "active";
+    const nextStatus = currentStatus === "inactive" ? "active" : "inactive";
+    try {
+      await apiRequest(`/api/admin/schools/${school._id}`, {
+        method: "PUT",
+        body: { status: nextStatus },
+      });
+      setSuccess(
+        nextStatus === "inactive"
+          ? "School deactivated."
+          : "School reactivated."
+      );
+      fetchSchools({ offset: pagination.offset || 0 });
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err.message || "Failed to update school status.");
     }
   };
 
@@ -192,7 +229,21 @@ export default function AdminSchools() {
         <div className="admin-section">
           <div className="admin-toolbar">
             <h3 className="admin-section-title" style={{ margin: 0 }}>All Schools</h3>
-            <span className="admin-toolbar__count">{schools.length} schools</span>
+            <span className="admin-toolbar__count">
+              {pagination.total || schools.length} schools
+            </span>
+          </div>
+
+          <div className="admin-card" style={{ marginTop: 12, padding: 12 }}>
+            <div className="admin-form-group" style={{ margin: 0 }}>
+              <label className="admin-label">Search schools</label>
+              <input
+                className="admin-input"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name or address…"
+              />
+            </div>
           </div>
 
           <div className="admin-table-wrap">
@@ -244,6 +295,13 @@ export default function AdminSchools() {
                           <Pencil style={{ width: 16, height: 16 }} />
                         </button>
                         <button
+                          className="admin-btn--icon"
+                          onClick={() => handleToggleSchoolStatus(school)}
+                          title={school.status === "inactive" ? "Reactivate School" : "Deactivate School"}
+                        >
+                          <Power style={{ width: 16, height: 16 }} />
+                        </button>
+                        <button
                           className="admin-btn--icon admin-btn--icon-danger"
                           onClick={() => handleDelete(school._id)}
                           title="Deactivate School"
@@ -263,6 +321,32 @@ export default function AdminSchools() {
             </table>
           </div>
         </div>
+
+        {!loading && pagination.total > 0 && (
+          <div className="admin-section" style={{ paddingTop: 0 }}>
+            <div className="admin-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+              <span style={{ color: "#64748b", fontSize: 12, fontWeight: 600 }}>
+                Showing {pagination.offset + 1}-{Math.min(pagination.offset + schools.length, pagination.total)} of {pagination.total}
+              </span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="admin-btn admin-btn--secondary"
+                  disabled={pagination.offset <= 0}
+                  onClick={() => fetchSchools({ offset: Math.max(0, pagination.offset - pagination.limit) })}
+                >
+                  Prev
+                </button>
+                <button
+                  className="admin-btn admin-btn--secondary"
+                  disabled={!pagination.hasMore}
+                  onClick={() => fetchSchools({ offset: pagination.offset + pagination.limit })}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* -------- Edit School Modal -------- */}
         {editSchool && (

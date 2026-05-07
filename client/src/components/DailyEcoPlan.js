@@ -107,7 +107,7 @@ export default function DailyEcoPlan({ streak = 0, missionsCompleted = 0, level 
         }, 2000);
       }
     } catch (err) {
-      showAlert({ type: "warning", message: "You’ve already completed this today. Come back tomorrow 🌱" });
+      showAlert({ type: "warning", message: "You’ve already completed this today. Come back tomorrow." });
       setModalStage("start");
       setTaskStates(prev => ({ ...prev, [activeTask.taskId]: "idle" }));
     }

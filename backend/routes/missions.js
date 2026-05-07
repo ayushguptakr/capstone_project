@@ -5,7 +5,7 @@ const DailyPlan = require("../models/DailyPlan");
 const MissionClaim = require("../models/MissionClaim");
 const User = require("../models/User");
 const { generateEcoPlan } = require("../services/aiService");
-const { evaluateBadges } = require("../services/gamificationService");
+const gamificationService = require("../services/gamificationService");
 
 // GET /api/missions/today
 // Returns today's daily plan and the completed statuses
@@ -58,6 +58,35 @@ router.post("/complete", protect, async (req, res) => {
     const todayStr = new Date().toISOString().split("T")[0];
     const userId = req.user._id;
 
+    if (!taskId || typeof taskId !== "string") {
+      return res.status(400).json({ success: false, message: "taskId is required" });
+    }
+    if (!verificationType || typeof verificationType !== "string") {
+      return res.status(400).json({ success: false, message: "verificationType is required" });
+    }
+
+    // Ensure taskId is from today's plan (prevents forging arbitrary IDs)
+    const planDoc = await DailyPlan.findOne({ user: userId, dateKey: todayStr }).lean();
+    if (!planDoc) {
+      return res.status(400).json({ success: false, message: "Daily plan not found. Load /missions/today first." });
+    }
+    const planned = Array.isArray(planDoc.tasks)
+      ? planDoc.tasks.find((t) => t && t.taskId === taskId)
+      : null;
+    if (!planned) {
+      return res.status(403).json({ success: false, message: "Invalid mission for today." });
+    }
+    if (String(planned.verificationType) !== String(verificationType)) {
+      return res.status(400).json({ success: false, message: "verificationType does not match the mission." });
+    }
+
+    // Proof requirements
+    if (verificationType === "proof" || verificationType === "quiz") {
+      if (typeof proofData !== "string" || proofData.trim().length < 2) {
+        return res.status(400).json({ success: false, message: "proofData is required for this verification type." });
+      }
+    }
+
     // 1. Check if already claimed
     const existingClaim = await MissionClaim.findOne({ user: userId, taskId, dateKey: todayStr });
     if (existingClaim) {
@@ -80,26 +109,34 @@ router.post("/complete", protect, async (req, res) => {
     // Ensure we don't breach the cap
     if (xpEarnedToday + xpToAward > 50) xpToAward = 50 - xpEarnedToday;
 
-    // 3. Create Claim
-    await MissionClaim.create({
-      user: userId,
-      taskId,
-      dateKey: todayStr,
-      status: "verified",
-      verificationType,
-      proofData,
-      awardedXP: xpToAward
-    });
+    // 3. Create Claim (idempotent at DB level too)
+    let claim;
+    try {
+      claim = await MissionClaim.create({
+        user: userId,
+        taskId,
+        dateKey: todayStr,
+        status: "verified",
+        verificationType,
+        proofData,
+        awardedXP: xpToAward
+      });
+    } catch (e) {
+      if (e?.code === 11000) {
+        return res.status(400).json({ success: false, message: "Already claimed" });
+      }
+      throw e;
+    }
 
-    // 4. Update user points
-    const userObj = await User.findById(userId);
-    userObj.points = (userObj.points || 0) + xpToAward;
-    userObj.experiencePoints = (userObj.experiencePoints || 0) + xpToAward;
-    userObj.weeklyXP = (userObj.weeklyXP || 0) + xpToAward;
-    
-    // Evaluate badges
-    await evaluateBadges(userObj);
-    await userObj.save();
+    // 4. Award XP through central service for consistent streak/level/badges/plant
+    await gamificationService.awardPoints({
+      userId,
+      points: xpToAward,
+      source: "mission",
+      sourceRef: taskId,
+      idempotencyKey: `mission-claim:${userId.toString()}:${todayStr}:${taskId}`,
+      metadata: { verificationType, claimId: String(claim._id) },
+    });
 
     res.json({ success: true, message: "Mission completed", xpAwarded: xpToAward });
 

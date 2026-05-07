@@ -7,11 +7,22 @@ export async function fetchTeacherBootstrap() {
       apiRequest("/api/teacher/verification-queue"),
       apiRequest("/api/tasks/my"),
       apiRequest("/api/quizzes"),
-      apiRequest("/api/teacher/announcements"),
-      apiRequest("/api/teacher/schedules"),
+      apiRequest("/api/teacher/announcements?limit=25&offset=0"),
+      apiRequest("/api/teacher/schedules?limit=25&offset=0"),
       apiRequest("/api/teacher/badges"),
     ]);
-  return { analytics, verificationQueue, tasks, quizzes, announcements, schedules, badges };
+  return {
+    analytics,
+    verificationQueue,
+    tasks: Array.isArray(tasks) ? tasks : tasks?.items || [],
+    tasksPagination: tasks?.pagination || null,
+    quizzes: Array.isArray(quizzes) ? quizzes : quizzes?.items || [],
+    announcements: Array.isArray(announcements) ? announcements : announcements?.items || [],
+    announcementsPagination: announcements?.pagination || null,
+    schedules: Array.isArray(schedules) ? schedules : schedules?.items || [],
+    schedulesPagination: schedules?.pagination || null,
+    badges,
+  };
 }
 
 export const verifySubmissionApi = (submissionId, payload) =>

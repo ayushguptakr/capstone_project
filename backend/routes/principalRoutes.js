@@ -16,6 +16,7 @@ const {
 } = require("../controllers/principalController");
 const { protect, authorizeRoles, requirePasswordSet } = require("../middleware/authMiddleware");
 const { aiRateLimiter } = require("../middleware/rateLimiter");
+const { requireFeature } = require("../middleware/featureToggle");
 
 // All principal routes protected
 router.use(protect);
@@ -37,8 +38,8 @@ router.get("/teachers", getTeacherPerformance);
 router.get("/class-insights", getClassInsights);
 
 // Events
-router.post("/events", createEvent);
-router.get("/events", getEvents);
+router.post("/events", requireFeature("competitions"), createEvent);
+router.get("/events", requireFeature("competitions"), getEvents);
 
 // Announcements
 router.post("/announcements", createSchoolAnnouncement);

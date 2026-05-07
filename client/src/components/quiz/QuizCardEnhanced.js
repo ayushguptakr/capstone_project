@@ -24,12 +24,31 @@ export default function QuizCardEnhanced({ quiz, progress, isLocked, onPlay }) {
     return "Not Started";
   };
 
+  const scheduleStatus = quiz?.schedule?.status || "unscheduled";
+  const scheduleText =
+    scheduleStatus === "upcoming"
+      ? "Opens Soon"
+      : scheduleStatus === "closed"
+        ? "Closed"
+        : scheduleStatus === "active"
+          ? "Scheduled"
+          : "Live";
+  const scheduleClass =
+    scheduleStatus === "upcoming"
+      ? "bg-blue-100 text-blue-700"
+      : scheduleStatus === "closed"
+        ? "bg-rose-100 text-rose-700"
+        : scheduleStatus === "active"
+          ? "bg-indigo-100 text-indigo-700"
+          : "bg-emerald-100 text-emerald-700";
+  const unavailableBySchedule = quiz?.isAvailableNow === false;
+
   return (
     <motion.div
-      whileHover={isLocked ? {} : { scale: 1.02, y: -4 }}
-      whileTap={isLocked ? {} : { scale: 0.98 }}
-      onClick={() => { if (!isLocked) onPlay(quiz._id); }}
-      className={`relative rounded-3xl p-5 shadow-sm border-2 ${isLocked ? 'border-slate-100 bg-slate-50 opacity-75 grayscale-[0.3]' : statusColors[layoutState]} cursor-pointer transition-all hover:shadow-lg`}
+      whileHover={isLocked || unavailableBySchedule ? {} : { scale: 1.02, y: -4 }}
+      whileTap={isLocked || unavailableBySchedule ? {} : { scale: 0.98 }}
+      onClick={() => { if (!isLocked && !unavailableBySchedule) onPlay(quiz._id); }}
+      className={`relative rounded-3xl p-5 shadow-sm border-2 ${isLocked || unavailableBySchedule ? 'border-slate-100 bg-slate-50 opacity-75 grayscale-[0.3]' : statusColors[layoutState]} cursor-pointer transition-all hover:shadow-lg`}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -41,7 +60,10 @@ export default function QuizCardEnhanced({ quiz, progress, isLocked, onPlay }) {
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{getStatusText()}</span>
           </div>
         </div>
-        <Badge variant={isLocked ? "default" : (quiz.difficulty || "easy").toLowerCase()}>{quiz.difficulty || "Easy"}</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={isLocked ? "default" : (quiz.difficulty || "easy").toLowerCase()}>{quiz.difficulty || "Easy"}</Badge>
+          <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${scheduleClass}`}>{scheduleText}</span>
+        </div>
       </div>
 
       <p className="text-slate-500 text-sm mb-5 line-clamp-2 leading-relaxed">{quiz.description}</p>

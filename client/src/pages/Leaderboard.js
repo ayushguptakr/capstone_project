@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { Trophy, School, Crown, ArrowUpRight, ArrowDownRight, Clock, Flame } from "lucide-react";
 import { IconBox } from "../components";
-import { apiRequest } from "../api/httpClient";
+import { apiRequest, isFeatureDisabledError } from "../api/httpClient";
 import { getStoredUser } from "../utils/authStorage";
 
 function Leaderboard() {
@@ -12,9 +12,14 @@ function Leaderboard() {
   const [schoolLeaderboard, setSchoolLeaderboard] = useState([]);
   const [classLeaderboard, setClassLeaderboard] = useState([]);
   const [myLeague, setMyLeague] = useState("bronze");
+  const [leagueStatus, setLeagueStatus] = useState(null);
+  const [leaguesDisabled, setLeaguesDisabled] = useState(false);
 
   const [timeRange, setTimeRange] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [pageLimit] = useState(50);
+  const [pagination, setPagination] = useState({ total: 0, offset: 0, limit: 50, hasMore: false });
 
 
   const currentUser = getStoredUser();
@@ -26,10 +31,19 @@ function Leaderboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [studData, schData, clsData] = await Promise.all([
-          apiRequest("/api/leaderboard"),
+        const offset = page * pageLimit;
+        const userSchool = currentUser?.school || "";
+        const [studData, schData, clsData, leaguesRes] = await Promise.all([
+          apiRequest(`/api/leaderboard?limit=${pageLimit}&offset=${offset}`),
           apiRequest("/api/leaderboard/schools"),
-          apiRequest("/api/leaderboard/class")
+          apiRequest(userSchool ? `/api/leaderboard/class?school=${encodeURIComponent(userSchool)}` : "/api/leaderboard/class"),
+          apiRequest("/api/leagues/status").catch((e) => {
+            if (isFeatureDisabledError(e)) {
+              setLeaguesDisabled(true);
+              return null;
+            }
+            return null;
+          }),
         ]);
         
         // Before updating, capture current states natively into prevMapRef
@@ -39,13 +53,21 @@ function Leaderboard() {
             newMap.set(String(u._id), { points: u.points, rank: i + 1 });
           });
           prevMapRef.current = newMap;
-          return studData || [];
+          return Array.isArray(studData) ? studData : (studData?.items || []);
         });
+        setPagination(studData?.pagination || { total: 0, offset, limit: pageLimit, hasMore: false });
 
         // Set league based on user data
-        const currentStud = (studData || []).find(u => String(u._id) === String(currentUser?.id || currentUser?._id));
+        const currentStud = (Array.isArray(studData) ? studData : (studData?.items || [])).find(
+          (u) => String(u._id) === String(currentUser?.id || currentUser?._id)
+        );
         if (currentStud?.league) {
           setMyLeague(currentStud.league);
+        }
+        if (leaguesRes?.league) {
+          setLeagueStatus(leaguesRes);
+          setMyLeague(leaguesRes.league);
+          setLeaguesDisabled(false);
         }
 
         setSchoolLeaderboard(schData || []);
@@ -61,11 +83,11 @@ function Leaderboard() {
     fetchData();
     const inv = setInterval(fetchData, 60000); // 60s
     return () => clearInterval(inv);
-  }, [currentUser]);
+  }, [currentUser, page, pageLimit]);
 
   // Derived filtered rows
   const filteredStudents = useMemo(() => {
-    let rows = [...globalLeaderboard];
+    const rows = Array.isArray(globalLeaderboard) ? [...globalLeaderboard] : [];
     if (timeRange === "week") {
       rows.sort((a, b) => (b.weeklyXP || 0) - (a.weeklyXP || 0));
     } else {
@@ -97,6 +119,14 @@ function Leaderboard() {
 
   const getPoints = (s) => timeRange === "week" ? (s.weeklyXP || 0) : (s.points || 0);
 
+  const leagueProgress = useMemo(() => {
+    const weeklyXP = Number(leagueStatus?.weeklyXP ?? 0);
+    const promoteAt = Number(leagueStatus?.promoteAt ?? 200);
+    const pct = promoteAt > 0 ? Math.max(0, Math.min(100, Math.round((weeklyXP / promoteAt) * 100))) : 0;
+    const remaining = Math.max(0, promoteAt - weeklyXP);
+    return { weeklyXP, promoteAt, pct, remaining, nextLeague: leagueStatus?.nextLeague || null };
+  }, [leagueStatus]);
+
   const getDeltaMeta = (s, currRank) => {
     const prev = prevMapRef.current.get(String(s._id));
     if (!prev) return { xpGain: 0, rankDiff: 0 };
@@ -116,7 +146,7 @@ function Leaderboard() {
     );
   }
 
-  const listRows = filteredStudents.slice(0, 20);
+  const listRows = filteredStudents;
   
   const myCurrentRank = filteredStudents.findIndex((s) => String(s._id) === String(currentUser?.id || currentUser?._id)) + 1;
 
@@ -169,13 +199,19 @@ function Leaderboard() {
                    <Crown className="w-6 h-6 text-yellow-300" />
                    <span className="capitalize">{myLeague} League</span>
                  </h3>
-                 <p className="text-indigo-100 text-sm font-semibold mb-4">Top 5 get promoted. Ends in 2d 14h.</p>
+                 <p className="text-indigo-100 text-sm font-semibold mb-4">
+                   {leaguesDisabled ? "Leagues are disabled by admin." : "Weekly league progress (resets weekly)."}
+                 </p>
                  
                  <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden mt-2">
-                    <div className="h-full bg-yellow-400 rounded-full" style={{ width: '40%' }} />
+                    <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${leaguesDisabled ? 0 : leagueProgress.pct}%` }} />
                  </div>
                  <p className="text-xs uppercase tracking-wider font-bold mt-2 text-indigo-200">
-                    Need 450 XP to enter promotion zone
+                    {leaguesDisabled
+                      ? "Unavailable"
+                      : leagueProgress.nextLeague
+                        ? `Need ${leagueProgress.remaining} XP to reach ${String(leagueProgress.nextLeague).toUpperCase()}`
+                        : "Max league reached"}
                  </p>
                </div>
 
@@ -211,6 +247,20 @@ function Leaderboard() {
                 <option value="all">All-Time XP</option>
                 <option value="week">Weekly XP</option>
               </select>
+              <button
+                disabled={page <= 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-bold shadow-sm disabled:opacity-40"
+              >
+                Prev
+              </button>
+              <button
+                disabled={!pagination.hasMore}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-bold shadow-sm disabled:opacity-40"
+              >
+                Next
+              </button>
             </div>
 
             <div className="rounded-3xl border border-slate-200 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden relative">
@@ -283,7 +333,7 @@ function Leaderboard() {
                                 {s.streakCurrent > 2 && <span className="inline-flex items-center text-[10px] font-bold text-orange-500"><Flame className="w-3 h-3" fill="currentColor"/> {s.streakCurrent}</span>}
                               </span>
                               <span className="text-xs font-semibold text-slate-500 truncate">
-                                Lvl {s.level} • {classLabelOf(s)}
+                                Lvl {s.level} • {classLabelOf(s)}{(s.schoolName || s.schoolId?.name || s.school) ? ` • ${s.schoolName || s.schoolId?.name || s.school}` : ""}
                               </span>
                            </div>
                         </div>

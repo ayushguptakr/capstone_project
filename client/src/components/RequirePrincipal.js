@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { isPrincipalRole } from "../utils/authStorage";
+import { defaultRouteForRole } from "../utils/defaultRouteForRole";
 
 /** Principal (or admin) only. Enforces first-login password change. */
 export default function RequirePrincipal({ children }) {
@@ -13,7 +14,7 @@ export default function RequirePrincipal({ children }) {
   if (user.isFirstLogin && location.pathname !== "/set-password") {
     return <Navigate to="/set-password" replace />;
   }
-  if (!isPrincipalRole(user.role)) return <Navigate to="/dashboard" replace />;
+  if (!isPrincipalRole(user.role)) return <Navigate to={defaultRouteForRole(user.role)} replace />;
   
   return children;
 }

@@ -1,6 +1,12 @@
 const Task = require("../models/Task");
 const User = require("../models/User");
 const { buildContentScope } = require("../middleware/scopeFilter");
+const {
+  listStudentSchedules,
+  buildScheduleMatcher,
+  isWindowActive,
+  getScheduleState,
+} = require("../services/scheduleVisibilityService");
 
 // Create task (teacher/admin); validates targetClass against teacher's assignment
 exports.createTask = async (req, res) => {
@@ -51,8 +57,35 @@ exports.createTask = async (req, res) => {
 exports.getTasks = async (req, res) => {
   try {
     const scope = buildContentScope(req.user);
-    const tasks = await Task.find(scope).sort({ createdAt: -1 });
-    res.json(tasks);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 30)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const total = await Task.countDocuments(scope);
+    let tasks = await Task.find(scope)
+      .sort({ createdAt: -1 })
+      .skip(offset)
+      .limit(limit);
+
+    if (req.user?.role === "student") {
+      const schedules = await listStudentSchedules("task", req.user.schoolId || null);
+      const pickSchedule = buildScheduleMatcher(schedules);
+      tasks = tasks.map((task) => {
+        const schedule = pickSchedule(task);
+        return {
+          ...task.toObject(),
+          schedule: getScheduleState(schedule),
+          isAvailableNow: isWindowActive(schedule),
+        };
+      });
+    }
+    res.json({
+      items: tasks,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + tasks.length < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -62,8 +95,23 @@ exports.getTasks = async (req, res) => {
 // Get tasks created by the logged-in teacher
 exports.getMyTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ createdBy: req.user.id }).sort({ createdAt: -1 });
-    res.json(tasks);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 30)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const filter = { createdBy: req.user.id };
+    const total = await Task.countDocuments(filter);
+    const tasks = await Task.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(offset)
+      .limit(limit);
+    res.json({
+      items: tasks,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + tasks.length < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,8 +1,25 @@
 const { MiniGame, GameScore } = require("../models/MiniGame");
+const GameRun = require("../models/GameRun");
 const adaptiveDifficultyEngine = require("../services/adaptiveDifficultyEngine");
 const gamificationService = require("../services/gamificationService");
 const User = require("../models/User");
 const { GAME_THRESHOLDS, calculateStars, updatePlayStreak } = require("../config/gameThresholds");
+const jwt = require("jsonwebtoken");
+const { randomUUID } = require("crypto");
+const XPEvent = require("../models/XPEvent");
+const mongoose = require("mongoose");
+
+function getMiniGameJwtSecret() {
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (process.env.NODE_ENV !== "production") return "ecoquest-dev-minigame-secret";
+  return null;
+}
+
+function startOfDay(dateValue) {
+  const d = new Date(dateValue || Date.now());
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
 const GAME_ALIAS = {
   "waste-sorting": "waste sorting",
@@ -11,7 +28,50 @@ const GAME_ALIAS = {
   "eco-trivia-race": "eco trivia race",
   "trivia-race": "eco trivia race",
   "plant-growth": "plant growth",
+  "eco-habit": "eco habit",
+  "river-cleanup-rush": "river cleanup rush",
+  "solar-sprint": "solar sprint",
+  "eco-quiz-blaster": "eco quiz blaster",
+  "power-planner": "power planner",
+  "ecosystem-balance": "ecosystem balance",
+  "carbon-choices": "carbon choices",
+  "water-cycle-lab": "water cycle lab",
 };
+
+function resolveThresholdKeyFromGameId(gameId, gameName) {
+  let thresholdId = String(gameId || "").toLowerCase();
+  if (GAME_THRESHOLDS[thresholdId]) return thresholdId;
+  const reverseAlias = Object.keys(GAME_ALIAS).find(
+    (k) => GAME_ALIAS[k] === String(gameName || "").toLowerCase()
+  );
+  if (reverseAlias && GAME_THRESHOLDS[reverseAlias]) return reverseAlias;
+  return thresholdId;
+}
+
+async function resolveGame(gameId) {
+  let game = null;
+  if (typeof gameId === "string" && mongoose.Types.ObjectId.isValid(gameId)) {
+    game = await MiniGame.findById(gameId);
+  }
+  if (!game && typeof gameId === "string") {
+    const alias = GAME_ALIAS[gameId.toLowerCase()] || gameId;
+    game = await MiniGame.findOne({
+      name: { $regex: new RegExp(alias.replace(/\s+/g, ".*"), "i") },
+      isActive: true,
+    });
+    if (!game) {
+      const normalizedAlias = alias.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const activeGames = await MiniGame.find({ isActive: true }).select("name");
+      const fuzzy = activeGames.find((g) =>
+        String(g.name || "").toLowerCase().replace(/[^a-z0-9]/g, "").includes(normalizedAlias)
+      );
+      if (fuzzy) {
+        game = await MiniGame.findById(fuzzy._id);
+      }
+    }
+  }
+  return game;
+}
 
 // Get all available mini-games
 const getMiniGames = async (req, res) => {
@@ -23,22 +83,88 @@ const getMiniGames = async (req, res) => {
   }
 };
 
+// Start a server-verified run (anti-replay token + runId)
+const startGameRun = async (req, res) => {
+  try {
+    const { gameId, level } = req.body;
+    const studentId = req.user.id;
+    const levelPlayed = Math.max(1, Math.min(3, parseInt(level, 10) || 1));
+
+    const game = await resolveGame(gameId);
+    if (!game) return res.status(404).json({ message: "Game not found" });
+
+    const runId = randomUUID();
+    await GameRun.create({ runId, student: studentId, game: game._id, level: levelPlayed, consumedAt: null });
+
+    const thresholdKey = resolveThresholdKeyFromGameId(gameId, game.name);
+    const config = GAME_THRESHOLDS[thresholdKey]?.[levelPlayed];
+    const maxScore = config?.maxScore ?? 100; // safe fallback cap if thresholds missing
+    const minSeconds = Number(process.env.GAME_MIN_SECONDS || 12);
+    const jwtSecret = getMiniGameJwtSecret();
+    if (!jwtSecret) {
+      return res.status(500).json({ message: "Server configuration error: JWT secret is missing" });
+    }
+
+    const token = jwt.sign(
+      { runId, studentId: String(studentId), game: String(game._id), level: levelPlayed, maxScore, minSeconds },
+      jwtSecret,
+      { expiresIn: "10m" }
+    );
+
+    res.json({ runId, runToken: token, maxScore, minSeconds, level: levelPlayed });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+      requestId: req.requestId,
+      ...(process.env.NODE_ENV !== "production" ? { stack: error.stack } : {}),
+    });
+  }
+};
+
 // Submit game score
 const submitGameScore = async (req, res) => {
   try {
-    const { gameId, score, timeSpent } = req.body;
+    const { gameId, score, timeSpent, runId, runToken } = req.body;
     const studentId = req.user.id;
 
-    let game = await MiniGame.findById(gameId);
-    if (!game && typeof gameId === "string") {
-      const alias = GAME_ALIAS[gameId.toLowerCase()] || gameId;
-      game = await MiniGame.findOne({
-        name: { $regex: new RegExp(alias.replace(/\s+/g, ".*"), "i") },
-        isActive: true,
-      });
+    if (!runId || !runToken) {
+      return res.status(400).json({ message: "runId and runToken are required" });
     }
+
+    let decoded;
+    try {
+      const jwtSecret = getMiniGameJwtSecret();
+      if (!jwtSecret) {
+        return res.status(500).json({ message: "Server configuration error: JWT secret is missing" });
+      }
+      decoded = jwt.verify(runToken, jwtSecret);
+    } catch (e) {
+      return res.status(401).json({ message: "Invalid or expired runToken" });
+    }
+
+    if (decoded.runId !== runId || decoded.studentId !== String(studentId)) {
+      return res.status(403).json({ message: "Run token does not match this user/run" });
+    }
+
+    // Enforce single-consume
+    const run = await GameRun.findOne({ runId, student: studentId });
+    if (!run) return res.status(400).json({ message: "Unknown runId" });
+    if (run.consumedAt) return res.status(400).json({ message: "Run already submitted" });
+
+    // Minimum play time gate (client-reported + server-observed run age)
+    const minSeconds = Math.max(0, Number(decoded.minSeconds ?? process.env.GAME_MIN_SECONDS ?? 12));
+    const clientSeconds = Number(timeSpent ?? 0);
+    const serverSeconds = Math.floor((Date.now() - new Date(run.createdAt).getTime()) / 1000);
+    if (minSeconds > 0 && (clientSeconds < minSeconds || serverSeconds < minSeconds)) {
+      return res.status(400).json({ message: `Playtime too short (min ${minSeconds}s)` });
+    }
+
+    const game = await resolveGame(gameId);
     if (!game) {
       return res.status(404).json({ message: "Game not found" });
+    }
+    if (String(decoded.game) !== String(game._id)) {
+      return res.status(403).json({ message: "Run token does not match this game" });
     }
 
     // Calculate points based on score and difficulty
@@ -75,13 +201,8 @@ const submitGameScore = async (req, res) => {
       // ignore
     }
 
-    const levelPlayed = parseInt(req.body.level) || 1;
-    let thresholdId = gameId.toLowerCase();
-    if (!GAME_THRESHOLDS[thresholdId]) {
-      // Try to find the correct key if alias was used
-      const reverseAlias = Object.keys(GAME_ALIAS).find(k => GAME_ALIAS[k] === game.name.toLowerCase());
-      if (reverseAlias && GAME_THRESHOLDS[reverseAlias]) thresholdId = reverseAlias;
-    }
+    const levelPlayed = Math.max(1, Math.min(3, parseInt(decoded.level, 10) || 1));
+    let thresholdId = resolveThresholdKeyFromGameId(gameId, game.name);
 
     const config = GAME_THRESHOLDS[thresholdId]?.[levelPlayed];
     let starsEarned = 0;
@@ -96,11 +217,15 @@ const submitGameScore = async (req, res) => {
       newUnlockedLevel: null
     };
 
+    const maxAllowedScore = config?.maxScore ?? Number(decoded.maxScore ?? 100);
+    if (typeof score !== "number" || Number.isNaN(score) || score < 0) {
+      return res.status(400).json({ message: "Invalid score" });
+    }
+    if (score > maxAllowedScore) {
+      return res.status(400).json({ message: "Invalid score - exceeds maximum possible for this level" });
+    }
+
     if (config) {
-      if (score > config.maxScore) {
-        return res.status(400).json({ message: "Invalid score - exceeds maximum possible for this level" });
-      }
-      
       starsEarned = calculateStars(score, config.thresholds);
       
       // Calculate delta for near miss
@@ -154,36 +279,107 @@ const submitGameScore = async (req, res) => {
       await user.save();
     }
 
+    // Consume run (best-effort)
+    run.consumedAt = new Date();
+    await run.save();
+
+    let capInfo = null;
+
+    // Daily cap for game XP
+    const cap = Number(process.env.GAME_DAILY_XP_CAP ?? 120);
+    if (cap > 0) {
+      const today = startOfDay(new Date());
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+      const agg = await XPEvent.aggregate([
+        { $match: { user: run.student, source: "game", occurredAt: { $gte: today, $lt: tomorrow } } },
+        { $group: { _id: null, total: { $sum: "$points" } } },
+      ]);
+      const earnedToday = Number(agg?.[0]?.total ?? 0);
+      if (earnedToday >= cap) {
+        pointsEarned = 0;
+        capInfo = { type: "daily", cap, earned: earnedToday, remaining: 0 };
+      } else if (earnedToday + pointsEarned > cap) {
+        pointsEarned = Math.max(0, cap - earnedToday);
+        capInfo = { type: "daily", cap, earned: earnedToday, remaining: Math.max(0, cap - earnedToday) };
+      }
+    }
+
+    // Per-game daily cap (prevents grinding a single easy game)
+    const perGameCap = Number(process.env.GAME_PER_GAME_DAILY_XP_CAP ?? 40);
+    if (perGameCap > 0 && pointsEarned > 0) {
+      const today = startOfDay(new Date());
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+      const gameAgg = await XPEvent.aggregate([
+        {
+          $match: {
+            user: run.student,
+            source: "game",
+            sourceRef: String(game._id),
+            occurredAt: { $gte: today, $lt: tomorrow },
+          },
+        },
+        { $group: { _id: null, total: { $sum: "$points" } } },
+      ]);
+      const earnedForGameToday = Number(gameAgg?.[0]?.total ?? 0);
+      if (earnedForGameToday >= perGameCap) {
+        pointsEarned = 0;
+        capInfo = { type: "perGameDaily", cap: perGameCap, earned: earnedForGameToday, remaining: 0 };
+      } else if (earnedForGameToday + pointsEarned > perGameCap) {
+        pointsEarned = Math.max(0, perGameCap - earnedForGameToday);
+        capInfo = { type: "perGameDaily", cap: perGameCap, earned: earnedForGameToday, remaining: Math.max(0, perGameCap - earnedForGameToday) };
+      }
+    }
+
     // Award XP through central service for level/streak consistency.
-    await gamificationService.awardPoints({
-      userId: studentId,
-      points: pointsEarned,
-      source: "game",
-      sourceRef: String(game._id),
-      idempotencyKey: `game-score:${gameScore._id}`,
-      metadata: { rawScore: score, levelPlayed },
-    });
+    if (pointsEarned > 0) {
+      await gamificationService.awardPoints({
+        userId: studentId,
+        points: pointsEarned,
+        source: "game",
+        sourceRef: String(game._id),
+        idempotencyKey: `game-run:${runId}`,
+        metadata: { rawScore: score, levelPlayed, timeSpent: clientSeconds, serverSeconds },
+      });
+    }
 
     res.json({
       message: "Score submitted successfully",
       pointsEarned,
       totalScore: score,
       adaptive: adjustments,
-      mastery: masteryData
+      mastery: masteryData,
+      capInfo,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+      requestId: req.requestId,
+      ...(process.env.NODE_ENV !== "production" ? { stack: error.stack } : {}),
+    });
   }
 };
 
 // Get student's game history
 const getGameHistory = async (req, res) => {
   try {
-    const history = await GameScore.find({ student: req.user.id })
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 20)));
+    const offset = Math.max(0, Number(req.query.offset || 0));
+    const filter = { student: req.user.id };
+    const total = await GameScore.countDocuments(filter);
+    const history = await GameScore.find(filter)
       .populate("game", "name type category")
       .sort({ createdAt: -1 })
-      .limit(20);
-    res.json(history);
+      .skip(offset)
+      .limit(limit);
+    res.json({
+      items: history,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + history.length < total,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -191,6 +387,7 @@ const getGameHistory = async (req, res) => {
 
 module.exports = {
   getMiniGames,
+  startGameRun,
   submitGameScore,
   getGameHistory
 };

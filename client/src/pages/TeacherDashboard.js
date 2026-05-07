@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldAlert, Trophy, Users, ClipboardCheck, Award, Sparkles } from "lucide-react";
+import { ShieldAlert, Trophy, Users, ClipboardCheck, Award, Sparkles, ArrowRight, Clock3, Flame } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -14,6 +14,7 @@ import TeacherShell from "../components/TeacherShell";
 import { fetchTeacherBootstrap } from "../api/teacherApi";
 import { apiRequest } from "../api/httpClient";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
@@ -23,6 +24,7 @@ function TeacherDashboard() {
   const [aiInsight, setAiInsight] = useState("");
   const [aiRefreshing, setAiRefreshing] = useState(false);
   const { user, isLoggedIn } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isLoggedIn || !user) return;
@@ -147,12 +149,48 @@ function TeacherDashboard() {
       title="Dashboard"
       subtitle="Overview of engagement, risk alerts, and class performance."
     >
+      <section className="rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Teacher command center</p>
+            <h2 className="font-display font-bold text-2xl text-slate-900 mt-1">
+              Welcome back, {user?.name || "Teacher"} 👋
+            </h2>
+            <p className="text-slate-600 mt-1">
+              {pendingCount > 0
+                ? `${pendingCount} submissions are waiting for review.`
+                : "No pending reviews right now — great job staying on top."}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => navigate("/teacher/submissions")}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 text-white px-4 py-2 font-semibold hover:bg-emerald-700 transition"
+            >
+              Review Queue <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate("/teacher/tasks")}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Create Task
+            </button>
+            <button
+              onClick={() => navigate("/teacher/quizzes")}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Create Quiz
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section className="grid md:grid-cols-4 gap-4">
         {[
-          { label: "Total Students", value: students.length, icon: Users },
-          { label: "Pending Submissions", value: pendingCount, icon: ClipboardCheck, urgent: pendingCount > 0 },
-          { label: "Quizzes Created", value: createdQuizCount, icon: Trophy },
-          { label: "Tasks Created", value: createdTaskCount, icon: Trophy },
+          { label: "Total Students", value: students.length, icon: Users, helper: "In your school scope" },
+          { label: "Pending Submissions", value: pendingCount, icon: ClipboardCheck, urgent: pendingCount > 0, helper: "Needs your action" },
+          { label: "Quizzes Created", value: createdQuizCount, icon: Trophy, helper: "Published content" },
+          { label: "Tasks Created", value: createdTaskCount, icon: Trophy, helper: "Mission inventory" },
         ].map((card) => (
           <motion.article
             key={card.label}
@@ -161,8 +199,12 @@ function TeacherDashboard() {
               card.urgent ? "border-red-200 bg-red-50/50" : "border-slate-200"
             }`}
           >
-            <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">{card.label}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">{card.label}</p>
+              <card.icon className={`w-4 h-4 ${card.urgent ? "text-red-500" : "text-emerald-600"}`} />
+            </div>
             <p className="mt-2 text-3xl font-display font-bold">{card.value}</p>
+            <p className="text-xs text-slate-500 mt-1">{card.helper}</p>
           </motion.article>
         ))}
       </section>
@@ -251,6 +293,14 @@ function TeacherDashboard() {
               </p>
               <p className="text-red-700 mt-1">{inactiveStudents.length} students need re-engagement.</p>
             </div>
+            <div className="rounded-xl bg-sky-50 border border-sky-200 p-3">
+              <p className="font-semibold text-sky-800 flex items-center gap-1">
+                <Clock3 className="w-4 h-4" /> Review Velocity
+              </p>
+              <p className="text-sky-700 mt-1">
+                {pendingCount > 0 ? "Prioritize review queue to keep XP feedback loop fast." : "Queue is clear. Keep momentum with new content."}
+              </p>
+            </div>
           </div>
         </article>
       </section>
@@ -295,7 +345,9 @@ function TeacherDashboard() {
               <div key={ev._id} className="rounded-xl bg-gradient-to-r from-purple-50 to-fuchsia-50 border border-purple-100 p-3 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-1">
                   <p className="font-bold text-purple-900 leading-tight pr-2">{ev.title}</p>
-                  <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-purple-200 text-purple-800 shrink-0">{ev.type}</span>
+                  <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-purple-200 text-purple-800 shrink-0 inline-flex items-center gap-1">
+                    <Flame className="w-3 h-3" /> {ev.type}
+                  </span>
                 </div>
                 <p className="text-purple-700 text-xs font-semibold mt-1 opacity-80 uppercase tracking-wide">
                   Scope: {ev.scope || "school-wide"}

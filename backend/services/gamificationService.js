@@ -2,6 +2,8 @@ const User = require("../models/User");
 const XPEvent = require("../models/XPEvent");
 const Submission = require("../models/Submission");
 
+const progression = require("../config/progression");
+
 async function evaluateBadges(user) {
   if (!Array.isArray(user.badges)) user.badges = [];
   
@@ -90,8 +92,7 @@ function applyPlantRecovery(user, type) {
 }
 
 function levelFromPoints(points) {
-  const p = Number(points || 0);
-  return Math.max(1, Math.floor(p / 100) + 1);
+  return progression.levelFromPoints(points);
 }
 
 function applyStreak(user, activityDate = new Date()) {

@@ -16,7 +16,7 @@ import {
   EyeOff,
   X
 } from "lucide-react";
-import { apiRequest } from "../api/httpClient";
+import { apiRequest, isFeatureDisabledError } from "../api/httpClient";
 import { useAlert } from "../components/ui/AlertProvider";
 import { EcoLogo } from "../components/EcoLogo";
 import { useAuth } from "../context/AuthContext";
@@ -38,6 +38,11 @@ export default function PrincipalDashboard() {
   const [teachers, setTeachers] = useState([]);
   const [classStats, setClassStats] = useState([]);
   const [events, setEvents] = useState([]);
+  const [competitionsDisabled, setCompetitionsDisabled] = useState(false);
+  const [teacherPagination, setTeacherPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
+  const [classPagination, setClassPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
+  const [eventPagination, setEventPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
+  const [teacherQuery, setTeacherQuery] = useState("");
 
   // Event Form State
   const [newEventTitle, setNewEventTitle] = useState("");
@@ -70,14 +75,30 @@ export default function PrincipalDashboard() {
     }
   };
 
-  const fetchTeachers = async () => {
+  const fetchTeacherPage = async (nextOffset = 0) => {
     try {
-      const data = await apiRequest("/api/principal/teachers");
-      if (data) setTeachers(data.teachers || []);
+      const limit = teacherPagination.limit || 25;
+      const data = await apiRequest(
+        `/api/principal/teachers?limit=${limit}&offset=${nextOffset}&q=${encodeURIComponent(teacherQuery || "")}`
+      );
+      const items = Array.isArray(data) ? data : data?.items || [];
+      if (data) {
+        setTeachers(items);
+        setTeacherPagination((p) => ({ ...p, ...(data?.pagination || { total: 0, limit, offset: nextOffset, hasMore: false }) }));
+      }
     } catch (e) {
       console.error(e);
     }
   };
+
+  const fetchTeachers = async () => fetchTeacherPage(0);
+
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
+    const t = setTimeout(() => fetchTeachers(), 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teacherQuery]);
 
   const [aiInsight, setAiInsight] = useState("");
   const [aiRefreshing, setAiRefreshing] = useState(false);
@@ -96,21 +117,36 @@ export default function PrincipalDashboard() {
 
   const fetchClasses = async () => {
     try {
-      const data = await apiRequest("/api/principal/classes");
+      // This tab renders aggregate class insights (avg XP), not class roster.
+      const data = await apiRequest("/api/principal/class-insights");
       if (data) setClassStats(data.classStats || []);
     } catch (e) {
       console.error(e);
     }
   };
 
-  const fetchEvents = async () => {
+  const fetchEventPage = async (nextOffset = 0) => {
     try {
-      const data = await apiRequest("/api/principal/events");
-      if (data) setEvents(data.events || []);
+      const limit = eventPagination.limit || 25;
+      const data = await apiRequest(`/api/principal/events?limit=${limit}&offset=${nextOffset}`);
+      const items = Array.isArray(data) ? data : data?.items || [];
+      if (data) {
+        setCompetitionsDisabled(false);
+        setEvents(items);
+        setEventPagination((p) => ({ ...p, ...(data?.pagination || { total: 0, limit, offset: nextOffset, hasMore: false }) }));
+      }
     } catch (e) {
+      if (isFeatureDisabledError(e)) {
+        setCompetitionsDisabled(true);
+        setEvents([]);
+        setEventPagination({ total: 0, limit: eventPagination.limit || 25, offset: 0, hasMore: false });
+        return;
+      }
       console.error(e);
     }
   };
+
+  const fetchEvents = async () => fetchEventPage(0);
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
@@ -128,6 +164,11 @@ export default function PrincipalDashboard() {
       fetchEvents();
       showAlert({ type: "success", message: "Event Created Successfully" });
     } catch (err) {
+      if (isFeatureDisabledError(err)) {
+        setCompetitionsDisabled(true);
+        showAlert({ type: "error", message: "Competitions are currently disabled by admin." });
+        return;
+      }
       showAlert({ type: "error", message: "Failed to create event" });
     }
   };
@@ -178,6 +219,13 @@ export default function PrincipalDashboard() {
 
   const topClass = classStats.length > 0 ? classStats[0] : null;
   const lowestClass = classStats.length > 0 ? classStats[classStats.length - 1] : null;
+
+  const metricCards = [
+    { label: "Total Students", value: overview.totalStudents, text: "Active accounts", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Active Today", value: overview.activeStudentsToday, text: "Engagement pulse", icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Weekly XP Earned", value: overview.weeklyXp, text: "Platform-wide", icon: Lightbulb, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Tasks Completed", value: overview.tasksCompleted, text: "Total approvals", icon: CheckCircle, color: "text-purple-600", bg: "bg-purple-50" },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 font-body flex transition-colors">
@@ -240,19 +288,14 @@ export default function PrincipalDashboard() {
           {activeTab === "overview" && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                  { label: "Total Students", value: overview.totalStudents, up: true, text: "Active accounts", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-                  { label: "Active Today", value: overview.activeStudentsToday, up: true, text: "Engagement pulse", icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
-                  { label: "Weekly XP Earned", value: overview.weeklyXp, up: true, text: "Platform-wide", icon: Lightbulb, color: "text-amber-600", bg: "bg-amber-50" },
-                  { label: "Tasks Completed", value: overview.tasksCompleted, up: true, text: "Total approvals", icon: CheckCircle, color: "text-purple-600", bg: "bg-purple-50" }
-                ].map((stat, i) => (
+                {metricCards.map((stat, i) => (
                   <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center`}>
                         <stat.icon className={`w-6 h-6 ${stat.color}`} />
                       </div>
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${stat.up ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                        {stat.up ? "▲ 12%" : "▼ 3%"}
+                      <span className="text-xs font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                        Live
                       </span>
                     </div>
                     <h3 className="text-slate-500 text-sm font-bold uppercase tracking-wider mb-1">{stat.label}</h3>
@@ -503,8 +546,35 @@ export default function PrincipalDashboard() {
           {/* ====================== TEACHER PERFORMANCE ====================== */}
           {activeTab === "teachers" && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-6 border-b border-slate-200">
-                <h3 className="font-display font-bold text-lg text-slate-800">Teacher Leaderboard &amp; Engagement</h3>
+              <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h3 className="font-display font-bold text-lg text-slate-800">Teacher Leaderboard &amp; Engagement</h3>
+                  <p className="text-xs text-slate-500 font-semibold mt-1">
+                    Showing {teacherPagination.offset + 1}-{Math.min(teacherPagination.offset + teachers.length, teacherPagination.total || teachers.length)} of {teacherPagination.total || teachers.length}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={teacherQuery}
+                    onChange={(e) => setTeacherQuery(e.target.value)}
+                    placeholder="Search teachers…"
+                    className="w-full sm:w-64 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-slate-900 outline-none"
+                  />
+                  <button
+                    disabled={teacherPagination.offset <= 0}
+                    onClick={() => fetchTeacherPage(Math.max(0, teacherPagination.offset - teacherPagination.limit))}
+                    className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-bold disabled:opacity-40"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    disabled={!teacherPagination.hasMore}
+                    onClick={() => fetchTeacherPage(teacherPagination.offset + teacherPagination.limit)}
+                    className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-bold disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
               <table className="w-full text-left text-sm text-slate-600">
                 <thead className="bg-slate-50 text-xs uppercase font-bold text-slate-500">
@@ -578,6 +648,11 @@ export default function PrincipalDashboard() {
           {/* ====================== EVENTS & COMPETITIONS ====================== */}
           {activeTab === "events" && (
             <div className="grid md:grid-cols-3 gap-6">
+              {competitionsDisabled && (
+                <div className="md:col-span-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800 font-semibold">
+                  Competitions are currently disabled by admin.
+                </div>
+              )}
               <div className="md:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 h-fit">
                 <h3 className="font-display font-bold text-lg text-slate-800 mb-6 flex items-center gap-2">
                   <CalendarPlus className="w-5 h-5 text-purple-500" /> Launch Event
@@ -587,6 +662,7 @@ export default function PrincipalDashboard() {
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Event Name</label>
                     <input 
                       value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)}
+                      disabled={competitionsDisabled}
                       className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-slate-900 outline-none" 
                       placeholder="e.g. Earth Week Challenge" required
                     />
@@ -595,6 +671,7 @@ export default function PrincipalDashboard() {
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Type</label>
                     <select 
                       value={newEventType} onChange={e => setNewEventType(e.target.value)}
+                      disabled={competitionsDisabled}
                       className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-slate-900 outline-none"
                     >
                       <option value="mixed">Mixed Activities</option>
@@ -606,13 +683,14 @@ export default function PrincipalDashboard() {
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Scope</label>
                     <select 
                       value={newEventScope} onChange={e => setNewEventScope(e.target.value)}
+                      disabled={competitionsDisabled}
                       className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-slate-900 outline-none"
                     >
                       <option value="school-wide">School Wide</option>
                       <option value="class">Inter-Class Duel</option>
                     </select>
                   </div>
-                  <button type="submit" className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg hover:bg-slate-800 mt-2 transition-colors">
+                  <button type="submit" disabled={competitionsDisabled} className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg hover:bg-slate-800 mt-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Publish Event
                   </button>
                 </form>
@@ -631,13 +709,38 @@ export default function PrincipalDashboard() {
                     </div>
                     <div className="bg-slate-50 px-4 py-2 rounded-xl text-center border border-slate-100 min-w-[120px]">
                       <p className="text-xs font-bold text-slate-500 uppercase mb-0.5">Participation</p>
-                      <p className="font-bold text-emerald-600 text-lg">78%</p>
+                      <p className="font-bold text-emerald-600 text-lg">
+                        {typeof ev.participationRate === "number" ? `${Math.round(ev.participationRate)}%` : "N/A"}
+                      </p>
                     </div>
                   </div>
                 ))}
                 {events.length === 0 && (
                   <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">
                     No active events or competitions.
+                  </div>
+                )}
+                {(eventPagination.total || 0) > 0 && (
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <span className="text-xs text-slate-500 font-semibold">
+                      Showing {eventPagination.offset + 1}-{Math.min(eventPagination.offset + events.length, eventPagination.total)} of {eventPagination.total}
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={eventPagination.offset <= 0}
+                        onClick={() => fetchEventPage(Math.max(0, eventPagination.offset - eventPagination.limit))}
+                        className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-bold disabled:opacity-40"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        disabled={!eventPagination.hasMore}
+                        onClick={() => fetchEventPage(eventPagination.offset + eventPagination.limit)}
+                        className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-bold disabled:opacity-40"
+                      >
+                        Next
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

@@ -4,6 +4,12 @@ const User = require("../models/User");
 const adaptiveDifficultyEngine = require("../services/adaptiveDifficultyEngine");
 const gamificationService = require("../services/gamificationService");
 const { buildContentScope } = require("../middleware/scopeFilter");
+const {
+  listStudentSchedules,
+  buildScheduleMatcher,
+  isWindowActive,
+  getScheduleState,
+} = require("../services/scheduleVisibilityService");
 
 const QUIZ_CURRICULUM = {
   version: 1,
@@ -27,9 +33,23 @@ function calculateStars(correct, total) {
 const getQuizzes = async (req, res) => {
   try {
     const scope = buildContentScope(req.user, { skipClassFilter: true });
-    const quizzes = await Quiz.find({ ...scope, isActive: true })
+    let quizzes = await Quiz.find({ ...scope, isActive: true })
       .select("-questions.correctAnswer")
       .populate("createdBy", "name");
+
+    if (req.user?.role === "student") {
+      const schedules = await listStudentSchedules("quiz", req.user.schoolId || null);
+      const pickSchedule = buildScheduleMatcher(schedules);
+      quizzes = quizzes.map((quiz) => {
+        const schedule = pickSchedule(quiz);
+        return {
+          ...quiz.toObject(),
+          schedule: getScheduleState(schedule),
+          isAvailableNow: isWindowActive(schedule),
+        };
+      });
+    }
+
     res.json(quizzes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -41,6 +61,14 @@ const getQuizById = async (req, res) => {
     const quiz = await Quiz.findById(req.params.id).select("-questions.correctAnswer");
     if (!quiz) {
       return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    if (req.user?.role === "student") {
+      const schedules = await listStudentSchedules("quiz", req.user.schoolId || null);
+      const pickSchedule = buildScheduleMatcher(schedules);
+      if (!isWindowActive(pickSchedule(quiz))) {
+        return res.status(403).json({ message: "This quiz is not available in the current schedule window." });
+      }
     }
 
     // Enforce Backend Route Locking via Curriculum
@@ -80,6 +108,14 @@ const submitQuiz = async (req, res) => {
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
       return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    if (req.user?.role === "student") {
+      const schedules = await listStudentSchedules("quiz", req.user.schoolId || null);
+      const pickSchedule = buildScheduleMatcher(schedules);
+      if (!isWindowActive(pickSchedule(quiz))) {
+        return res.status(403).json({ message: "This quiz is currently outside its scheduled window." });
+      }
     }
 
     let totalScore = 0;

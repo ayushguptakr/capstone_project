@@ -7,10 +7,20 @@ export default function TeacherAnnouncements() {
   const [target, setTarget] = useState("All Classes");
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState("");
+  const [pagination, setPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
 
   useEffect(() => {
-    fetchTeacherBootstrap().then((d) => setAnnouncements(d.announcements || []));
+    fetchTeacherBootstrap().then((d) => {
+      setAnnouncements(d.announcements || []);
+      if (d.announcementsPagination) setPagination((p) => ({ ...p, ...d.announcementsPagination }));
+    });
   }, []);
+
+  async function fetchPage(nextOffset) {
+    const resp = await apiRequest(`/api/teacher/announcements?limit=${pagination.limit}&offset=${nextOffset}`);
+    setAnnouncements(Array.isArray(resp) ? resp : resp?.items || []);
+    setPagination((p) => ({ ...p, ...(resp?.pagination || {}) }));
+  }
 
   async function send() {
     if (!message.trim()) return;
@@ -55,6 +65,29 @@ export default function TeacherAnnouncements() {
           </tbody>
         </table>
         {announcements.length === 0 ? <div className="p-8 text-center text-slate-500">No announcements yet.</div> : null}
+        {pagination.total > 0 ? (
+          <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>
+              Showing {pagination.offset + 1}-{Math.min(pagination.offset + announcements.length, pagination.total)} of {pagination.total}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={pagination.offset <= 0}
+                onClick={() => fetchPage(Math.max(0, pagination.offset - pagination.limit))}
+                className="px-2 py-1 rounded border border-slate-200 disabled:opacity-40"
+              >
+                Prev
+              </button>
+              <button
+                disabled={!pagination.hasMore}
+                onClick={() => fetchPage(pagination.offset + pagination.limit)}
+                className="px-2 py-1 rounded border border-slate-200 disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </TeacherShell>
   );

@@ -83,7 +83,7 @@ export default function LeagueCard({ league = "bronze", weeklyXP = 0 }) {
 
       {!next && (
         <p className="text-[11px] text-center text-indigo-500 font-semibold mt-1">
-          🏆 You've reached the highest league!
+          You've reached the highest league!
         </p>
       )}
     </motion.div>

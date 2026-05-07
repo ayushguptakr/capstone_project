@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { apiRequest } from "../api/httpClient";
 
 // ── Question Bank ──────────────────────────────────────────────────
 const QUESTIONS = [
@@ -201,6 +202,34 @@ export default function useGameLogic(level = 1) {
   const [correctCount, setCorrectCount] = useState(0);
   const [results, setResults] = useState([]);// eslint-disable-next-line react-hooks/exhaustive-deps
   const timerRef = useRef(null);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+
+  const buildFromAi = (aiList) => {
+    if (!Array.isArray(aiList) || aiList.length === 0) return null;
+    const mapped = aiList.map((q, idx) => {
+      const opts = Array.isArray(q?.options) ? q.options.map((s) => String(s)) : [];
+      if (opts.length < 3) return null;
+      const answerIndex = Number(q?.answerIndex);
+      const safeAnswer = [0, 1, 2].includes(answerIndex) ? answerIndex : 0;
+      const wrongExtra =
+        level >= 3
+          ? "It doesn't matter"
+          : level === 2
+            ? "Do nothing"
+            : "Ignore it";
+      const all = [
+        ...opts.map((text, i) => ({ text, correct: i === safeAnswer })),
+        { text: wrongExtra, correct: false },
+      ];
+      return {
+        scenario: String(q?.question || `Eco choice ${idx + 1}`).trim(),
+        choices: shuffle(all),
+        explanation: String(q?.fact || "Great eco decision!").trim(),
+        impact: { type: "habit", value: "Eco knowledge gained" },
+      };
+    }).filter(Boolean);
+    return mapped.length ? mapped : null;
+  };
 
   // Multiplier: 1x base, +0.5x per streak hit (max 3x)
   const multiplier = Math.min(3, 1 + streakCount * 0.5);
@@ -209,14 +238,29 @@ export default function useGameLogic(level = 1) {
   const progress = questions.length > 0 ? ((currentIndex) / ROUNDS) * 100 : 0;
 
   // ── Start Game ─────────────────────────────
-  const startGame = useCallback(() => {
-    const picked = shuffle(QUESTIONS).slice(0, ROUNDS);
-    // Shuffle choices within each question
-    const withShuffled = picked.map(q => ({
-      ...q,
-      choices: shuffle(q.choices)
-    }));
-    setQuestions(withShuffled);
+  const startGame = useCallback(async () => {
+    setLoadingQuestions(true);
+    let nextQuestions = null;
+    try {
+      const ai = await apiRequest("/api/ai/game-questions", {
+        method: "POST",
+        body: { topic: "eco habits and daily choices", level, count: Math.max(ROUNDS * 2, 14), exclude: [] },
+        retries: 0,
+        timeoutMs: 9000,
+      });
+      nextQuestions = buildFromAi(ai?.questions);
+    } catch {
+      // ignore, fallback below
+    }
+
+    if (!nextQuestions) {
+      const picked = shuffle(QUESTIONS).slice(0, ROUNDS);
+      nextQuestions = picked.map((q) => ({ ...q, choices: shuffle(q.choices) }));
+    } else {
+      nextQuestions = shuffle(nextQuestions).slice(0, ROUNDS);
+    }
+
+    setQuestions(nextQuestions);
     setCurrentIndex(0);
     setScore(0);
     setStreakCount(0);
@@ -227,8 +271,9 @@ export default function useGameLogic(level = 1) {
     setIsCorrect(null);
     setTimeLeft(TIME_PER_QUESTION);
     setPhase("playing");
+    setLoadingQuestions(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [ROUNDS, TIME_PER_QUESTION, level]);
 
   // ── Timer ──────────────────────────────────
   useEffect(() => {
@@ -321,6 +366,7 @@ export default function useGameLogic(level = 1) {
     ecoImpacts,
     totalRounds: ROUNDS,
     startGame,
+    loadingQuestions,
     handleAnswer,
     nextQuestion,
   };

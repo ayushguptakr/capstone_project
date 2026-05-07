@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "../api/httpClient";
 import {
   Gamepad2, Recycle, Brain, Globe, Zap, Sprout, Clock3,
-  Play, Lock, Flame, Star, ChevronLeft, ChevronRight, Target, X, Trophy, BarChart3
+  Play, Lock, Flame, Star, ChevronLeft, ChevronRight, Target, X, Trophy, BarChart3, Crosshair, Bolt, Layers, Route, Droplet
 } from "lucide-react";
 import useSound from "../hooks/useSound";
 
@@ -15,11 +15,16 @@ import gamesConfigRaw from "../data/gamesConfig";
 const ID_ICON = {
   "eco-memory": Brain, "waste-sorting": Recycle, "trivia-race": Zap,
   "climate-hero": Globe, "plant-growth": Sprout, "ecosystem-builder": Sprout,
-  "eco-speed-round": Zap, "eco-habit": Sprout
+  "eco-speed-round": Zap, "eco-habit": Sprout, "river-cleanup-rush": Globe, "solar-sprint": Zap,
+  "eco-quiz-blaster": Crosshair, "power-planner": Bolt,
+  "ecosystem-balance": Layers, "carbon-choices": Route, "water-cycle-lab": Droplet
 };
 const PLAY_COUNTS = {
   "eco-memory": 2841, "waste-sorting": 3672, "trivia-race": 1953,
-  "climate-hero": 2104, "plant-growth": 1587, "eco-habit": 4210
+  "climate-hero": 2104, "plant-growth": 1587, "eco-habit": 4210,
+  "river-cleanup-rush": 1320, "solar-sprint": 980,
+  "eco-quiz-blaster": 0, "power-planner": 0,
+  "ecosystem-balance": 0, "carbon-choices": 0, "water-cycle-lab": 0
 };
 
 const games = gamesConfigRaw.map(g => ({
@@ -37,9 +42,9 @@ const CATEGORIES = [
 ];
 
 const SECTIONS = [
-  { id: "trending", title: "Trending Games", icon: "🔥", filter: g => g.section === "trending" },
-  { id: "learn", title: "Learn & Play", icon: "🧠", filter: g => g.section === "learn" },
-  { id: "quick", title: "Quick XP Games", icon: "⚡", filter: g => g.section === "quick" },
+  { id: "trending", title: "Trending Games", Icon: Flame, filter: g => g.section === "trending" },
+  { id: "learn", title: "Learn & Play", Icon: Brain, filter: g => g.section === "learn" },
+  { id: "quick", title: "Quick XP Games", Icon: Zap, filter: g => g.section === "quick" },
 ];
 
 const diffColor = { easy: "text-emerald-600 bg-emerald-50 border-emerald-200", medium: "text-amber-600 bg-amber-50 border-amber-200", hard: "text-red-600 bg-red-50 border-red-200" };
@@ -144,7 +149,7 @@ function GameCard({ game, onPlay, userLevel }) {
 
 // ── Next Goal Hint Helper ─────────────────────────────────────────
 function getNextGoalHint(level, score, stars) {
-  if (stars === 3) return "Mastered! ✨";
+  if (stars === 3) return "Mastered";
   if (stars === 0) return "Complete to unlock next level";
   if (stars === 1) return "Get a higher score for 2 stars!";
   if (stars === 2) return "So close to mastery!";
@@ -359,7 +364,7 @@ function MiniGames() {
             </div>
             <div>
               <p className="font-bold text-sm text-slate-800">
-                {dailyChallengeComplete ? "Daily Challenge Complete!" : "🌍 Daily Challenge"}
+                {dailyChallengeComplete ? "Daily Challenge Complete!" : "Daily Challenge"}
               </p>
               <p className="text-xs text-slate-500">
                 {dailyChallengeComplete
@@ -416,7 +421,7 @@ function MiniGames() {
               <div key={section.id} className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-display font-bold text-lg text-slate-800 flex items-center gap-2">
-                    <span className="text-xl">{section.icon}</span> {section.title}
+                    <section.Icon className="w-5 h-5 text-slate-600" /> {section.title}
                   </h2>
                   <span className="text-xs font-medium text-slate-400">{sectionGames.length} games</span>
                 </div>

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
 const { protect, requirePasswordSet } = require("../middleware/authMiddleware");
+const { requireFeature } = require("../middleware/featureToggle");
 
 const LEAGUE_THRESHOLDS = {
   bronze: { promote: 200, demote: 0 },
@@ -15,7 +16,7 @@ const LEAGUE_ORDER = ["bronze", "silver", "gold", "diamond"];
 /**
  * GET /api/leagues/status — Current user's league info
  */
-router.get("/status", protect, requirePasswordSet, async (req, res) => {
+router.get("/status", protect, requirePasswordSet, requireFeature("competitions"), async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("league weeklyXP points streakCurrent level").lean();
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -41,7 +42,7 @@ router.get("/status", protect, requirePasswordSet, async (req, res) => {
  * POST /api/leagues/weekly-reset — Run weekly league evaluation.
  * Call this from a cron job or admin trigger every Sunday midnight.
  */
-router.post("/weekly-reset", protect, async (req, res) => {
+router.post("/weekly-reset", protect, requireFeature("competitions"), async (req, res) => {
   try {
     // Only allow admin/developer to trigger
     if (!["admin", "developer"].includes(req.user.role)) {

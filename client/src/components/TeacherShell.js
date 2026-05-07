@@ -36,6 +36,7 @@ const BREADCRUMB_LABELS = {
   "/teacher-dashboard": "Dashboard",
   "/teacher/classes": "Classes",
   "/teacher/students": "Students",
+  "/teacher/students/profile": "Student Profile",
   "/teacher/quizzes": "Quizzes",
   "/teacher/tasks": "Tasks",
   "/teacher/content": "Content",
@@ -67,8 +68,11 @@ export default function TeacherShell({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [showProfile, setShowProfile] = useState(false);
+  const [themeMode, setThemeMode] = useState("premium");
   const userName = useMemo(() => user?.name || getUserName(), [user]);
-  const breadcrumb = BREADCRUMB_LABELS[location.pathname] || "Teacher Workspace";
+  const breadcrumb = location.pathname.startsWith("/teacher/students/")
+    ? "Student Profile"
+    : (BREADCRUMB_LABELS[location.pathname] || "Teacher Workspace");
 
   const quickActions = useMemo(
     () => [
@@ -84,23 +88,52 @@ export default function TeacherShell({
     if (typeof onSearch === "function") onSearch(query);
   }, [onSearch, query]);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("eco_teacher_theme");
+      if (stored === "classic" || stored === "premium") {
+        setThemeMode(stored);
+      }
+    } catch {
+      // keep default premium mode
+    }
+    const syncTheme = () => {
+      try {
+        const next = localStorage.getItem("eco_teacher_theme");
+        if (next === "classic" || next === "premium") {
+          setThemeMode(next);
+        }
+      } catch {
+        // ignore read issues
+      }
+    };
+    window.addEventListener("eco-teacher-theme-change", syncTheme);
+    return () => window.removeEventListener("eco-teacher-theme-change", syncTheme);
+  }, []);
+
+  const isPremium = themeMode === "premium";
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className={isPremium ? "min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-cyan-50/40 text-slate-900" : "min-h-screen bg-slate-50 text-slate-900"}>
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-slate-200 bg-white shadow-sm transition-transform lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 transition-transform lg:translate-x-0 ${
+          isPremium
+            ? "border-r border-slate-800/50 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 text-slate-100 shadow-[0_20px_60px_-20px_rgba(2,6,23,0.7)]"
+            : "border-r border-slate-200 bg-white text-slate-800 shadow-sm"
+        } ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="h-16 border-b border-slate-200 px-4 flex items-center justify-between">
+        <div className={`h-16 px-4 flex items-center justify-between ${isPremium ? "border-b border-white/10" : "border-b border-slate-200"}`}>
           <div className="flex items-center gap-1">
             <EcoLogo size="sm" withText={true} showTagline={false} animated={false} />
-            <span className="font-display font-semibold text-sm text-slate-500 ml-0.5">Teacher</span>
+            <span className={`font-display font-semibold text-sm ml-0.5 ${isPremium ? "text-emerald-200" : "text-emerald-700"}`}>Teacher</span>
           </div>
-          <button className="lg:hidden p-2 rounded-xl hover:bg-slate-100" onClick={() => setOpen(false)}>
+          <button className={`lg:hidden p-2 rounded-xl ${isPremium ? "hover:bg-white/10" : "hover:bg-slate-100"}`} onClick={() => setOpen(false)}>
             <X className="w-4 h-4" />
           </button>
         </div>
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1.5">
           {NAV_ITEMS.map((item) => {
             const active =
               location.pathname === item.to ||
@@ -110,7 +143,11 @@ export default function TeacherShell({
                 key={item.to}
                 to={item.to}
                 className={`w-full rounded-xl px-3 py-2.5 flex items-center gap-2 text-sm font-semibold transition ${
-                  active ? "bg-emerald-100 text-emerald-800" : "text-slate-600 hover:bg-slate-100"
+                  active
+                    ? (isPremium
+                      ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/10 text-emerald-200 border border-emerald-400/30"
+                      : "bg-emerald-50 text-emerald-700 border border-emerald-200")
+                    : (isPremium ? "text-slate-300 hover:bg-white/5 hover:text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900")
                 }`}
                 onClick={() => setOpen(false)}
               >
@@ -123,8 +160,10 @@ export default function TeacherShell({
             to="/teacher/scheduling"
             className={`w-full rounded-xl px-3 py-2.5 flex items-center gap-2 text-sm font-semibold transition ${
               location.pathname.startsWith("/teacher/scheduling")
-                ? "bg-indigo-100 text-indigo-800"
-                : "text-slate-600 hover:bg-slate-100"
+                ? (isPremium
+                  ? "bg-gradient-to-r from-indigo-500/20 to-violet-500/10 text-indigo-200 border border-indigo-400/30"
+                  : "bg-indigo-50 text-indigo-700 border border-indigo-200")
+                : (isPremium ? "text-slate-300 hover:bg-white/5 hover:text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900")
             }`}
             onClick={() => setOpen(false)}
           >
@@ -135,7 +174,7 @@ export default function TeacherShell({
       </aside>
 
       <div className="lg:pl-72">
-        <header className="h-16 sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur px-4 sm:px-6 flex items-center gap-3">
+        <header className={`h-16 sticky top-0 z-30 px-4 sm:px-6 flex items-center gap-3 ${isPremium ? "border-b border-white/60 bg-white/80 backdrop-blur-xl" : "border-b border-slate-200 bg-white"}`}>
           <button className="p-2 rounded-xl hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
@@ -148,7 +187,7 @@ export default function TeacherShell({
               className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2 text-sm outline-none focus:border-emerald-300"
             />
           </div>
-          <button className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-100">
+          <button className="w-10 h-10 rounded-xl border border-slate-200/80 bg-white flex items-center justify-center hover:bg-slate-100">
             <Bell className="w-4 h-4 text-slate-600" />
           </button>
           <div className="hidden xl:flex items-center gap-2">

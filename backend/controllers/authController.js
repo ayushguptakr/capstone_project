@@ -95,6 +95,11 @@ exports.login = async (req, res) => {
     // Check user
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid email or password" });
+    if (user.status === "inactive") {
+      return res.status(403).json({
+        message: "Your account is temporary block try to contact EcoQuest team for more details",
+      });
+    }
 
     // Compare password
     const isMatch = await user.matchPassword(password);
