@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import TeacherShell from "../components/TeacherShell";
 import { createAnnouncementApi, fetchTeacherBootstrap } from "../api/teacherApi";
+import { apiRequest } from "../api/httpClient";
 
 export default function TeacherAnnouncements() {
   const [announcements, setAnnouncements] = useState([]);
