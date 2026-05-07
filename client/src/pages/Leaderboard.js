@@ -26,6 +26,7 @@ function Leaderboard() {
 
   // Dictionary for previous states
   const prevMapRef = useRef(new Map());
+  const prevOffsetRef = useRef(0);
 
   // Polling mechanism (60s)
   useEffect(() => {
@@ -51,13 +52,15 @@ function Leaderboard() {
         const newMap = new Map();
         setGlobalLeaderboard(prev => {
           prev.forEach((u, i) => {
-            const prevOffset = Number(pagination?.offset || 0);
+            const prevOffset = Number(prevOffsetRef.current || 0);
             newMap.set(String(u._id), { points: u.points, rank: prevOffset + i + 1 });
           });
           prevMapRef.current = newMap;
           return Array.isArray(studData) ? studData : (studData?.items || []);
         });
-        setPagination(studData?.pagination || { total: 0, offset, limit: pageLimit, hasMore: false });
+        const nextPagination = studData?.pagination || { total: 0, offset, limit: pageLimit, hasMore: false };
+        setPagination(nextPagination);
+        prevOffsetRef.current = Number(nextPagination?.offset || 0);
 
         // Set league based on user data
         const currentStud = (Array.isArray(studData) ? studData : (studData?.items || [])).find(
