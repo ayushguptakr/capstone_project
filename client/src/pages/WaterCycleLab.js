@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Droplet, ThermometerSun, Wind, CloudRain, Sparkles } from "lucide-react";
+import { Droplet, Sparkles } from "lucide-react";
 import CanvasGameShell from "../components/CanvasGameShell";
 import useMiniGameRun from "../hooks/useMiniGameRun";
 import MiniGameDebugPanel from "../components/game/MiniGameDebugPanel";

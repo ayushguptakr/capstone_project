@@ -40,7 +40,6 @@ export default function PrincipalDashboard() {
   const [events, setEvents] = useState([]);
   const [competitionsDisabled, setCompetitionsDisabled] = useState(false);
   const [teacherPagination, setTeacherPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
-  const [classPagination, setClassPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
   const [eventPagination, setEventPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
   const [teacherQuery, setTeacherQuery] = useState("");
 

@@ -77,7 +77,7 @@ export default function GamePlayer() {
     };
     start();
     return () => { cancelled = true; };
-  }, [game?.id, runNonce]);
+  }, [game, runNonce]);
 
   // Listen for game completion messages from iframe
   const handleMessage = useCallback((event) => {

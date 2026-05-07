@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Route, Leaf, Sparkles } from "lucide-react";
 import CanvasGameShell from "../components/CanvasGameShell";
@@ -100,10 +100,15 @@ export default function CarbonChoices() {
     return () => clearInterval(timer);
   }, [gameOver]);
 
+  const endGame = useCallback(async () => {
+    if (gameOver) return;
+    setGameOver(true);
+    await submitScore({ score: Math.max(0, score), timeSpent: 70 - timeLeft });
+  }, [gameOver, score, submitScore, timeLeft]);
+
   useEffect(() => {
     if (timeLeft === 0 && !gameOver) endGame();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft]);
+  }, [timeLeft, gameOver, endGame]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -273,13 +278,7 @@ export default function CarbonChoices() {
       cancelAnimationFrame(raf);
       canvas.removeEventListener("click", click);
     };
-  }, [gameOver, score, step, steps]);
-
-  async function endGame() {
-    if (gameOver) return;
-    setGameOver(true);
-    await submitScore({ score: Math.max(0, score), timeSpent: 70 - timeLeft });
-  }
+  }, [endGame, gameOver, score, step, steps]);
 
   return (
     <CanvasGameShell
