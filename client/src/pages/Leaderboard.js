@@ -27,12 +27,15 @@ function Leaderboard() {
   // Dictionary for previous states
   const prevMapRef = useRef(new Map());
   const prevOffsetRef = useRef(0);
+  const hasLoadedOnceRef = useRef(false);
 
   // Polling mechanism (60s)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
+        if (!hasLoadedOnceRef.current) {
+          setLoading(true);
+        }
         const offset = page * pageLimit;
         const userSchool = currentUser?.school || "";
         const studentsPromise = apiRequest(
@@ -101,7 +104,10 @@ function Leaderboard() {
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!hasLoadedOnceRef.current) {
+          hasLoadedOnceRef.current = true;
+          setLoading(false);
+        }
       }
     };
 
