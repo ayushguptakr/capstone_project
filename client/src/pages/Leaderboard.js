@@ -135,10 +135,18 @@ function Leaderboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F6FAF6] flex flex-col pt-12 px-6 max-w-6xl mx-auto space-y-4">
-        {[1,2,3,4,5].map(i => (
-          <div key={i} className="h-20 bg-slate-200/50 rounded-2xl animate-pulse" />
-        ))}
+      <div className="min-h-screen bg-[#F6FAF6] pb-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+          <div className="h-8 w-64 rounded-xl bg-slate-200/70 animate-pulse" />
+          <div className="h-24 rounded-3xl bg-slate-200/60 animate-pulse" />
+          <div className="h-12 rounded-2xl bg-slate-200/50 animate-pulse w-56" />
+          <div className="rounded-3xl border border-slate-200 bg-white overflow-hidden">
+            <div className="h-12 bg-slate-100/70 animate-pulse" />
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-16 border-t border-slate-100 bg-white animate-pulse" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

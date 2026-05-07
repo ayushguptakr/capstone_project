@@ -503,13 +503,23 @@ export default function EcoStore() {
 
   if (loading) {
     return (
-      <div className="eco-store-loading">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          className="eco-store-spinner"
-        />
-        <p className="mt-4 text-gray-500 font-semibold">Loading Eco Store…</p>
+      <div className="min-h-screen bg-[#F6FAF6] pb-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+          <div className="h-28 rounded-3xl bg-slate-200/60 animate-pulse" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-12 rounded-2xl bg-slate-200/60 animate-pulse" />
+            ))}
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-4">
+            <div className="h-6 w-40 rounded-lg bg-slate-200/70 animate-pulse mb-4" />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-56 rounded-2xl bg-slate-100 animate-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
