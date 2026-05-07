@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import { Trophy, School, Crown, ArrowUpRight, ArrowDownRight, Clock, Flame } from "lucide-react";
+import { Trophy, School, Crown, ArrowUpRight, ArrowDownRight, Clock, Flame, Medal } from "lucide-react";
 import { IconBox } from "../components";
 import { apiRequest, isFeatureDisabledError } from "../api/httpClient";
 import { getStoredUser } from "../utils/authStorage";
@@ -31,10 +31,11 @@ function Leaderboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const offset = page * pageLimit;
         const userSchool = currentUser?.school || "";
         const [studData, schData, clsData, leaguesRes] = await Promise.all([
-          apiRequest(`/api/leaderboard?limit=${pageLimit}&offset=${offset}`),
+          apiRequest(`/api/leaderboard?limit=${pageLimit}&offset=${offset}&range=${encodeURIComponent(timeRange)}`),
           apiRequest("/api/leaderboard/schools"),
           apiRequest(userSchool ? `/api/leaderboard/class?school=${encodeURIComponent(userSchool)}` : "/api/leaderboard/class"),
           apiRequest("/api/leagues/status").catch((e) => {
@@ -50,7 +51,8 @@ function Leaderboard() {
         const newMap = new Map();
         setGlobalLeaderboard(prev => {
           prev.forEach((u, i) => {
-            newMap.set(String(u._id), { points: u.points, rank: i + 1 });
+            const prevOffset = Number(pagination?.offset || 0);
+            newMap.set(String(u._id), { points: u.points, rank: prevOffset + i + 1 });
           });
           prevMapRef.current = newMap;
           return Array.isArray(studData) ? studData : (studData?.items || []);
@@ -83,18 +85,13 @@ function Leaderboard() {
     fetchData();
     const inv = setInterval(fetchData, 60000); // 60s
     return () => clearInterval(inv);
-  }, [currentUser, page, pageLimit]);
+  }, [currentUser, page, pageLimit, timeRange]);
 
-  // Derived filtered rows
-  const filteredStudents = useMemo(() => {
-    const rows = Array.isArray(globalLeaderboard) ? [...globalLeaderboard] : [];
-    if (timeRange === "week") {
-      rows.sort((a, b) => (b.weeklyXP || 0) - (a.weeklyXP || 0));
-    } else {
-      rows.sort((a, b) => (b.points || 0) - (a.points || 0));
-    }
-    return rows;
-  }, [globalLeaderboard, timeRange]);
+  // Backend already paginates by selected range.
+  const filteredStudents = useMemo(
+    () => (Array.isArray(globalLeaderboard) ? globalLeaderboard : []),
+    [globalLeaderboard]
+  );
 
   // Confetti trigger if rank changed massively
   useEffect(() => {
@@ -272,7 +269,7 @@ function Leaderboard() {
               
               <div className="flex flex-col relative z-0">
                 {listRows.map((s, i) => {
-                  const rank = i + 1;
+                  const rank = Number(pagination?.offset || 0) + i + 1;
                   const pts = getPoints(s);
                   const meta = getDeltaMeta(s, rank);
                   const isMe = String(s._id) === String(currentUser?.id || currentUser?._id);
@@ -285,15 +282,15 @@ function Leaderboard() {
                   if (rank === 1) {
                     rowBg = "bg-gradient-to-r from-amber-50/50 to-yellow-50 overflow-hidden";
                     rankColor = "bg-yellow-400 text-yellow-900 shadow-md shadow-yellow-400/40 border border-yellow-200";
-                    medal = "🥇";
+                    medal = "gold";
                   } else if (rank === 2) {
                     rowBg = "bg-slate-50 hover:bg-slate-100/80";
                     rankColor = "bg-slate-300 text-slate-800 shadow-sm border border-slate-200";
-                    medal = "🥈";
+                    medal = "silver";
                   } else if (rank === 3) {
                     rowBg = "bg-orange-50/40 hover:bg-orange-50/70";
                     rankColor = "bg-orange-300 text-orange-900 shadow-sm border border-orange-200";
-                    medal = "🥉";
+                    medal = "bronze";
                   } else if (isMe) {
                     rowBg = "bg-emerald-50/50 border border-emerald-100";
                   }
@@ -317,7 +314,19 @@ function Leaderboard() {
 
                         <div className="col-span-2 sm:col-span-1 flex justify-center relative">
                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-display font-bold text-sm z-10 ${rankColor}`}>
-                              {medal ? <span className="text-lg">{medal}</span> : rank}
+                              {medal ? (
+                                <Medal
+                                  className={`w-5 h-5 ${
+                                    medal === "gold"
+                                      ? "text-yellow-900"
+                                      : medal === "silver"
+                                        ? "text-slate-700"
+                                        : "text-orange-900"
+                                  }`}
+                                />
+                              ) : (
+                                rank
+                              )}
                            </div>
                         </div>
 

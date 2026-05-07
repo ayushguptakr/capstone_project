@@ -6,6 +6,7 @@ const Submission = require("../models/Submission");
 const getLeaderboard = async (req, res) => {
   try {
     const { type = "school", class: classValue, section } = req.query;
+    const range = String(req.query.range || "all").toLowerCase();
     const limit = Math.max(1, Math.min(100, Number(req.query.limit || 50)));
     const offset = Math.max(0, Number(req.query.offset || 0));
     
@@ -28,11 +29,12 @@ const getLeaderboard = async (req, res) => {
       filter.section = section;
     }
 
+    const sortField = range === "week" ? "weeklyXP" : "points";
     const total = await User.countDocuments(filter);
     const leaderboard = await User.find(filter)
       .select("name className class section points level badges league weeklyXP streakCurrent school schoolId")
       .populate("schoolId", "name")
-      .sort({ points: -1 })
+      .sort({ [sortField]: -1, points: -1, _id: 1 })
       .skip(offset)
       .limit(limit);
 

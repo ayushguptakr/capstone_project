@@ -5,16 +5,19 @@ import { apiRequest } from "../api/httpClient";
 
 export default function TeacherAnnouncements() {
   const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState("All Classes");
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState("");
   const [pagination, setPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
 
   useEffect(() => {
-    fetchTeacherBootstrap().then((d) => {
-      setAnnouncements(d.announcements || []);
-      if (d.announcementsPagination) setPagination((p) => ({ ...p, ...d.announcementsPagination }));
-    });
+    fetchTeacherBootstrap()
+      .then((d) => {
+        setAnnouncements(d.announcements || []);
+        if (d.announcementsPagination) setPagination((p) => ({ ...p, ...d.announcementsPagination }));
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   async function fetchPage(nextOffset) {
@@ -53,19 +56,30 @@ export default function TeacherAnnouncements() {
         </div>
       </div>
       <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50"><tr><th className="p-3 text-left">Target</th><th className="p-3 text-left">Message</th><th className="p-3 text-left">Date</th></tr></thead>
-          <tbody>
-            {announcements.map((a) => (
-              <tr key={a._id} className="border-t border-slate-100">
-                <td className="p-3 font-semibold">{a.target}</td>
-                <td className="p-3">{a.message}{a.isPending ? " (sending...)" : ""}</td>
-                <td className="p-3">{new Date(a.createdAt).toLocaleString()}</td>
-              </tr>
+        {loading ? (
+          <div className="p-4 space-y-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-10 rounded-lg bg-slate-100 animate-pulse" />
             ))}
-          </tbody>
-        </table>
-        {announcements.length === 0 ? <div className="p-8 text-center text-slate-500">No announcements yet.</div> : null}
+          </div>
+        ) : null}
+        {!loading ? (
+          <>
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50"><tr><th className="p-3 text-left">Target</th><th className="p-3 text-left">Message</th><th className="p-3 text-left">Date</th></tr></thead>
+              <tbody>
+                {announcements.map((a) => (
+                  <tr key={a._id} className="border-t border-slate-100">
+                    <td className="p-3 font-semibold">{a.target}</td>
+                    <td className="p-3">{a.message}{a.isPending ? " (sending...)" : ""}</td>
+                    <td className="p-3">{new Date(a.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {announcements.length === 0 ? <div className="p-8 text-center text-slate-500">No announcements yet.</div> : null}
+          </>
+        ) : null}
         {pagination.total > 0 ? (
           <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>

@@ -55,13 +55,13 @@ export default function PrincipalDashboard() {
   const [createdCredentials, setCreatedCredentials] = useState(null);
   const [showTempPassword, setShowTempPassword] = useState(false);
   const [copiedField, setCopiedField] = useState("");
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoggedIn || !user) return;
-    fetchOverview();
-    fetchTeachers();
-    fetchClasses();
-    fetchEvents();
+    Promise.allSettled([fetchOverview(), fetchTeachers(), fetchClasses(), fetchEvents()]).finally(() => {
+      setInitialLoading(false);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, user]);
 
@@ -299,9 +299,16 @@ export default function PrincipalDashboard() {
         </header>
         
         <div className="p-8 max-w-6xl mx-auto space-y-8">
+          {initialLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-24 rounded-2xl bg-slate-200/60 animate-pulse" />
+              ))}
+            </div>
+          ) : null}
           
           {/* ====================== OVERVIEW TAB ====================== */}
-          {activeTab === "overview" && (
+          {!initialLoading && activeTab === "overview" && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {metricCards.map((stat, i) => (
@@ -445,7 +452,7 @@ export default function PrincipalDashboard() {
           )}
 
           {/* ====================== MANAGE TEACHERS TAB ====================== */}
-          {activeTab === "manage-teachers" && (
+          {!initialLoading && activeTab === "manage-teachers" && (
             <div className="grid md:grid-cols-5 gap-8">
               
               {/* Create Teacher Form */}
@@ -655,7 +662,7 @@ export default function PrincipalDashboard() {
           )}
 
           {/* ====================== TEACHER PERFORMANCE ====================== */}
-          {activeTab === "teachers" && (
+          {!initialLoading && activeTab === "teachers" && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
@@ -726,7 +733,7 @@ export default function PrincipalDashboard() {
           )}
 
           {/* ====================== CLASS INSIGHTS ====================== */}
-          {activeTab === "classes" && (
+          {!initialLoading && activeTab === "classes" && (
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <h3 className="font-display font-bold text-lg text-slate-800 mb-6 flex items-center gap-2">
@@ -757,7 +764,7 @@ export default function PrincipalDashboard() {
           )}
 
           {/* ====================== EVENTS & COMPETITIONS ====================== */}
-          {activeTab === "events" && (
+          {!initialLoading && activeTab === "events" && (
             <div className="grid md:grid-cols-3 gap-6">
               {competitionsDisabled && (
                 <div className="md:col-span-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800 font-semibold">

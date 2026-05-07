@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BarChart3, ArrowLeft, Trophy, Clock3, Sparkles } from "lucide-react";
 import { fetchGamificationMe } from "../api/gamificationApi";
 import { apiRequest } from "../api/httpClient";
+import { EcoLoader } from "../components";
 
 function GameHistory() {
   const [history, setHistory] = useState([]);
@@ -33,11 +34,7 @@ function GameHistory() {
   }, [limit, offset]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-slate-600">
-        Loading game history...
-      </div>
-    );
+    return <EcoLoader text="Loading game history..." />;
   }
 
   return (
