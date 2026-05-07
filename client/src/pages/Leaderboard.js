@@ -35,48 +35,68 @@ function Leaderboard() {
         setLoading(true);
         const offset = page * pageLimit;
         const userSchool = currentUser?.school || "";
-        const [studData, schData, clsData, leaguesRes] = await Promise.all([
-          apiRequest(`/api/leaderboard?limit=${pageLimit}&offset=${offset}&range=${encodeURIComponent(timeRange)}`),
-          apiRequest("/api/leaderboard/schools"),
-          apiRequest(userSchool ? `/api/leaderboard/class?school=${encodeURIComponent(userSchool)}` : "/api/leaderboard/class"),
-          apiRequest("/api/leagues/status").catch((e) => {
-            if (isFeatureDisabledError(e)) {
-              setLeaguesDisabled(true);
-              return null;
-            }
-            return null;
-          }),
+        const studentsPromise = apiRequest(
+          `/api/leaderboard?limit=${pageLimit}&offset=${offset}&range=${encodeURIComponent(timeRange)}`
+        );
+        const classPromise = apiRequest(
+          userSchool ? `/api/leaderboard/class?school=${encodeURIComponent(userSchool)}` : "/api/leaderboard/class"
+        );
+        const schoolsPromise = activeTab === "schools" ? apiRequest("/api/leaderboard/schools") : Promise.resolve(null);
+        const leaguesPromise = apiRequest("/api/leagues/status").catch((e) => {
+          if (isFeatureDisabledError(e)) {
+            setLeaguesDisabled(true);
+          }
+          return null;
+        });
+
+        const [studRes, clsRes, schRes, leaguesRes] = await Promise.allSettled([
+          studentsPromise,
+          classPromise,
+          schoolsPromise,
+          leaguesPromise,
         ]);
+        const studData = studRes.status === "fulfilled" ? studRes.value : null;
+        const clsData = clsRes.status === "fulfilled" ? clsRes.value : null;
+        const schData = schRes.status === "fulfilled" ? schRes.value : null;
+        const leagueData = leaguesRes.status === "fulfilled" ? leaguesRes.value : null;
         
         // Before updating, capture current states natively into prevMapRef
-        const newMap = new Map();
-        setGlobalLeaderboard(prev => {
-          prev.forEach((u, i) => {
-            const prevOffset = Number(prevOffsetRef.current || 0);
-            newMap.set(String(u._id), { points: u.points, rank: prevOffset + i + 1 });
+        if (studData) {
+          const newMap = new Map();
+          setGlobalLeaderboard((prev) => {
+            prev.forEach((u, i) => {
+              const prevOffset = Number(prevOffsetRef.current || 0);
+              newMap.set(String(u._id), { points: u.points, rank: prevOffset + i + 1 });
+            });
+            prevMapRef.current = newMap;
+            return Array.isArray(studData) ? studData : studData?.items || [];
           });
-          prevMapRef.current = newMap;
-          return Array.isArray(studData) ? studData : (studData?.items || []);
-        });
-        const nextPagination = studData?.pagination || { total: 0, offset, limit: pageLimit, hasMore: false };
-        setPagination(nextPagination);
-        prevOffsetRef.current = Number(nextPagination?.offset || 0);
+          const nextPagination = studData?.pagination || { total: 0, offset, limit: pageLimit, hasMore: false };
+          setPagination(nextPagination);
+          prevOffsetRef.current = Number(nextPagination?.offset || 0);
+        }
 
         // Set league based on user data
-        const currentStud = (Array.isArray(studData) ? studData : (studData?.items || [])).find(
-          (u) => String(u._id) === String(currentUser?.id || currentUser?._id)
-        );
-        if (currentStud?.league) {
-          setMyLeague(currentStud.league);
+        if (studData) {
+          const currentStud = (Array.isArray(studData) ? studData : studData?.items || []).find(
+            (u) => String(u._id) === String(currentUser?.id || currentUser?._id)
+          );
+          if (currentStud?.league) {
+            setMyLeague(currentStud.league);
+          }
         }
-        if (leaguesRes?.league) {
-          setLeagueStatus(leaguesRes);
-          setMyLeague(leaguesRes.league);
+        if (leagueData?.league) {
+          setLeagueStatus(leagueData);
+          setMyLeague(leagueData.league);
           setLeaguesDisabled(false);
         }
 
-        setSchoolLeaderboard(schData || []);
-        setClassLeaderboard(clsData || []);
+        if (activeTab === "schools" && schData) {
+          setSchoolLeaderboard(Array.isArray(schData) ? schData : []);
+        }
+        if (clsData) {
+          setClassLeaderboard(Array.isArray(clsData) ? clsData : []);
+        }
 
       } catch (err) {
         console.error(err);
@@ -88,7 +108,7 @@ function Leaderboard() {
     fetchData();
     const inv = setInterval(fetchData, 60000); // 60s
     return () => clearInterval(inv);
-  }, [currentUser, page, pageLimit, timeRange]);
+  }, [activeTab, currentUser, page, pageLimit, timeRange]);
 
   // Backend already paginates by selected range.
   const filteredStudents = useMemo(
