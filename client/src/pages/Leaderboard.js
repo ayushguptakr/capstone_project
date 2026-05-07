@@ -334,8 +334,6 @@ function Leaderboard() {
 
                   return (
                      <motion.div
-                       layout
-                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
                        key={s._id}
                        whileHover={{ scale: 1.015, y: -2, zIndex: 10, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.1)" }}
                        className={`grid grid-cols-12 gap-4 items-center p-3 sm:px-4 sm:py-4 border-b border-slate-100 last:border-0 relative ${rowBg}`}
